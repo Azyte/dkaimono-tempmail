@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { hashPassword, createSessionToken } from '@/lib/auth';
+import { hashPassword, createSessionToken, COOKIE_NAME } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,11 +59,12 @@ export async function POST(req: NextRequest) {
     });
 
     // Create session token
-    const token = createSessionToken(newUser.id);
+    const token = createSessionToken(newUser);
 
     const response = NextResponse.json({
       success: true,
       message: 'Pendaftaran akun berhasil!',
+      token,
       user: {
         id: newUser.id,
         username: newUser.username,
@@ -78,12 +79,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Set HTTP-only session cookie
-    response.cookies.set('tempmail_user_session', token, {
+    // Set cookie
+    response.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
       sameSite: 'lax',
-      maxAge: 30 * 24 * 3600, // 30 days
+      maxAge: 90 * 24 * 3600, // 90 days
       path: '/',
     });
 

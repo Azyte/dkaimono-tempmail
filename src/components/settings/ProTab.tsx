@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Crown,
   Send,
@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   AlertCircle,
   RefreshCw,
-  ExternalLink,
   Bot,
   MessageSquare,
   Lock,
@@ -44,6 +43,27 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
   const [testLoading, setTestLoading] = useState(false);
   const [testMsg, setTestMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  useEffect(() => {
+    if (currentUser) {
+      setBotToken(currentUser.telegramBotToken || '');
+      setChatId(currentUser.telegramChatId || '');
+      setTelegramEnabled(currentUser.telegramEnabled || false);
+      setCustomPin(currentUser.customPin || '');
+    }
+  }, [currentUser]);
+
+  const getSessionHeaders = () => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('tempmail_session_token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        headers['x-session-token'] = token;
+      }
+    }
+    return headers;
+  };
+
   // 1. Handle Redeem Voucher
   const handleRedeem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +79,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
     try {
       const res = await fetch('/api/auth/redeem-voucher', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSessionHeaders(),
         body: JSON.stringify({ code: voucherCode }),
       });
       const data = await res.json();
@@ -68,6 +88,10 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
       } else {
         setRedeemMsg({ type: 'success', text: data.message });
         setVoucherCode('');
+        if (data.token && typeof window !== 'undefined') {
+          localStorage.setItem('tempmail_session_token', data.token);
+          localStorage.setItem('tempmail_saved_user', JSON.stringify(data.user));
+        }
         fireConfetti();
         onRefreshUser();
       }
@@ -91,10 +115,10 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
     try {
       const res = await fetch('/api/auth/pro-config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSessionHeaders(),
         body: JSON.stringify({
-          telegramBotToken: botToken,
-          telegramChatId: chatId,
+          telegramBotToken: botToken.trim().replace(/^bot/i, ''),
+          telegramChatId: chatId.trim().replace(/^@/, ''),
           telegramEnabled,
           customPin,
           keepEmailsForever: keepForever,
@@ -105,6 +129,10 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
         setSaveMsg({ type: 'error', text: data.error || 'Gagal menyimpan konfigurasi.' });
       } else {
         setSaveMsg({ type: 'success', text: data.message });
+        if (data.token && typeof window !== 'undefined') {
+          localStorage.setItem('tempmail_session_token', data.token);
+          localStorage.setItem('tempmail_saved_user', JSON.stringify(data.user));
+        }
         fireConfetti();
         onRefreshUser();
       }
@@ -117,7 +145,10 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
 
   // 3. Handle Test Telegram Notification
   const handleTestTelegram = async () => {
-    if (!botToken || !chatId) {
+    const cleanToken = botToken.trim().replace(/^bot/i, '');
+    const cleanChat = chatId.trim().replace(/^@/, '');
+
+    if (!cleanToken || !cleanChat) {
       setTestMsg({ type: 'error', text: 'Masukkan Bot Token dan Chat ID terlebih dahulu!' });
       return;
     }
@@ -127,8 +158,8 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
     try {
       const res = await fetch('/api/telegram/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ botToken, chatId }),
+        headers: getSessionHeaders(),
+        body: JSON.stringify({ botToken: cleanToken, chatId: cleanChat }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -145,25 +176,25 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top Banner: Membership Status */}
-      <div className="relative overflow-hidden rounded-3xl border border-indigo-500/50 bg-gradient-to-r from-indigo-950/80 via-slate-900/90 to-cyan-950/80 p-5 sm:p-6 shadow-2xl backdrop-blur-xl">
+      <div className="relative overflow-hidden rounded-3xl border border-indigo-500/50 bg-gradient-to-r from-indigo-950/80 via-slate-900/90 to-cyan-950/80 p-4 sm:p-6 shadow-2xl backdrop-blur-xl">
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-indigo-500/20 blur-3xl"></div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 shadow-lg shadow-amber-500/30 text-white font-black text-xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 shadow-lg shadow-amber-500/30 text-white font-black text-xl">
               👑
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-bold text-white">Langganan TempMail PRO</h3>
+                <h3 className="text-sm sm:text-base font-bold text-white">Langganan TempMail PRO</h3>
                 {currentUser?.isPro ? (
-                  <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-300">
+                  <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.2 text-[10px] font-extrabold text-emerald-300">
                     AKTIF ({currentUser.proPlan?.toUpperCase() || 'LIFETIME'})
                   </span>
                 ) : (
-                  <span className="rounded-full bg-slate-800 border border-slate-700 px-2.5 py-0.5 text-[10px] font-bold text-slate-300">
+                  <span className="rounded-full bg-slate-800 border border-slate-700 px-2 py-0.2 text-[10px] font-bold text-slate-300">
                     BELUM AKTIF
                   </span>
                 )}
@@ -181,7 +212,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
           {!currentUser && (
             <button
               onClick={onOpenAuthModal}
-              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-indigo-600 active:scale-95 transition-all shrink-0"
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-indigo-600 active:scale-95 transition-all shrink-0"
             >
               <span>Login / Daftar Dulu</span>
             </button>
@@ -218,22 +249,22 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
             value={voucherCode}
             onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
             placeholder="Contoh: VIP-PRO-2026"
-            className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 font-mono text-xs uppercase font-bold text-cyan-300 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+            className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 font-mono text-xs uppercase font-bold text-cyan-300 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
           />
 
           <button
             type="submit"
             disabled={redeemLoading}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-amber-600 active:scale-95 transition-all disabled:opacity-50 shrink-0"
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-4 py-2 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-amber-600 active:scale-95 transition-all disabled:opacity-50 shrink-0"
           >
-            {redeemLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {redeemLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             <span>Klaim Voucher</span>
           </button>
         </form>
 
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 pt-1">
-          <Flame className="h-3.5 w-3.5 text-amber-400" />
-          <span>Kode voucher demo untuk Anda coba sekarang: </span>
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400 pt-1">
+          <Flame className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+          <span>Voucher gratis: </span>
           <code
             onClick={() => setVoucherCode('VIP-PRO-2026')}
             className="cursor-pointer rounded bg-slate-800 px-1.5 py-0.5 font-mono font-bold text-amber-300 hover:bg-slate-700"
@@ -244,7 +275,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
         </div>
       </div>
 
-      {/* Section 2: Konfigurasi Bot Telegram Sendiri (Custom Bot) */}
+      {/* Section 2: Konfigurasi Bot Telegram Sendiri */}
       <form onSubmit={handleSaveConfig} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -282,13 +313,13 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
 
         {testMsg && (
           <div
-            className={`flex items-center gap-2 rounded-xl p-3 text-xs ${
+            className={`flex items-start gap-2 rounded-xl p-3 text-xs ${
               testMsg.type === 'success'
                 ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
                 : 'border border-rose-500/40 bg-rose-500/10 text-rose-300'
             }`}
           >
-            {testMsg.type === 'success' ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
+            {testMsg.type === 'success' ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" /> : <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />}
             <span>{testMsg.text}</span>
           </div>
         )}
@@ -303,7 +334,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
               type="text"
               value={botToken}
               onChange={(e) => setBotToken(e.target.value)}
-              placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+              placeholder="Contoh: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
               className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-mono text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
             />
           </div>
@@ -317,28 +348,30 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
               type="text"
               value={chatId}
               onChange={(e) => setChatId(e.target.value)}
-              placeholder="Contoh: 123456789"
+              placeholder="Contoh: 987654321"
               className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-mono text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
             />
           </div>
         </div>
 
         {/* Telegram Guide Steps */}
-        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-[11px] text-slate-400 space-y-1">
+        <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-[11px] text-slate-400 space-y-1.5">
           <div className="font-semibold text-slate-200 flex items-center gap-1">
             <MessageSquare className="h-3.5 w-3.5 text-sky-400" />
-            <span>Cara membuat Bot Telegram (1 Menit):</span>
+            <span>Cara menyetel Bot Telegram (Wajib ikuti langkah ke-4):</span>
           </div>
-          <ol className="list-inside list-decimal space-y-0.5 text-slate-400">
+          <ol className="list-inside list-decimal space-y-1 text-slate-400">
             <li>Buka Telegram, cari bot <b>@BotFather</b> lalu kirim perintah <code>/newbot</code>.</li>
             <li>Salin <b>HTTP API Token</b> yang diberikan ke kolom Bot Token di atas.</li>
             <li>Cari bot <b>@userinfobot</b> untuk melihat angka <b>ID</b> Anda, lalu masukkan ke Chat ID di atas.</li>
-            <li>Tekan <b>/start</b> pada bot baru Anda agar bot bisa mengirim pesan ke Anda.</li>
+            <li className="text-amber-300 font-semibold">
+              ⚠️ PENTING: Buka bot baru Anda di Telegram lalu klik <u>START</u> atau kirim pesan <u>/start</u> agar bot diizinkan mengirim pesan ke Anda!
+            </li>
           </ol>
         </div>
 
-        {/* Section 3: Extra PRO Features (PIN Lock & Lifetime Storage) */}
-        <div className="border-t border-slate-800 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        {/* Extra PRO Features */}
+        <div className="border-t border-slate-800 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Custom PIN */}
           <div className="space-y-1">
             <label className="text-[11px] font-semibold text-slate-300 flex items-center gap-1">
@@ -356,7 +389,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
           </div>
 
           {/* Lifetime Storage Toggle */}
-          <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 p-3">
+          <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 p-2.5">
             <div>
               <div className="text-xs font-semibold text-white">Simpan Email Selamanya</div>
               <div className="text-[10px] text-slate-400">Jangan hapus email otomatis</div>
@@ -371,21 +404,21 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
           <button
             type="button"
             onClick={handleTestTelegram}
             disabled={testLoading || !botToken || !chatId}
-            className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-2.5 text-xs font-semibold text-sky-300 hover:bg-sky-500/20 active:scale-95 transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-300 hover:bg-sky-500/20 active:scale-95 transition-all disabled:opacity-50"
           >
             {testLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            <span>🧪 Test Kirim Notifikasi Telegram</span>
+            <span>🧪 Test Notifikasi Telegram</span>
           </button>
 
           <button
             type="submit"
             disabled={saveLoading}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-indigo-600 active:scale-95 transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-indigo-600 active:scale-95 transition-all disabled:opacity-50"
           >
             {saveLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
             <span>Simpan Konfigurasi PRO</span>

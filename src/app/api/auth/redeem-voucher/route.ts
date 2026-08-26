@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, createSessionToken, COOKIE_NAME } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const authHeader = req.headers.get('authorization');
+    const customHeader = req.headers.get('x-session-token');
+    let headerToken: string | undefined;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      headerToken = authHeader.substring(7).trim();
+    } else if (customHeader) {
+      headerToken = customHeader.trim();
+    }
+
+    const user = await getCurrentUser(headerToken);
     if (!user) {
       return NextResponse.json(
         { error: 'Silakan login terlebih dahulu untuk mengaktifkan voucher PRO.' },
@@ -27,9 +37,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.message }, { status: 400 });
     }
 
-    return NextResponse.json({
+    const token = createSessionToken(result.user!);
+
+    const response = NextResponse.json({
       success: true,
       message: result.message,
+      token,
       user: {
         id: result.user!.id,
         username: result.user!.username,
@@ -43,6 +56,16 @@ export async function POST(req: NextRequest) {
         customPin: result.user!.customPin,
       },
     });
+
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 90 * 24 * 3600,
+      path: '/',
+    });
+
+    return response;
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

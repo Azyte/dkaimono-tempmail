@@ -28,7 +28,15 @@ export default function Home() {
   const [refreshCountdown, setRefreshCountdown] = useState<number>(10);
 
   // User Auth & Subscription State
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('tempmail_saved_user');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return null;
+  });
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Modals state
@@ -41,15 +49,32 @@ export default function Home() {
   // Keep previous messages count to detect incoming mail and play chime
   const prevCountRef = useRef<number>(0);
 
-  // Fetch current user session
+  // Fetch current user session with token from localStorage
   const fetchCurrentUser = useCallback(async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const headers: Record<string, string> = {};
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('tempmail_session_token');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          headers['x-session-token'] = token;
+        }
+      }
+
+      const res = await fetch('/api/auth/me', { headers });
       const data = await res.json();
       if (data.success && data.user) {
         setCurrentUser(data.user);
+        if (typeof window !== 'undefined') {
+          if (data.token) localStorage.setItem('tempmail_session_token', data.token);
+          localStorage.setItem('tempmail_saved_user', JSON.stringify(data.user));
+        }
       } else {
-        setCurrentUser(null);
+        // If server says null and we had no valid token
+        if (typeof window !== 'undefined' && !localStorage.getItem('tempmail_session_token')) {
+          setCurrentUser(null);
+          localStorage.removeItem('tempmail_saved_user');
+        }
       }
     } catch (e) {
       console.error('Error fetching user:', e);
@@ -313,6 +338,10 @@ export default function Home() {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('tempmail_session_token');
+        localStorage.removeItem('tempmail_saved_user');
+      }
       setCurrentUser(null);
       setAuthModalOpen(false);
     } catch (e) {
@@ -504,8 +533,12 @@ export default function Home() {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         currentUser={currentUser}
-        onAuthSuccess={(user) => {
+        onAuthSuccess={(user, token) => {
           setCurrentUser(user);
+          if (token && typeof window !== 'undefined') {
+            localStorage.setItem('tempmail_session_token', token);
+            localStorage.setItem('tempmail_saved_user', JSON.stringify(user));
+          }
         }}
         onLogout={handleLogout}
         onOpenProTab={() => handleOpenSettings('pro')}

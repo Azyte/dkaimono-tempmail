@@ -21,7 +21,7 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: User | null;
-  onAuthSuccess: (user: User) => void;
+  onAuthSuccess: (user: User, token?: string) => void;
   onLogout: () => void;
   onOpenProTab: () => void;
 }
@@ -99,11 +99,15 @@ export function AuthModal({
         generateNewChallenge();
       } else {
         setSuccessMsg(data.message || 'Berhasil!');
+        if (data.token && typeof window !== 'undefined') {
+          localStorage.setItem('tempmail_session_token', data.token);
+          localStorage.setItem('tempmail_saved_user', JSON.stringify(data.user));
+        }
         fireConfetti();
-        onAuthSuccess(data.user);
+        onAuthSuccess(data.user, data.token);
         setTimeout(() => {
           onClose();
-        }, 1200);
+        }, 1000);
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Gagal menghubungi server.');

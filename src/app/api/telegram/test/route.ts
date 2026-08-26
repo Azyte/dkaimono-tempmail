@@ -5,8 +5,12 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     const body = await req.json().catch(() => ({}));
-    const botToken = body.botToken || user?.telegramBotToken;
-    const chatId = body.chatId || user?.telegramChatId;
+    let botToken = (body.botToken || user?.telegramBotToken || '').trim();
+    let chatId = (body.chatId || user?.telegramChatId || '').trim();
+
+    // Clean token & chat ID
+    botToken = botToken.replace(/^bot/i, '').trim();
+    chatId = chatId.replace(/^@/, '').trim();
 
     if (!botToken || !chatId) {
       return NextResponse.json(
@@ -33,17 +37,32 @@ export async function POST(req: NextRequest) {
 
     const data = await res.json();
     if (!data.ok) {
+      const desc = data.description || '';
+      if (data.error_code === 401 || desc.includes('Unauthorized')) {
+        return NextResponse.json(
+          { error: 'Bot Token salah / tidak valid. Pastikan Anda menyalin seluruh HTTP API Token dari @BotFather.' },
+          { status: 400 }
+        );
+      }
+      if (desc.includes('chat not found') || desc.includes('bot was blocked') || desc.includes('Forbidden')) {
+        return NextResponse.json(
+          {
+            error: 'PENTING: Bot belum di-START! Silakan buka bot Anda di Telegram dan ketuk tombol START atau kirim pesan /start terlebih dahulu, lalu coba lagi.',
+          },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
-        { error: `Telegram API Error: ${data.description || 'Gagal mengirim pesan'}` },
+        { error: `Telegram Error: ${desc}` },
         { status: 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Test notifikasi berhasil dikirim! Silakan cek chat Telegram Anda.',
+      message: 'Test notifikasi berhasil dikirim! Silakan cek chat bot Telegram Anda.',
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Gagal menghubungi Telegram' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Gagal menghubungi server Telegram' }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { verifyPassword, createSessionToken } from '@/lib/auth';
+import { verifyPassword, createSessionToken, COOKIE_NAME } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Username / Email tidak ditemukan.' },
+        { error: 'Username / Email tidak ditemukan. Silakan periksa kembali atau daftar baru.' },
         { status: 404 }
       );
     }
@@ -52,11 +52,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Create session token
-    const token = createSessionToken(user.id);
+    const token = createSessionToken(user);
 
     const response = NextResponse.json({
       success: true,
       message: 'Login berhasil!',
+      token,
       user: {
         id: user.id,
         username: user.username,
@@ -71,11 +72,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    response.cookies.set('tempmail_user_session', token, {
+    response.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
       sameSite: 'lax',
-      maxAge: 30 * 24 * 3600, // 30 days
+      maxAge: 90 * 24 * 3600, // 90 days
       path: '/',
     });
 

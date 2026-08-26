@@ -13,6 +13,14 @@ import {
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
 
+function escapeTelegramHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 const DEFAULT_SETTINGS: AppSettings = {
   defaultDomain: 'loginptn.xyz',
   webhookSecret: 'sec_tempmail_' + Math.random().toString(36).substring(2, 12),
@@ -537,10 +545,7 @@ export const db = {
         u.isPro &&
         u.telegramEnabled &&
         u.telegramBotToken &&
-        u.telegramChatId &&
-        (u.savedMailboxes?.includes(msg.mailboxAddress) ||
-          u.savedMailboxes?.includes(localPart) ||
-          (data.users.length === 1 && u.isPro)) // if single user configured, notify
+        u.telegramChatId
     );
 
     // Extract OTP if present
@@ -550,21 +555,32 @@ export const db = {
       combined.match(/\b(\d{6})\b/);
     const otpCode = otpMatch ? otpMatch[1] : null;
 
+    const safeMailbox = escapeTelegramHtml(msg.mailboxAddress);
+    const safeSender = escapeTelegramHtml(msg.from.name || msg.from.address);
+    const safeSenderAddr = escapeTelegramHtml(msg.from.address);
+    const safeSubject = escapeTelegramHtml(msg.subject || '(Tanpa Subjek)');
+    const safeText = escapeTelegramHtml((msg.text || '').substring(0, 250));
+
     for (const user of targetUsers) {
       try {
+        const cleanBotToken = (user.telegramBotToken || '').trim().replace(/^bot/i, '');
+        const cleanChatId = (user.telegramChatId || '').trim().replace(/^@/, '');
+
+        if (!cleanBotToken || !cleanChatId) continue;
+
         const text = `📬 <b>EMAIL BARU DITERIMA!</b>\n\n` +
-          `📧 <b>Mailbox:</b> <code>${msg.mailboxAddress}</code>\n` +
-          `👤 <b>Pengirim:</b> ${msg.from.name || msg.from.address} &lt;${msg.from.address}&gt;\n` +
-          `📋 <b>Subjek:</b> ${msg.subject || '(Tanpa Subjek)'}\n\n` +
-          (otpCode ? `🔑 <b>KODE OTP TERDETEKSI:</b> <code>${otpCode}</code>\n\n` : '') +
-          `📄 <b>Cuplikan Pesan:</b>\n<i>${(msg.text || '').substring(0, 200)}...</i>\n\n` +
+          `📧 <b>Mailbox:</b> <code>${safeMailbox}</code>\n` +
+          `👤 <b>Pengirim:</b> ${safeSender} &lt;${safeSenderAddr}&gt;\n` +
+          `📋 <b>Subjek:</b> ${safeSubject}\n\n` +
+          (otpCode ? `🔑 <b>KODE OTP:</b> <code>${escapeTelegramHtml(otpCode)}</code>\n\n` : '') +
+          (safeText ? `📄 <b>Cuplikan Pesan:</b>\n<i>${safeText}...</i>\n\n` : '') +
           `🔗 <a href="https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(localPart)}">Buka Kotak Masuk Sekarang</a>`;
 
-        await fetch(`https://api.telegram.org/bot${user.telegramBotToken}/sendMessage`, {
+        await fetch(`https://api.telegram.org/bot${cleanBotToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            chat_id: user.telegramChatId,
+            chat_id: cleanChatId,
             text,
             parse_mode: 'HTML',
             disable_web_page_preview: false,

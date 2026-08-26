@@ -1,15 +1,28 @@
-import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser, createSessionToken } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const authHeader = req.headers.get('authorization');
+    const customHeader = req.headers.get('x-session-token');
+    let headerToken: string | undefined;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      headerToken = authHeader.substring(7).trim();
+    } else if (customHeader) {
+      headerToken = customHeader.trim();
+    }
+
+    const user = await getCurrentUser(headerToken);
     if (!user) {
       return NextResponse.json({ success: false, user: null });
     }
 
+    const token = createSessionToken(user);
+
     return NextResponse.json({
       success: true,
+      token,
       user: {
         id: user.id,
         username: user.username,
