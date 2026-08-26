@@ -5,7 +5,7 @@ import { DatabaseSchema, DomainConfig, Mailbox, EmailMessage, AppSettings, Inbou
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
 
 const DEFAULT_SETTINGS: AppSettings = {
-  defaultDomain: 'mail.yourdomain.com',
+  defaultDomain: 'loginptn.xyz',
   webhookSecret: 'sec_tempmail_' + Math.random().toString(36).substring(2, 12),
   bypassSpamFilter: true, // Tangkap semua pesan spam & folder spam tetap masuk
   autoRefreshSeconds: 10,
@@ -25,14 +25,14 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 const DEFAULT_DOMAINS: DomainConfig[] = [
   {
-    id: 'dom_default',
-    name: 'mail.yourdomain.com',
+    id: 'dom_loginptn',
+    name: 'loginptn.xyz',
     isPrimary: true,
     isCatchAll: true,
     status: 'active',
     createdAt: new Date().toISOString(),
-    mxRecords: ['10 mail.yourdomain.com'],
-    spfRecord: 'v=spf1 ~all',
+    mxRecords: ['10 route1.mx.cloudflare.net', '20 route2.mx.cloudflare.net', '30 route3.mx.cloudflare.net'],
+    spfRecord: 'v=spf1 include:_spf.mx.cloudflare.net ~all',
   },
 ];
 
