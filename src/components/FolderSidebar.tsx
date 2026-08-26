@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Mail, Inbox, ShieldAlert, Star, Activity, ShieldCheck, Info } from 'lucide-react';
+import { Mail, Inbox, ShieldAlert, Star, Activity, ShieldCheck } from 'lucide-react';
 
 export type FolderType = 'all' | 'inbox' | 'spam' | 'starred' | 'logs';
 
@@ -44,7 +44,7 @@ export function FolderSidebar({
     {
       id: 'spam' as FolderType,
       label: 'Spam & Terfilter',
-      sublabel: 'Tetap Dimunculkan',
+      sublabel: 'Tetap Disimpan',
       icon: ShieldAlert,
       count: counts.spam,
       color: 'text-amber-400',
@@ -71,10 +71,10 @@ export function FolderSidebar({
   ];
 
   return (
-    <div className="flex flex-col justify-between h-full space-y-4">
+    <div className="flex flex-col justify-between h-full space-y-4 rounded-2xl sm:rounded-3xl border border-slate-800/80 bg-slate-950/80 p-3.5 sm:p-4 shadow-xl backdrop-blur-xl">
       {/* Navigation Folder List */}
       <div className="space-y-1.5">
-        <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
           Folder Mailbox
         </div>
 
@@ -86,9 +86,9 @@ export function FolderSidebar({
             <button
               key={item.id}
               onClick={() => onSelectFolder(item.id)}
-              className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all ${
+              className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all active:scale-[0.98] ${
                 isActive
-                  ? 'bg-gradient-to-r from-indigo-600/30 to-indigo-700/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-900/10'
+                  ? 'bg-gradient-to-r from-indigo-600/30 to-indigo-700/20 text-white border border-indigo-500/40 shadow-lg shadow-indigo-900/20'
                   : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'
               }`}
             >
@@ -101,7 +101,7 @@ export function FolderSidebar({
               </div>
 
               {item.count > 0 && (
-                <span className={`ml-2 shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-mono font-bold ${item.badgeColor}`}>
+                <span className={`ml-2 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-mono font-bold ${item.badgeColor}`}>
                   {item.count}
                 </span>
               )}
@@ -110,14 +110,14 @@ export function FolderSidebar({
         })}
       </div>
 
-      {/* Catch-All & Spam Retention Feature Callout */}
-      <div className="rounded-xl border border-slate-800 bg-gradient-to-b from-slate-900/80 to-slate-950/80 p-3.5 shadow-sm">
-        <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold mb-1.5">
-          <ShieldCheck className="h-4 w-4" />
-          <span>Zero-Drop Guarantee</span>
+      {/* Catch-All Feature Callout */}
+      <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 shadow-sm">
+        <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold mb-1">
+          <ShieldCheck className="h-4 w-4 shrink-0" />
+          <span>Catch-All Auto Inbound</span>
         </div>
         <p className="text-[11px] text-slate-400 leading-relaxed">
-          Semua pesan ke <span className="text-slate-300 font-mono">@domain</span> baik inbox maupun folder spam otomatis ditangkap dan disimpan tanpa dibuang.
+          Semua pesan yang dikirim ke domain Anda akan ditangkap dan ditampilkan tanpa terlewat.
         </p>
       </div>
     </div>

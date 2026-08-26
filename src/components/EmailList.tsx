@@ -11,7 +11,7 @@ import {
   Sparkles,
   Inbox,
   FlaskConical,
-  X
+  X,
 } from 'lucide-react';
 import { EmailMessage } from '@/types';
 import { FolderType } from './FolderSidebar';
@@ -50,7 +50,6 @@ export function EmailList({
     );
   });
 
-  // Avatar color generator based on sender name
   const getAvatarGradient = (name: string) => {
     const gradients = [
       'from-blue-600 to-indigo-600',
@@ -89,7 +88,7 @@ export function EmailList({
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/80 shadow-xl backdrop-blur-xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/80 bg-slate-950/80 shadow-xl backdrop-blur-xl">
       {/* Search Header Bar */}
       <div className="border-b border-slate-800/80 p-3 sm:p-4">
         <div className="relative flex items-center">
@@ -98,7 +97,7 @@ export function EmailList({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari pengirim, subjek, kata kunci..."
+            placeholder="Cari pengirim, subjek, isi email..."
             className="w-full rounded-xl border border-slate-800 bg-slate-900/90 pl-10 pr-9 py-2 text-xs text-slate-200 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
           />
           {searchQuery && (
@@ -120,7 +119,7 @@ export function EmailList({
             {currentFolder === 'starred' && 'Pesan Favorit'}
           </span>
           <span className="font-mono text-slate-400">
-            {filteredMessages.length} {filteredMessages.length === 1 ? 'pesan' : 'pesan'}
+            {filteredMessages.length} pesan
           </span>
         </div>
       </div>
@@ -128,25 +127,25 @@ export function EmailList({
       {/* Email List Scrollable Container */}
       <div className="flex-1 divide-y divide-slate-800/60 overflow-y-auto custom-scrollbar">
         {filteredMessages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/60 shadow-inner">
-              <Inbox className="h-7 w-7 text-slate-400" />
+          <div className="flex h-full flex-col items-center justify-center p-6 sm:p-8 text-center min-h-[280px]">
+            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/60 shadow-inner">
+              <Inbox className="h-6 w-6 sm:h-7 sm:w-7 text-slate-400" />
             </div>
-            <h4 className="mt-4 text-sm font-semibold text-slate-200">
-              {searchQuery ? 'Tidak ada pesan yang cocok' : 'Kotak masuk masih kosong'}
+            <h4 className="mt-3 text-sm font-semibold text-slate-200">
+              {searchQuery ? 'Tidak ada pesan yang cocok' : 'Belum ada email masuk'}
             </h4>
             <p className="mt-1 max-w-xs text-xs text-slate-400">
               {searchQuery
                 ? 'Coba kata kunci pencarian yang lain.'
-                : 'Menunggu email masuk... Email akan muncul otomatis saat diterima oleh server.'}
+                : 'Email masuk akan otomatis muncul di sini secara realtime.'}
             </p>
 
             <button
               onClick={onOpenTestEmail}
-              className="mt-5 flex items-center gap-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 px-4 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-600/30 transition-all active:scale-95"
+              className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 px-3.5 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-600/30 transition-all active:scale-95"
             >
               <FlaskConical className="h-3.5 w-3.5 text-indigo-400" />
-              <span>Kirim Email Percobaan Sekarang</span>
+              <span>Kirim Email Test</span>
             </button>
           </div>
         ) : (
@@ -158,34 +157,34 @@ export function EmailList({
               <div
                 key={msg.id}
                 onClick={() => onSelectMessage(msg.id)}
-                className={`group relative cursor-pointer p-3.5 sm:p-4 transition-all ${
+                className={`group relative cursor-pointer p-3 sm:p-4 transition-all active:scale-[0.99] ${
                   isSelected
                     ? 'bg-indigo-950/40 border-l-4 border-l-indigo-500 shadow-inner'
                     : 'hover:bg-slate-900/60'
                 } ${!msg.isRead ? 'bg-slate-900/40' : ''}`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2.5 sm:gap-3">
                   {/* Sender Avatar & Unread Indicator */}
                   <div className="relative shrink-0">
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr ${getAvatarGradient(
+                      className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-tr ${getAvatarGradient(
                         msg.from.name || msg.from.address
-                      )} text-sm font-bold text-white shadow-md`}
+                      )} text-xs sm:text-sm font-bold text-white shadow-md`}
                     >
                       {senderInitial}
                     </div>
 
                     {!msg.isRead && (
-                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 sm:h-3 sm:w-3">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>
-                        <span className="relative inline-flex h-3 w-3 rounded-full bg-cyan-500"></span>
+                        <span className="relative inline-flex h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-cyan-500"></span>
                       </span>
                     )}
                   </div>
 
                   {/* Content Info */}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-1.5">
                       <p
                         className={`truncate text-xs ${
                           !msg.isRead ? 'font-bold text-slate-100' : 'font-medium text-slate-300'
@@ -194,7 +193,7 @@ export function EmailList({
                         {msg.from.name || msg.from.address}
                       </p>
 
-                      <div className="flex items-center gap-1.5 shrink-0 text-[10px] text-slate-400">
+                      <div className="flex items-center gap-1 shrink-0 text-[10px] text-slate-400">
                         <Clock className="h-3 w-3" />
                         <span>{formatTime(msg.receivedAt)}</span>
                       </div>
@@ -210,31 +209,28 @@ export function EmailList({
                     </p>
 
                     {/* Body Snippet */}
-                    <p className="mt-1 line-clamp-1 text-[11px] text-slate-400">
+                    <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-400">
                       {msg.text ? msg.text.replace(/\s+/g, ' ').substring(0, 100) : '(Konten HTML)'}
                     </p>
 
                     {/* Badges Footer */}
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {/* SPAM BADGE (Clear indicator) */}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       {msg.isSpam && (
-                        <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+                        <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-400">
                           <ShieldAlert className="h-3 w-3" />
                           <span>Spam ({msg.spamScore}%)</span>
                         </span>
                       )}
 
-                      {/* Security SPF/DKIM OK */}
                       {msg.security.spf === 'pass' && !msg.isSpam && (
                         <span className="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400">
-                          SPF Verified
+                          SPF OK
                         </span>
                       )}
 
-                      {/* Attachments Badge */}
                       {msg.attachments && msg.attachments.length > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-300">
-                          <Paperclip className="h-3 w-3 text-slate-400" />
+                        <span className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[9px] font-medium text-slate-300">
+                          <Paperclip className="h-2.5 w-2.5 text-slate-400" />
                           <span>{msg.attachments.length}</span>
                         </span>
                       )}
@@ -242,13 +238,13 @@ export function EmailList({
                   </div>
 
                   {/* Actions (Star & Delete) */}
-                  <div className="flex shrink-0 flex-col items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                  <div className="flex shrink-0 flex-col items-center gap-1.5">
                     <button
                       onClick={(e) => onToggleStar(msg.id, e)}
-                      className={`p-1 rounded-lg transition-colors ${
+                      className={`p-1 rounded-lg transition-colors active:scale-95 ${
                         msg.isStarred
                           ? 'text-yellow-400 hover:text-yellow-300'
-                          : 'text-slate-400 hover:text-slate-200'
+                          : 'text-slate-500 hover:text-slate-300'
                       }`}
                     >
                       <Star className={`h-4 w-4 ${msg.isStarred ? 'fill-yellow-400' : ''}`} />
@@ -257,7 +253,7 @@ export function EmailList({
                     <button
                       onClick={(e) => onDeleteMessage(msg.id, e)}
                       title="Hapus pesan"
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-400 transition-colors"
+                      className="p-1 rounded-lg text-slate-500 hover:text-rose-400 transition-colors active:scale-95"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Copy,
   Check,
@@ -15,7 +15,6 @@ import {
   Clock,
   Sparkles,
   Inbox,
-  AlertTriangle
 } from 'lucide-react';
 import { DomainConfig, Mailbox } from '@/types';
 import { fireConfetti } from '@/lib/confetti';
@@ -70,33 +69,33 @@ export function MailboxHeader({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-b from-slate-900/90 via-slate-950/80 to-slate-950 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
+    <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/90 bg-gradient-to-b from-slate-900/95 via-slate-950/90 to-slate-950 p-4 sm:p-6 shadow-2xl backdrop-blur-xl">
       {/* Background Decorative Glow */}
-      <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl"></div>
-      <div className="pointer-events-none absolute -left-16 -bottom-16 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl"></div>
+      <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-500/15 blur-3xl"></div>
+      <div className="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl"></div>
 
-      <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        {/* Left: Email Address Display & Copy */}
-        <div className="flex-1 space-y-3">
+      <div className="relative z-10 flex flex-col gap-4 lg:gap-5">
+        {/* Top Row: Status Badge & Domain Switcher */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-semibold text-cyan-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300">
               <Sparkles className="h-3 w-3" />
-              Alamat Temp Mail Aktif
+              <span>Email Aktif</span>
             </span>
 
             {/* Domain Switcher Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setDomainDropdownOpen(!domainDropdownOpen)}
-                className="flex items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-800/90 px-3 py-1 text-[11px] font-medium text-slate-300 transition-all hover:border-slate-600 hover:bg-slate-700/90"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-800/90 px-3 py-1 text-[11px] font-medium text-slate-200 transition-all hover:border-slate-600 hover:bg-slate-700 active:scale-95"
               >
                 <Globe className="h-3 w-3 text-sky-400" />
-                <span>@{activeDomain || 'default'}</span>
+                <span className="truncate max-w-[150px]">@{activeDomain || 'default'}</span>
                 <ChevronDown className="h-3 w-3 text-slate-400" />
               </button>
 
               {domainDropdownOpen && (
-                <div className="absolute left-0 mt-1.5 w-64 rounded-xl border border-slate-700 bg-slate-900 p-1.5 shadow-2xl z-50">
+                <div className="absolute left-0 mt-1.5 w-64 rounded-2xl border border-slate-700 bg-slate-900/95 p-2 shadow-2xl z-50 backdrop-blur-xl">
                   <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Pilih Domain Tersedia:
                   </div>
@@ -107,9 +106,9 @@ export function MailboxHeader({
                         onSelectDomain(dom.name);
                         setDomainDropdownOpen(false);
                       }}
-                      className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
+                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-all ${
                         activeDomain === dom.name
-                          ? 'bg-indigo-600/20 text-indigo-300 font-semibold'
+                          ? 'bg-indigo-600/20 text-indigo-300 font-semibold border border-indigo-500/30'
                           : 'text-slate-300 hover:bg-slate-800'
                       }`}
                     >
@@ -127,114 +126,119 @@ export function MailboxHeader({
                         setDomainDropdownOpen(false);
                         onOpenSettings('dns');
                       }}
-                      className="flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-sky-400 hover:bg-sky-500/10"
+                      className="flex w-full items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs text-sky-400 hover:bg-sky-500/10"
                     >
-                      <span>+ Tambah / Konfigurasi Domain</span>
+                      <span>+ Tambah / Setting Domain</span>
                     </button>
                   </div>
                 </div>
               )}
             </div>
-
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-              <Clock className="h-3 w-3 text-slate-500" />
-              <span>Catch-All Aktif</span>
-            </div>
           </div>
 
-          {/* Email Card & Fast Copy Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <div className="group relative flex flex-1 items-center justify-between rounded-xl border border-slate-700/80 bg-slate-950/90 px-4 py-3 shadow-inner transition-all hover:border-indigo-500/50">
-              <div className="min-w-0 flex-1 pr-3">
-                <p className="truncate font-mono text-base font-semibold tracking-tight text-white sm:text-xl selection:bg-indigo-500 selection:text-white">
-                  {address}
-                </p>
-              </div>
-
-              {/* Fast Copy Button Inside Input */}
-              <button
-                onClick={handleCopy}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all shadow-md active:scale-95 ${
-                  copied
-                    ? 'bg-emerald-500 text-white shadow-emerald-500/20'
-                    : 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-500 hover:to-indigo-600 shadow-indigo-600/30'
-                }`}
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-3.5 w-3.5" />
-                    <span>Disalin!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>Salin</span>
-                  </>
-                )}
-              </button>
-            </div>
+          {/* Auto Refresh Indicator Pill */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onRefresh}
+              title="Refresh inbox sekarang"
+              className="flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 hover:border-slate-700 hover:text-white active:scale-95 transition-all"
+            >
+              <RefreshCw className={`h-3 w-3 text-sky-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="text-slate-400 font-mono">{refreshCountdown}s</span>
+            </button>
           </div>
         </div>
 
-        {/* Right: Action Buttons Group */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Middle: Email Address Card with Click-To-Copy */}
+        <div
+          onClick={handleCopy}
+          className="group relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-slate-700/80 bg-slate-950/90 p-3.5 sm:p-4 shadow-inner cursor-pointer hover:border-indigo-500/60 transition-all active:scale-[0.99]"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-0.5 sm:hidden">
+              Alamat Email Masuk:
+            </div>
+            <p className="truncate font-mono text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white selection:bg-indigo-500">
+              {address}
+            </p>
+          </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopy();
+            }}
+            className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-md active:scale-95 shrink-0 ${
+              copied
+                ? 'bg-emerald-500 text-white shadow-emerald-500/25'
+                : 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-500 hover:to-indigo-600 shadow-indigo-600/30'
+            }`}
+          >
+            {copied ? (
+              <>
+                <Check className="h-4 w-4" />
+                <span>Tersalin!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" />
+                <span>Salin Alamat</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Bottom Row: Action Buttons Grid (Fully responsive 2-col or 4-col) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-wrap items-center gap-2">
           {/* Random New Mailbox */}
           <button
             onClick={onGenerateRandom}
             title="Generate alamat email acak baru"
-            className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/80 px-3.5 py-2.5 text-xs font-semibold text-slate-200 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/80 px-3 py-2.5 text-xs font-semibold text-slate-200 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
           >
-            <Shuffle className="h-3.5 w-3.5 text-amber-400" />
-            <span>Acak Baru</span>
+            <Shuffle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+            <span className="truncate">Acak Baru</span>
           </button>
 
           {/* Custom Alias */}
           <button
             onClick={onOpenCustomAlias}
             title="Buat alamat email kustom"
-            className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/80 px-3.5 py-2.5 text-xs font-semibold text-slate-200 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/80 px-3 py-2.5 text-xs font-semibold text-slate-200 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
           >
-            <Edit3 className="h-3.5 w-3.5 text-sky-400" />
-            <span>Custom Alias</span>
+            <Edit3 className="h-3.5 w-3.5 text-sky-400 shrink-0" />
+            <span className="truncate">Custom Alias</span>
           </button>
 
           {/* Test Simulation Email */}
           <button
             onClick={onOpenTestEmail}
             title="Simulasikan email masuk (OTP, Newsletter, Spam, dll)"
-            className="flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-3.5 py-2.5 text-xs font-semibold text-indigo-300 shadow-md transition-all hover:bg-indigo-500/20 hover:text-indigo-200 active:scale-95"
+            className="flex items-center justify-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 py-2.5 text-xs font-semibold text-indigo-300 shadow-md transition-all hover:bg-indigo-500/25 hover:text-indigo-200 active:scale-95"
           >
-            <FlaskConical className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Kirim Test Email</span>
+            <FlaskConical className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+            <span className="truncate">Test Email</span>
           </button>
 
           {/* QR Code */}
           <button
             onClick={onOpenQrCode}
             title="Tampilkan QR Code untuk buka di HP"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700/80 bg-slate-800/80 text-slate-300 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/80 px-3 py-2.5 text-xs font-semibold text-slate-200 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
           >
-            <QrCode className="h-4 w-4 text-cyan-400" />
+            <QrCode className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+            <span className="truncate">Scan QR HP</span>
           </button>
 
-          {/* Manual Refresh / Countdown */}
-          <button
-            onClick={onRefresh}
-            title={`Refresh inbox (Auto-refresh dalam ${refreshCountdown}d)`}
-            className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/80 px-3 py-2.5 text-xs font-semibold text-slate-300 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 text-sky-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="tabular-nums font-mono text-[11px] text-slate-400">{refreshCountdown}s</span>
-          </button>
-
-          {/* Clear Mailbox Messages */}
+          {/* Clear Mailbox Messages (if any) */}
           {totalMessages > 0 && (
             <button
               onClick={onClearMailbox}
               title="Bersihkan semua pesan di mailbox ini"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-400 shadow-md transition-all hover:bg-rose-500/20 active:scale-95"
+              className="col-span-2 sm:col-span-4 lg:col-auto flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2.5 text-xs font-semibold text-rose-400 shadow-md transition-all hover:bg-rose-500/20 active:scale-95"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5 shrink-0" />
+              <span>Bersihkan Inbox ({totalMessages})</span>
             </button>
           )}
         </div>
