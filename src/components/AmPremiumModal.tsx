@@ -19,6 +19,8 @@ import {
   Link as LinkIcon,
   HelpCircle,
   ArrowRight,
+  Smartphone,
+  Info,
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
 import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
@@ -114,10 +116,12 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const handleCopyAll = () => {
     const text = results
       .filter((r) => r.success)
-      .map(
-        (r, i) =>
-          `[${i + 1}] Layanan: ${r.serviceName || currentService.name}\n    Email: ${r.email}\n    Password: ${r.password || '(Magic Link Auth)'}\n    Format: ${r.email}:${r.password || ''}\n    Link Inbox: ${r.inboxUrl}\n    Durasi: ${r.duration || 'Pro/Trial'}`
-      )
+      .map((r, i) => {
+        if (!r.password) {
+          return `[${i + 1}] Layanan: ${r.serviceName || currentService.name}\n    Email: ${r.email}\n    Metode: Magic Link (Tanpa Password)\n    Link Inbox: ${r.inboxUrl}\n    Status: ${r.duration || '1 Tahun Premium'}`;
+        }
+        return `[${i + 1}] Layanan: ${r.serviceName || currentService.name}\n    Email: ${r.email}\n    Password: ${r.password}\n    Format: ${r.email}:${r.password}\n    Link Inbox: ${r.inboxUrl}\n    Durasi: ${r.duration || 'Pro/Trial'}`;
+      })
       .join('\n\n');
     handleCopyText(text, 'all');
   };
@@ -142,7 +146,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                   PRO VIP
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Generate akun premium &amp; password otomatis.</p>
+              <p className="text-xs text-slate-400">Pilih aplikasi target untuk generate akun instan.</p>
             </div>
           </div>
 
@@ -192,15 +196,27 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             </div>
           </div>
 
-          {/* Workflow Guide Banner */}
-          <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/30 p-3 text-xs text-indigo-200">
-            <div className="flex items-center gap-1.5 font-bold text-indigo-300 mb-1">
-              <HelpCircle className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-              <span>Cara Kerja {currentService.name}:</span>
+          {/* Real-World Workflow Guide Banner */}
+          <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/30 p-3.5 text-xs text-indigo-200 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-bold text-indigo-300">
+                <HelpCircle className="h-4 w-4 text-cyan-400 shrink-0" />
+                <span>Panduan &amp; Cara Login {currentService.name}:</span>
+              </div>
+              <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${
+                currentService.hasPassword 
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+              }`}>
+                {currentService.hasPassword ? '🔑 Butuh Password' : '✉️ Passwordless (Magic Link)'}
+              </span>
             </div>
-            <p className="text-[11px] text-slate-300 whitespace-pre-line leading-relaxed">
-              {currentService.instructions}
-            </p>
+
+            <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300 leading-relaxed pl-0.5">
+              {currentService.stepByStep.map((step, idx) => (
+                <li key={idx} className="pl-1">{step}</li>
+              ))}
+            </ol>
           </div>
 
           {/* Form Controls */}
@@ -264,19 +280,34 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
               </div>
             )}
 
-            {/* Password Info Box */}
-            <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2">
-              <div className="flex items-center gap-2">
-                <Key className="h-4 w-4 text-amber-400" />
-                <div>
-                  <p className="text-xs font-bold text-slate-200">Password Otomatis</p>
-                  <p className="text-[10px] text-slate-400">Password aman unik digenerate untuk setiap akun.</p>
+            {/* Password Info Box (Only for password services) */}
+            {currentService.hasPassword ? (
+              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2">
+                <div className="flex items-center gap-2">
+                  <Key className="h-4 w-4 text-amber-400" />
+                  <div>
+                    <p className="text-xs font-bold text-slate-200">Password Otomatis Kuat</p>
+                    <p className="text-[10px] text-slate-400">Password unik otomatis dibuat untuk registrasi.</p>
+                  </div>
                 </div>
+                <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                  Auto-Secure
+                </span>
               </div>
-              <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                Auto-Secure
-              </span>
-            </div>
+            ) : (
+              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-emerald-400" />
+                  <div>
+                    <p className="text-xs font-bold text-slate-200">Login Tanpa Password (Magic Link)</p>
+                    <p className="text-[10px] text-slate-400">Alight Motion login langsung via tautan email di HP.</p>
+                  </div>
+                </div>
+                <span className="rounded-lg bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 text-[10px] font-bold text-cyan-300">
+                  Passwordless
+                </span>
+              </div>
+            )}
 
             {/* Error Message */}
             {errorMsg && (
@@ -318,14 +349,16 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords(!showPasswords)}
-                    className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-slate-200"
-                  >
-                    {showPasswords ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                    <span>{showPasswords ? 'Tutup Pass' : 'Lihat Pass'}</span>
-                  </button>
+                  {currentService.hasPassword && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords(!showPasswords)}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-slate-200"
+                    >
+                      {showPasswords ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                      <span>{showPasswords ? 'Tutup Pass' : 'Lihat Pass'}</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -366,8 +399,8 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                             </span>
                           </div>
 
-                          {/* Password Row */}
-                          {acc.password && (
+                          {/* Password Row (Only if has password) */}
+                          {acc.password ? (
                             <div className="flex items-center gap-2 text-slate-300">
                               <span className="text-[11px] text-slate-400">🔑 Pass:</span>
                               <span className="font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
@@ -381,11 +414,16 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                                 {isPassCopied ? 'Tersalin' : 'Salin'}
                               </button>
                             </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-[11px] text-emerald-400">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Login Magic Link (Tanpa Password - Masukkan email di aplikasi HP)</span>
+                            </div>
                           )}
 
                           {/* Inbox Link */}
                           <div className="flex items-center gap-1 text-[11px] text-slate-400 truncate">
-                            <span className="shrink-0">📬 Inbox OTP:</span>
+                            <span className="shrink-0">📬 Inbox OTP/Link:</span>
                             <a
                               href={acc.inboxUrl}
                               target="_blank"
@@ -410,27 +448,46 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
 
                       {/* Direct Action Buttons on Result Card */}
                       <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80 flex-wrap sm:flex-nowrap">
-                        {signupTarget ? (
-                          <a
-                            href={signupTarget}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-cyan-500 hover:to-indigo-500 active:scale-95 transition-all text-center"
-                          >
-                            <span>🚀 Buka Sign-Up {currentService.name.split(' ')[0]}</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        ) : null}
+                        {acc.password ? (
+                          <>
+                            {signupTarget ? (
+                              <a
+                                href={signupTarget}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-cyan-500 hover:to-indigo-500 active:scale-95 transition-all text-center"
+                              >
+                                <span>🚀 Buka Sign-Up {currentService.name.split(' ')[0]}</span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : null}
 
-                        <button
-                          type="button"
-                          onClick={() => handleCopyText(comboText, 'combo')}
-                          className="flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-850 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 active:scale-95 transition-all"
-                          title="Salin dalam format email:password"
-                        >
-                          {isComboCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                          <span>{isComboCopied ? 'Tersalin!' : 'Salin Email:Pass'}</span>
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyText(comboText, 'combo')}
+                              className="flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-850 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 active:scale-95 transition-all"
+                              title="Salin dalam format email:password"
+                            >
+                              {isComboCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                              <span>{isComboCopied ? 'Tersalin!' : 'Salin Email:Pass'}</span>
+                            </button>
+                          </>
+                        ) : (
+                          <div className="flex-1 flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-slate-300 flex items-center gap-1">
+                              <Smartphone className="h-3.5 w-3.5 text-cyan-400" />
+                              <span>Buka Alight Motion di HP &amp; login pakai email ini</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyText(acc.email, 'email')}
+                              className="flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white shadow-sm"
+                            >
+                              {isEmailCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                              <span>Salin Email</span>
+                            </button>
+                          </div>
+                        )}
 
                         <a
                           href={acc.inboxUrl}

@@ -495,8 +495,8 @@ export function AmAccountsTab({
                       )}
                     </div>
 
-                    {/* Password Display (If available) */}
-                    {acc.password && (
+                    {/* Password Display / Magic Link Notice */}
+                    {acc.password ? (
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-slate-400 flex items-center gap-1">
                           <Key className="h-3 w-3 text-amber-400" />
@@ -511,6 +511,11 @@ export function AmAccountsTab({
                         >
                           {isPassCopied ? 'Tersalin' : 'Salin Pass'}
                         </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-400/90 font-medium">
+                        <Mail className="h-3.5 w-3.5 text-emerald-400" />
+                        <span>Login Magic Link (Tanpa Password - Masukkan email di aplikasi HP)</span>
                       </div>
                     )}
 
@@ -545,8 +550,8 @@ export function AmAccountsTab({
                       </button>
                     )}
 
-                    {/* Direct Sign-Up Web Launcher */}
-                    {serviceDef.signupUrl ? (
+                    {/* Direct Sign-Up Web Launcher (For services with password/signup) */}
+                    {acc.password && serviceDef.signupUrl ? (
                       <a
                         href={serviceDef.signupUrl}
                         target="_blank"
@@ -559,15 +564,17 @@ export function AmAccountsTab({
                       </a>
                     ) : null}
 
-                    {/* Copy Combo Email:Pass Button */}
-                    <button
-                      onClick={() => handleCopy(`${acc.email}:${acc.password || ''}`, 'combo')}
-                      className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 active:scale-95 transition-all"
-                      title="Salin dalam format email:password"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      <span>Email:Pass</span>
-                    </button>
+                    {/* Copy Combo Email:Pass Button (Only if password exists) */}
+                    {acc.password && (
+                      <button
+                        onClick={() => handleCopy(`${acc.email}:${acc.password}`, 'combo')}
+                        className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 active:scale-95 transition-all"
+                        title="Salin dalam format email:password"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Email:Pass</span>
+                      </button>
+                    )}
 
                     {/* Copy Email Button */}
                     <button
@@ -580,7 +587,7 @@ export function AmAccountsTab({
                       title="Salin alamat email"
                     >
                       {isEmailCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                      <span>{isEmailCopied ? 'Tersalin' : 'Email'}</span>
+                      <span>{isEmailCopied ? 'Tersalin' : 'Salin Email'}</span>
                     </button>
 
                     {/* Copy Pass Button (if present) */}

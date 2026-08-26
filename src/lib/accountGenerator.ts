@@ -44,17 +44,16 @@ export async function createMultiServiceAccount(
   userId?: string,
   deviceFingerprint?: string
 ): Promise<AmAccountResult & { password?: string; serviceType?: string; serviceName?: string }> {
-  // If Alight Motion, run full automated magic link pipeline
+  // If Alight Motion, run full automated magic link pipeline (PASSWORDLESS)
   if (serviceType === 'alight_motion') {
     const amRes = await createSingleAmPremium(customAlias, domain, userId, deviceFingerprint);
-    const password = generateSecurePassword();
 
-    // Attach password to the saved AM account in DB
+    // Save AM account in DB without password (since AM uses Magic Link)
     if (amRes.id) {
       const savedAccounts = db.getAmAccounts(userId);
       const acc = savedAccounts.find((a) => a.id === amRes.id);
       if (acc) {
-        acc.password = password;
+        acc.password = undefined;
         acc.serviceType = 'alight_motion';
         acc.serviceName = SUPPORTED_SERVICES.alight_motion.name;
         db.saveAmAccount(acc);
@@ -63,9 +62,10 @@ export async function createMultiServiceAccount(
 
     return {
       ...amRes,
-      password,
+      password: undefined,
       serviceType: 'alight_motion',
       serviceName: SUPPORTED_SERVICES.alight_motion.name,
+      message: 'Akun Alight Motion 1 Tahun Premium AKTIF! Login di aplikasi HP via Magic Link (Cek kotak masuk TempMail).',
     };
   }
 

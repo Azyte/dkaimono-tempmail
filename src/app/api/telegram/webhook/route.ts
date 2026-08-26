@@ -132,22 +132,45 @@ async function processAccountGenerationBackground(
 
         await sendTelegramMessage(botToken, chatId, pendingMsg, pendingButtons);
       } else {
-        const singleSuccessMsg =
-          `🎉 <b>AKUN ${serviceDef.name.toUpperCase()} [${i + 1}/${count}] BERHASIL DIBUAT!</b> ✨\n\n` +
-          `🏷️ <b>Layanan:</b> ${serviceDef.icon} ${serviceDef.name}\n` +
-          `📧 <b>Email:</b> <code>${result.email}</code>\n` +
-          `${result.password ? `🔑 <b>Password:</b> <code>${result.password}</code>\n` : ''}` +
-          `✨ <b>Status / Kuota:</b> <code>${escapeTgHtml(result.duration || serviceDef.defaultDuration)}</code>\n` +
-          `🔗 <b>Link Inbox:</b> ${result.inboxUrl}\n\n` +
-          `<i>(Ketuk email atau password di atas untuk langsung menyalin ke clipboard!)</i>`;
+        let singleSuccessMsg = '';
+        const inlineButtons: Array<Array<{ text: string; url?: string; callback_data?: string }>> = [];
 
-        const accountButtons = {
-          inline_keyboard: [
-            [{ text: '📬 Buka Inbox Email Ini', url: result.inboxUrl }],
-          ],
-        };
+        if (serviceType === 'alight_motion') {
+          singleSuccessMsg =
+            `🎉 <b>AKUN ALIGHT MOTION 1 TAHUN PREMIUM AKTIF!</b> ✨\n\n` +
+            `🏷️ <b>Layanan:</b> 🎬 Alight Motion Premium\n` +
+            `📧 <b>Email:</b> <code>${result.email}</code>\n` +
+            `🔑 <b>Metode Login:</b> ✉️ <i>Magic Link (Tanpa Password)</i>\n` +
+            `✨ <b>Masa Aktif:</b> <code>1 Tahun Premium (Aktif)</code>\n` +
+            `🔗 <b>Link Inbox:</b> ${result.inboxUrl}\n\n` +
+            `📱 <b>Cara Login di HP:</b>\n` +
+            `1. Buka aplikasi Alight Motion di HP\n` +
+            `2. Pilih <b>Masuk dengan Email</b> ➔ Masukkan email di atas\n` +
+            `3. Buka kotak masuk bot ini ➔ Klik link login yang masuk!`;
 
-        await sendTelegramMessage(botToken, chatId, singleSuccessMsg, accountButtons);
+          inlineButtons.push([
+            { text: '📬 Buka Inbox Login', url: result.inboxUrl },
+          ]);
+        } else {
+          singleSuccessMsg =
+            `🎉 <b>AKUN ${serviceDef.name.toUpperCase()} [${i + 1}/${count}] SIAP!</b> ✨\n\n` +
+            `🏷️ <b>Layanan:</b> ${serviceDef.icon} ${serviceDef.name}\n` +
+            `📧 <b>Email:</b> <code>${result.email}</code>\n` +
+            `🔑 <b>Password:</b> <code>${result.password}</code>\n` +
+            `📋 <b>Format Cepat:</b> <code>${result.email}:${result.password}</code>\n` +
+            `✨ <b>Status:</b> <code>${escapeTgHtml(result.duration || serviceDef.defaultDuration)}</code>\n` +
+            `🔗 <b>Link Inbox:</b> ${result.inboxUrl}\n\n` +
+            `💡 <i>Kode OTP / Link verifikasi akan otomatis muncul di chat Telegram ini begitu kamu mendaftar!</i>`;
+
+          const row1: Array<{ text: string; url?: string; callback_data?: string }> = [];
+          if (serviceDef.signupUrl) {
+            row1.push({ text: `🚀 Buka Sign-Up ${serviceDef.name.split(' ')[0]}`, url: serviceDef.signupUrl });
+          }
+          row1.push({ text: '📬 Buka Inbox OTP', url: result.inboxUrl });
+          inlineButtons.push(row1);
+        }
+
+        await sendTelegramMessage(botToken, chatId, singleSuccessMsg, { inline_keyboard: inlineButtons });
       }
     } else {
       await sendTelegramMessage(
