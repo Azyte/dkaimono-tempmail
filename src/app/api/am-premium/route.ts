@@ -84,11 +84,6 @@ export async function POST(req: NextRequest) {
         if (!monitored.includes(local)) monitored.unshift(local);
         db.updateUser(user.id, { savedMailboxes: saved.slice(0, 30), monitoredAliases: monitored.slice(0, 30) });
       }
-
-      // Small delay between requests to be polite to the generator server
-      if (i < count - 1) {
-        await new Promise((r) => setTimeout(r, 2000));
-      }
     }
 
     const successCount = results.filter((r) => r.success).length;

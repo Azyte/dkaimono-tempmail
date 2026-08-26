@@ -99,7 +99,6 @@ export async function createSingleAmPremium(
     const startTime = Date.now();
 
     while (Date.now() - startTime < 40000) {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
       const messages = db.getMessages(emailAddress);
       const amEmail = messages.find(
         (m) =>
@@ -112,6 +111,7 @@ export async function createSingleAmPremium(
         magicLink = extractMagicLinkFromEmail(amEmail.html, amEmail.text);
         if (magicLink) break;
       }
+      await new Promise((resolve) => setTimeout(resolve, 800));
     }
 
     if (!magicLink) {

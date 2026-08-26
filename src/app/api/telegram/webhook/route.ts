@@ -65,6 +65,7 @@ async function processAmPremiumBackground(
     botToken,
     chatId,
     `🚀 <b>MEMULAI PEMBUATAN OTOMATIS ${count} AKUN ALIGHT MOTION PREMIUM...</b>\n\n` +
+      `⚡ <i>Mode Cepat Tanpa Jeda / Cooldown diaktifkan!</i>\n` +
       `⚙️ <b>Tahapan Otomatis:</b>\n` +
       `1. Generate email baru di <code>@${primaryDomain}</code>\n` +
       `2. Kirim permintaan Magic Link ke generator AM\n` +
@@ -129,10 +130,6 @@ async function processAmPremiumBackground(
         `⚠️ <b>[${i + 1}/${count}] Gagal:</b> ${escapeTgHtml(result.error || result.statusText)}`
       );
     }
-
-    if (i < count - 1) {
-      await new Promise((r) => setTimeout(r, 2000));
-    }
   }
 
   // Final Batch Summary
@@ -148,8 +145,9 @@ async function processAmPremiumBackground(
     const summaryKeyboard = {
       inline_keyboard: [
         [
-          { text: '⚡ Buat 1 Lagi', callback_data: 'cb_amprem' },
-          { text: '⚡ Buat 3 Akun', callback_data: 'cb_amprem_3' },
+          { text: '⚡ Buat 1 Lagi', callback_data: 'cb_do_amprem_1' },
+          { text: '⚡ Buat 3 Akun', callback_data: 'cb_do_amprem_3' },
+          { text: '⚡ Buat 5 Akun', callback_data: 'cb_do_amprem_5' },
         ],
         [
           { text: '📬 Cek Inbox', callback_data: 'cb_inbox' },
@@ -246,9 +244,9 @@ export async function POST(req: NextRequest) {
         welcomeText +=
           `<b>👑 Status Member: PRO / VIP AKTIF</b>\n\n` +
           `<b>⚡ Fitur Eksklusif Alight Motion (AM) Premium:</b>\n` +
-          `• <code>/amprem</code> ➡️ Buat 1 akun AM Premium otomatis sampai aktif!\n` +
-          `• <code>/amprem &lt;jumlah&gt;</code> (Contoh: <code>/amprem 3</code>) ➡️ Buat beberapa akun sekaligus!\n` +
-          `• <code>/amprem &lt;alias&gt;</code> (Contoh: <code>/amprem ravenedit</code>) ➡️ Buat akun AM dengan custom nama!\n\n`;
+          `• <code>/amprem</code> ➡️ Pilih &amp; buat akun AM Premium otomatis!\n` +
+          `• <code>/amprem &lt;jumlah&gt;</code> (Contoh: <code>/amprem 3</code> atau <code>/amprem 10</code>)\n` +
+          `• <code>/amprem &lt;alias&gt;</code> (Contoh: <code>/amprem ravenedit</code>)\n\n`;
       }
 
       welcomeText +=
@@ -263,9 +261,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 2. COMMAND: /amprem [count|alias] or '⚡ Buat AM Premium Otomatis' or callback 'cb_amprem'
-    if (text.startsWith('/amprem') || text === '⚡ Buat AM Premium Otomatis' || text === 'cb_amprem' || text.startsWith('cb_amprem_')) {
-      // PRO Restriction check
+    // 2. COMMAND: AM Premium Count Selection Prompt
+    // Triggered when user taps '⚡ Buat AM Premium Otomatis' or sends '/amprem' without arguments
+    if (text === '⚡ Buat AM Premium Otomatis' || text === '/amprem' || text === 'cb_ask_amprem' || text === 'cb_amprem') {
       if (!user?.isPro) {
         const proOnlyText =
           `👑 <b>FITUR KHUSUS PENGGUNA PRO / VIP</b>\n\n` +
@@ -280,14 +278,70 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
-      let param = text.replace(/^\/amprem/i, '').replace(/^cb_amprem_?/, '').trim();
+      const promptText =
+        `⚡ <b>GENERATOR ALIGHT MOTION PREMIUM 1 TAHUN</b> 🎬\n\n` +
+        `Berapa jumlah akun AM Premium yang ingin Anda buat?\n\n` +
+        `<i>Silakan pilih salah satu tombol di bawah untuk langsung mengeksekusi tanpa jeda:</i>`;
+
+      const countKeyboard = {
+        inline_keyboard: [
+          [
+            { text: '⚡ 1 Akun', callback_data: 'cb_do_amprem_1' },
+            { text: '⚡ 2 Akun', callback_data: 'cb_do_amprem_2' },
+            { text: '⚡ 3 Akun', callback_data: 'cb_do_amprem_3' },
+          ],
+          [
+            { text: '⚡ 5 Akun', callback_data: 'cb_do_amprem_5' },
+            { text: '⚡ 10 Akun (Batch)', callback_data: 'cb_do_amprem_10' },
+          ],
+          [
+            { text: '✏️ Pakai Custom Alias', callback_data: 'cb_amprem_custom_guide' },
+          ],
+        ],
+      };
+
+      sendTelegramMessage(botToken, chatId, promptText, countKeyboard);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Custom Alias Guide for AM Prem
+    if (text === 'cb_amprem_custom_guide') {
+      const guideText =
+        `✏️ <b>Cara Membuat Akun AM Premium dengan Nama Alias Kustom:</b>\n\n` +
+        `Ketik perintah:\n<code>/amprem nama_alias</code>\n\n` +
+        `<b>Contoh:</b>\n` +
+        `• <code>/amprem rayyenpro</code>\n` +
+        `• <code>/amprem alightedit</code>\n` +
+        `• <code>/amprem ravenvfx</code>\n\n` +
+        `<i>Bot akan langsung membuatkan email tersebut dan mengaktifkannya menjadi Premium 1 Tahun!</i>`;
+
+      sendTelegramMessage(botToken, chatId, guideText, mainReplyKeyboard);
+      return NextResponse.json({ ok: true });
+    }
+
+    // 3. EXECUTE AM Premium: /amprem <count|alias> OR cb_do_amprem_<count>
+    if (text.startsWith('/amprem ') || text.startsWith('cb_do_amprem_') || text.startsWith('cb_amprem_')) {
+      if (!user?.isPro) {
+        const proOnlyText =
+          `👑 <b>FITUR KHUSUS PENGGUNA PRO / VIP</b>\n\n` +
+          `Fitur <b>Auto AM Premium Creator</b> hanya dapat digunakan oleh member yang memiliki status PRO/VIP.`;
+        sendTelegramMessage(botToken, chatId, proOnlyText, mainReplyKeyboard);
+        return NextResponse.json({ ok: true });
+      }
+
+      let param = text
+        .replace(/^\/amprem\s*/i, '')
+        .replace(/^cb_do_amprem_/, '')
+        .replace(/^cb_amprem_/, '')
+        .trim();
+
       let count = 1;
       let customAlias: string | undefined = undefined;
 
       if (param) {
         const num = parseInt(param, 10);
         if (!isNaN(num) && num > 0) {
-          count = Math.min(num, 5); // Max 5 per Telegram batch
+          count = Math.min(num, 10); // Max 10 per batch
         } else if (param.length >= 2) {
           customAlias = param;
         }
@@ -298,7 +352,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 3. COMMAND: /new, /random, '🎲 Buat Email Acak', or callback 'cb_new'
+    // 4. COMMAND: /new, /random, '🎲 Buat Email Acak', or callback 'cb_new'
     if (text === '/new' || text === '/random' || text === '🎲 Buat Email Acak' || text === 'cb_new') {
       const alias = getRandomAlias();
       const emailAddress = `${alias}@${primaryDomain}`;
@@ -340,7 +394,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 4. COMMAND: /custom <alias>, /alias <alias>, or '✏️ Buat Alias Kustom'
+    // 5. COMMAND: /custom <alias>, /alias <alias>, or '✏️ Buat Alias Kustom'
     if (text.startsWith('/custom') || text.startsWith('/alias') || text === '✏️ Buat Alias Kustom') {
       let customName = text.replace(/^\/(custom|alias)/i, '').trim();
 
@@ -405,7 +459,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 5. COMMAND: /myemail, '📧 Email Aktif Saya', or 'cb_myemail'
+    // 6. COMMAND: /myemail, '📧 Email Aktif Saya', or 'cb_myemail'
     if (text === '/myemail' || text === '/email' || text === '📧 Email Aktif Saya' || text === 'cb_myemail') {
       const saved = user?.savedMailboxes || [];
       const primaryEmail = saved[0] || `${user?.username || 'user'}@${primaryDomain}`;
@@ -425,7 +479,7 @@ export async function POST(req: NextRequest) {
 
       const inlineKeyboard = {
         inline_keyboard: [
-          user?.isPro ? [{ text: '⚡ Buat AM Premium', callback_data: 'cb_amprem' }, { text: '🎲 Buat Acak Baru', callback_data: 'cb_new' }] : [{ text: '🎲 Buat Acak Baru', callback_data: 'cb_new' }],
+          user?.isPro ? [{ text: '⚡ Buat AM Premium', callback_data: 'cb_ask_amprem' }, { text: '🎲 Buat Acak Baru', callback_data: 'cb_new' }] : [{ text: '🎲 Buat Acak Baru', callback_data: 'cb_new' }],
           [
             { text: '📬 Cek Inbox', callback_data: 'cb_inbox' },
           ],
@@ -436,7 +490,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 6. COMMAND: /inbox, '📬 Cek Inbox Terakhir', or callback 'cb_inbox' / 'inbox_<alias>'
+    // 7. COMMAND: /inbox, '📬 Cek Inbox Terakhir', or callback 'cb_inbox' / 'inbox_<alias>'
     if (text === '/inbox' || text === '📬 Cek Inbox Terakhir' || text === 'cb_inbox' || text.startsWith('inbox_')) {
       let targetAlias = '';
       if (text.startsWith('inbox_')) {
