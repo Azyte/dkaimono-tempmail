@@ -23,11 +23,20 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    let { telegramBotToken, telegramChatId, telegramEnabled, customPin, keepEmailsForever } = body;
+    let { telegramBotToken, telegramChatId, telegramEnabled, customPin, keepEmailsForever, monitoredAliases } = body;
 
     // Clean Bot Token & Chat ID
     let cleanBotToken = telegramBotToken !== undefined ? telegramBotToken.trim().replace(/^bot/i, '') : user.telegramBotToken;
     let cleanChatId = telegramChatId !== undefined ? telegramChatId.trim().replace(/^@/, '') : user.telegramChatId;
+
+    let cleanAliases: string[] | undefined = undefined;
+    if (monitoredAliases !== undefined) {
+      if (Array.isArray(monitoredAliases)) {
+        cleanAliases = monitoredAliases.map((a: string) => a.trim().toLowerCase()).filter(Boolean);
+      } else if (typeof monitoredAliases === 'string') {
+        cleanAliases = monitoredAliases.split(',').map((a) => a.trim().toLowerCase()).filter(Boolean);
+      }
+    }
 
     const updatedUser = db.updateUser(user.id, {
       telegramBotToken: cleanBotToken,
@@ -35,6 +44,7 @@ export async function POST(req: NextRequest) {
       telegramEnabled: telegramEnabled !== undefined ? Boolean(telegramEnabled) : user.telegramEnabled,
       customPin: customPin !== undefined ? customPin.trim() : user.customPin,
       keepEmailsForever: keepEmailsForever !== undefined ? Boolean(keepEmailsForever) : user.keepEmailsForever,
+      monitoredAliases: cleanAliases !== undefined ? cleanAliases : user.monitoredAliases,
     });
 
     const token = createSessionToken(updatedUser!);
@@ -53,6 +63,7 @@ export async function POST(req: NextRequest) {
         telegramChatId: updatedUser!.telegramChatId,
         telegramEnabled: updatedUser!.telegramEnabled,
         customPin: updatedUser!.customPin,
+        monitoredAliases: updatedUser!.monitoredAliases,
       },
     });
 

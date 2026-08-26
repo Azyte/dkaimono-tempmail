@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Lock,
   Flame,
+  Filter,
 } from 'lucide-react';
 import { User } from '@/types';
 import { fireConfetti } from '@/lib/confetti';
@@ -36,6 +37,9 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
   const [telegramEnabled, setTelegramEnabled] = useState(currentUser?.telegramEnabled || false);
   const [customPin, setCustomPin] = useState(currentUser?.customPin || '');
   const [keepForever, setKeepForever] = useState(currentUser?.keepEmailsForever || false);
+  const [monitoredAliasesStr, setMonitoredAliasesStr] = useState(
+    (currentUser?.monitoredAliases || []).join(', ')
+  );
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -49,6 +53,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
       setChatId(currentUser.telegramChatId || '');
       setTelegramEnabled(currentUser.telegramEnabled || false);
       setCustomPin(currentUser.customPin || '');
+      setMonitoredAliasesStr((currentUser.monitoredAliases || []).join(', '));
     }
   }, [currentUser]);
 
@@ -122,6 +127,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
           telegramEnabled,
           customPin,
           keepEmailsForever: keepForever,
+          monitoredAliases: monitoredAliasesStr,
         }),
       });
       const data = await res.json();
@@ -280,7 +286,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bot className="h-4 w-4 text-sky-400" />
-            <h4 className="text-xs sm:text-sm font-bold text-white">Bot Telegram Pribadi (Realtime OTP Notifier)</h4>
+            <h4 className="text-xs sm:text-sm font-bold text-white">Bot Telegram Pribadi (Realtime OTP & Link Notifier)</h4>
           </div>
 
           <label className="relative inline-flex cursor-pointer items-center">
@@ -295,7 +301,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
         </div>
 
         <p className="text-xs text-slate-400">
-          Masukkan <b>Bot Token</b> dan <b>Chat ID Telegram</b> Anda. Setiap kali ada email atau OTP masuk, bot Anda akan langsung mengirim pesan ke Telegram Anda!
+          Setiap email, kode OTP, dan tombol <b>Sign In / Magic Link</b> yang masuk ke mailbox Anda akan langsung dikirim ke Telegram dengan <b>Tombol Klik Langsung</b>!
         </p>
 
         {saveMsg && (
@@ -352,6 +358,24 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
               className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-mono text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
             />
           </div>
+        </div>
+
+        {/* Filter Aliases yang Dipantau */}
+        <div className="space-y-1 rounded-xl border border-slate-800/90 bg-slate-950 p-3">
+          <label className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+            <Filter className="h-3.5 w-3.5 text-indigo-400" />
+            <span>Filter Alias yang Diteruskan ke Telegram (Pisahkan dengan koma):</span>
+          </label>
+          <input
+            type="text"
+            value={monitoredAliasesStr}
+            onChange={(e) => setMonitoredAliasesStr(e.target.value)}
+            placeholder="Contoh: alightmotion, akun1, ra1ven (atau biarkan kosong untuk semua mailbox Anda)"
+            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-xs font-mono text-cyan-300 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+          />
+          <p className="text-[10px] text-slate-400">
+            Hanya email yang ditujukan ke alias di atas (atau akun login Anda) yang akan dikirimkan ke Telegram. Email orang lain / alamat lain akan otomatis diabaikan.
+          </p>
         </div>
 
         {/* Telegram Guide Steps */}

@@ -106,6 +106,7 @@ export interface User {
   customPin?: string;
   keepEmailsForever?: boolean;
   savedMailboxes?: string[];
+  monitoredAliases?: string[]; // list of alias prefixes to send to Telegram
   createdAt: string;
 }
 

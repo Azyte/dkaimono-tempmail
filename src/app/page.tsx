@@ -168,6 +168,22 @@ export default function Home() {
         setSelectedMessageId(null);
         prevCountRef.current = 0;
         fetchMessages(data.mailbox.address);
+
+        // Auto associate with logged-in user if token exists
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('tempmail_session_token');
+          if (token) {
+            fetch('/api/auth/save-mailbox', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-session-token': token,
+              },
+              body: JSON.stringify({ mailboxAddress: data.mailbox.address }),
+            }).catch(() => {});
+          }
+        }
       }
     } catch (e) {
       console.error('Error init mailbox:', e);
@@ -259,6 +275,22 @@ export default function Home() {
         setSelectedMessageId(null);
         prevCountRef.current = 0;
         fetchMessages(data.mailbox.address);
+
+        // Auto associate with logged-in user if token exists
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('tempmail_session_token');
+          if (token) {
+            fetch('/api/auth/save-mailbox', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-session-token': token,
+              },
+              body: JSON.stringify({ mailboxAddress: data.mailbox.address }),
+            }).catch(() => {});
+          }
+        }
       }
     } catch (e) {
       console.error(e);

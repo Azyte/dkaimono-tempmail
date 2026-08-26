@@ -21,6 +21,133 @@ function escapeTelegramHtml(str: string): string {
     .replace(/>/g, '&gt;');
 }
 
+function extractActionLink(html: string, text: string): { url: string; label: string } | null {
+  // 1. Try HTML <a> tags looking for sign in, verify, confirm, click here, magic link
+  if (html) {
+    const linkRegex = /<a\s+[^>]*href=["'](https?:\/\/[^"'>\s]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    let match;
+    let bestMatch: { url: string; label: string; score: number } | null = null;
+
+    while ((match = linkRegex.exec(html)) !== null) {
+      const rawUrl = match[1];
+      const linkText = match[2].replace(/<[^>]+>/g, '').trim();
+      const lowerText = linkText.toLowerCase();
+      const lowerUrl = rawUrl.toLowerCase();
+
+      // Skip unsubscribe, privacy, social media, policies
+      if (
+        lowerUrl.includes('unsubscribe') ||
+        lowerUrl.includes('privacy') ||
+        lowerUrl.includes('terms') ||
+        lowerUrl.includes('twitter.com') ||
+        lowerUrl.includes('facebook.com') ||
+        lowerUrl.includes('instagram.com') ||
+        lowerUrl.includes('google.com/maps')
+      ) {
+        continue;
+      }
+
+      let score = 0;
+      let label = '🔗 Buka Link Sign In / Verifikasi';
+
+      if (
+        lowerText.includes('sign in') ||
+        lowerText.includes('signin') ||
+        lowerText.includes('log in') ||
+        lowerText.includes('login') ||
+        lowerText.includes('masuk') ||
+        lowerText.includes('alight')
+      ) {
+        score += 100;
+        label = '🔐 Sign In / Masuk Akun';
+      } else if (
+        lowerText.includes('verify') ||
+        lowerText.includes('verifikasi') ||
+        lowerText.includes('confirm') ||
+        lowerText.includes('konfirmasi') ||
+        lowerText.includes('activate') ||
+        lowerText.includes('aktifkan')
+      ) {
+        score += 90;
+        label = '✅ Verifikasi Email / Akun';
+      } else if (
+        lowerText.includes('magic link') ||
+        lowerText.includes('click here') ||
+        lowerText.includes('klik di sini') ||
+        lowerText.includes('continue') ||
+        lowerText.includes('lanjutkan') ||
+        lowerText.includes('get started')
+      ) {
+        score += 70;
+        label = '🔗 Buka Tautan';
+      } else if (
+        lowerUrl.includes('/verify') ||
+        lowerUrl.includes('/auth') ||
+        lowerUrl.includes('token=') ||
+        lowerUrl.includes('code=') ||
+        lowerUrl.includes('/signin') ||
+        lowerUrl.includes('/login') ||
+        lowerUrl.includes('alightcreative')
+      ) {
+        score += 60;
+        label = '🔗 Buka Link Masuk';
+      }
+
+      if (score > 0 && (!bestMatch || score > bestMatch.score)) {
+        bestMatch = {
+          url: rawUrl,
+          label: linkText.length > 0 && linkText.length <= 35 ? linkText : label,
+          score,
+        };
+      }
+    }
+
+    if (bestMatch) {
+      return { url: bestMatch.url, label: bestMatch.label };
+    }
+  }
+
+  // 2. Fallback to raw text URL matching
+  if (text) {
+    const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
+    const matches = text.match(urlRegex);
+    if (matches) {
+      for (const u of matches) {
+        const cleanU = u.replace(/[.,;)]+$/, '');
+        const lowerU = cleanU.toLowerCase();
+        if (
+          lowerU.includes('unsubscribe') ||
+          lowerU.includes('privacy') ||
+          lowerU.includes('terms')
+        ) {
+          continue;
+        }
+        if (
+          lowerU.includes('verify') ||
+          lowerU.includes('auth') ||
+          lowerU.includes('token') ||
+          lowerU.includes('signin') ||
+          lowerU.includes('login') ||
+          lowerU.includes('confirm') ||
+          lowerU.includes('alight')
+        ) {
+          return { url: cleanU, label: '🔐 Buka Link Sign In / Masuk' };
+        }
+      }
+
+      for (const u of matches) {
+        const cleanU = u.replace(/[.,;)]+$/, '');
+        const lowerU = cleanU.toLowerCase();
+        if (!lowerU.includes('unsubscribe') && !lowerU.includes('privacy')) {
+          return { url: cleanU, label: '🔗 Buka Link Email' };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 const DEFAULT_SETTINGS: AppSettings = {
   defaultDomain: 'loginptn.xyz',
   webhookSecret: 'sec_tempmail_' + Math.random().toString(36).substring(2, 12),
@@ -84,7 +211,7 @@ let memoryDbCache: DatabaseSchema | null = null;
 let lastMtimeMs = 0;
 
 function ensureDataDirectory() {
-  const dir = path.dirname(DB_PATH);
+  const dir = path.join(process.cwd(), 'data');
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -376,7 +503,7 @@ export const db = {
 
     saveDb(data);
 
-    // Check if any PRO user should receive Telegram Notification
+    // Check if matching PRO user should receive Telegram Notification
     try {
       this.dispatchTelegramNotification(msg);
     } catch (e) {
@@ -537,16 +664,42 @@ export const db = {
   // Telegram Notifications Dispatcher
   async dispatchTelegramNotification(msg: EmailMessage) {
     const data = loadDb();
-    const localPart = msg.mailboxAddress.split('@')[0];
+    const normMailbox = msg.mailboxAddress.toLowerCase().trim();
+    const localPart = normMailbox.split('@')[0];
 
-    // Find PRO users with Telegram Bot Token & Chat ID configured
-    const targetUsers = (data.users || []).filter(
-      (u) =>
-        u.isPro &&
-        u.telegramEnabled &&
-        u.telegramBotToken &&
-        u.telegramChatId
-    );
+    // Filter PRO users ONLY if the email belongs to their mailbox or aliases
+    const targetUsers = (data.users || []).filter((u) => {
+      if (!u.isPro || !u.telegramEnabled || !u.telegramBotToken || !u.telegramChatId) {
+        return false;
+      }
+
+      const userSaved = (u.savedMailboxes || []).map((m) => m.toLowerCase().trim());
+      const monitored = (u.monitoredAliases || []).map((a) => a.toLowerCase().trim().replace(/^@/, ''));
+
+      // 1. Direct match with saved mailbox or alias
+      if (userSaved.includes(normMailbox) || userSaved.includes(localPart)) {
+        return true;
+      }
+
+      // 2. Direct match with user's username or email
+      if (u.username.toLowerCase() === localPart || u.email.toLowerCase() === normMailbox) {
+        return true;
+      }
+
+      // 3. Monitored aliases
+      if (monitored.includes(localPart) || monitored.includes(normMailbox)) {
+        return true;
+      }
+
+      // 4. If single user configured on system and no aliases set, route all
+      if (data.users.length === 1 && (!u.monitoredAliases || u.monitoredAliases.length === 0) && (!u.savedMailboxes || u.savedMailboxes.length === 0)) {
+        return true;
+      }
+
+      return false;
+    });
+
+    if (targetUsers.length === 0) return;
 
     // Extract OTP if present
     const combined = `${msg.subject} ${msg.text}`;
@@ -555,11 +708,16 @@ export const db = {
       combined.match(/\b(\d{6})\b/);
     const otpCode = otpMatch ? otpMatch[1] : null;
 
+    // Smart Action Link / Magic Link Extractor (e.g. Alight Motion Sign In / Verify link)
+    const actionLink = extractActionLink(msg.html || '', msg.text || '');
+
     const safeMailbox = escapeTelegramHtml(msg.mailboxAddress);
     const safeSender = escapeTelegramHtml(msg.from.name || msg.from.address);
     const safeSenderAddr = escapeTelegramHtml(msg.from.address);
     const safeSubject = escapeTelegramHtml(msg.subject || '(Tanpa Subjek)');
-    const safeText = escapeTelegramHtml((msg.text || '').substring(0, 250));
+    const safeText = escapeTelegramHtml((msg.text || '').substring(0, 200));
+
+    const webInboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(localPart)}`;
 
     for (const user of targetUsers) {
       try {
@@ -568,13 +726,44 @@ export const db = {
 
         if (!cleanBotToken || !cleanChatId) continue;
 
-        const text = `📬 <b>EMAIL BARU DITERIMA!</b>\n\n` +
+        let text = `📬 <b>EMAIL BARU DITERIMA!</b>\n\n` +
           `📧 <b>Mailbox:</b> <code>${safeMailbox}</code>\n` +
           `👤 <b>Pengirim:</b> ${safeSender} &lt;${safeSenderAddr}&gt;\n` +
-          `📋 <b>Subjek:</b> ${safeSubject}\n\n` +
-          (otpCode ? `🔑 <b>KODE OTP:</b> <code>${escapeTelegramHtml(otpCode)}</code>\n\n` : '') +
-          (safeText ? `📄 <b>Cuplikan Pesan:</b>\n<i>${safeText}...</i>\n\n` : '') +
-          `🔗 <a href="https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(localPart)}">Buka Kotak Masuk Sekarang</a>`;
+          `📋 <b>Subjek:</b> ${safeSubject}\n\n`;
+
+        if (otpCode) {
+          text += `🔑 <b>KODE OTP:</b> <code>${escapeTelegramHtml(otpCode)}</code>\n\n`;
+        }
+
+        if (actionLink) {
+          text += `🔗 <b>LINK SIGN IN / VERIFIKASI:</b>\n` +
+            `👉 <a href="${actionLink.url}"><b>${escapeTelegramHtml(actionLink.label)}</b></a>\n\n`;
+        }
+
+        if (safeText) {
+          text += `📄 <b>Cuplikan Pesan:</b>\n<i>${safeText}...</i>\n\n`;
+        }
+
+        text += `🔗 <a href="${webInboxUrl}">Buka Kotak Masuk di Web</a>`;
+
+        // Build Telegram Inline Keyboard
+        const inlineKeyboard: Array<Array<{ text: string; url: string }>> = [];
+
+        if (actionLink) {
+          inlineKeyboard.push([
+            {
+              text: `🔐 ${actionLink.label}`,
+              url: actionLink.url,
+            },
+          ]);
+        }
+
+        inlineKeyboard.push([
+          {
+            text: '📬 Buka di TempMail Web',
+            url: webInboxUrl,
+          },
+        ]);
 
         await fetch(`https://api.telegram.org/bot${cleanBotToken}/sendMessage`, {
           method: 'POST',
@@ -584,6 +773,9 @@ export const db = {
             text,
             parse_mode: 'HTML',
             disable_web_page_preview: false,
+            reply_markup: {
+              inline_keyboard: inlineKeyboard,
+            },
           }),
         });
       } catch (err) {
