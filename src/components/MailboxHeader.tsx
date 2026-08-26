@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Copy,
   Check,
@@ -15,7 +15,8 @@ import {
   Clock,
   Sparkles,
   History,
-  Inbox,
+  X,
+  Lock,
 } from 'lucide-react';
 import { DomainConfig, Mailbox } from '@/types';
 import { fireConfetti } from '@/lib/confetti';
@@ -25,6 +26,7 @@ interface MailboxHeaderProps {
   domains: DomainConfig[];
   activeDomain: string;
   onSelectDomain: (domain: string) => void;
+  onSelectMailbox: (address: string) => void;
   onGenerateRandom: () => void;
   onOpenCustomAlias: () => void;
   onOpenHistory: () => void;
@@ -43,6 +45,7 @@ export function MailboxHeader({
   domains,
   activeDomain,
   onSelectDomain,
+  onSelectMailbox,
   onGenerateRandom,
   onOpenCustomAlias,
   onOpenHistory,
@@ -57,17 +60,54 @@ export function MailboxHeader({
 }: MailboxHeaderProps) {
   const [copied, setCopied] = useState(false);
   const [domainDropdownOpen, setDomainDropdownOpen] = useState(false);
+  const [isEditingAlias, setIsEditingAlias] = useState(false);
+  const [aliasInputValue, setAliasInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const address = mailbox?.address || `temp@${activeDomain || 'loginptn.xyz'}`;
+  const domain = activeDomain || mailbox?.domain || 'loginptn.xyz';
+  const localPart = mailbox?.name || 'user';
+  const fullAddress = mailbox?.address || `${localPart}@${domain}`;
+
+  useEffect(() => {
+    if (isEditingAlias) {
+      setAliasInputValue(localPart);
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.select();
+        }
+      }, 50);
+    }
+  }, [isEditingAlias, localPart]);
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(address);
+      await navigator.clipboard.writeText(fullAddress);
       setCopied(true);
       fireConfetti();
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
       console.error('Failed to copy', e);
+    }
+  };
+
+  const handleSaveAlias = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanAlias = aliasInputValue.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    if (!cleanAlias) {
+      setIsEditingAlias(false);
+      return;
+    }
+    const newFullAddress = `${cleanAlias}@${domain}`;
+    onSelectMailbox(newFullAddress);
+    setIsEditingAlias(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSaveAlias();
+    } else if (e.key === 'Escape') {
+      setIsEditingAlias(false);
     }
   };
 
@@ -78,7 +118,7 @@ export function MailboxHeader({
       <div className="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl"></div>
 
       <div className="relative z-10 flex flex-col gap-4 lg:gap-5">
-        {/* Top Row: Status Badge & Domain Switcher */}
+        {/* Top Row: Status Badge, Domain Switcher, History & Auto-Refresh */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold text-cyan-300">
@@ -93,7 +133,7 @@ export function MailboxHeader({
                 className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-800/90 px-3 py-1 text-[11px] font-medium text-slate-200 transition-all hover:border-slate-600 hover:bg-slate-700 active:scale-95"
               >
                 <Globe className="h-3 w-3 text-sky-400" />
-                <span className="truncate max-w-[150px]">@{activeDomain || 'loginptn.xyz'}</span>
+                <span className="truncate max-w-[150px]">@{domain}</span>
                 <ChevronDown className="h-3 w-3 text-slate-400" />
               </button>
 
@@ -110,7 +150,7 @@ export function MailboxHeader({
                         setDomainDropdownOpen(false);
                       }}
                       className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-all ${
-                        activeDomain === dom.name
+                        domain === dom.name
                           ? 'bg-indigo-600/20 text-indigo-300 font-semibold border border-indigo-500/30'
                           : 'text-slate-300 hover:bg-slate-800'
                       }`}
@@ -163,43 +203,110 @@ export function MailboxHeader({
           </div>
         </div>
 
-        {/* Middle: Email Address Card with Click-To-Copy */}
-        <div
-          onClick={handleCopy}
-          className="group relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-slate-700/80 bg-slate-950/90 p-3.5 sm:p-4 shadow-inner cursor-pointer hover:border-indigo-500/60 transition-all active:scale-[0.99]"
-        >
-          <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-0.5 sm:hidden">
-              Alamat Email Masuk:
-            </div>
-            <p className="truncate font-mono text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white selection:bg-indigo-500">
-              {address}
-            </p>
-          </div>
+        {/* Middle: Email Address Card with Inline Alias Editor */}
+        <div className="group relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-slate-700/80 bg-slate-950/90 p-3.5 sm:p-4 shadow-inner transition-all hover:border-indigo-500/60">
+          {isEditingAlias ? (
+            /* Inline Edit Mode Form */
+            <form
+              onSubmit={handleSaveAlias}
+              className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2 min-w-0"
+            >
+              <div className="flex flex-1 items-center rounded-xl border border-indigo-500 bg-slate-900/90 px-3 py-2 shadow-inner focus-within:ring-2 focus-within:ring-indigo-500/50">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={aliasInputValue}
+                  onChange={(e) => setAliasInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="ketik_alias_baru"
+                  className="flex-1 bg-transparent font-mono text-sm sm:text-base font-bold text-white placeholder-slate-500 focus:outline-none"
+                />
+                <span className="flex items-center gap-1 rounded-lg bg-slate-800/90 px-2 py-0.5 font-mono text-xs font-semibold text-cyan-300 select-none">
+                  <Lock className="h-3 w-3 text-slate-400" />
+                  @{domain}
+                </span>
+              </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCopy();
-            }}
-            className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-md active:scale-95 shrink-0 ${
-              copied
-                ? 'bg-emerald-500 text-white shadow-emerald-500/25'
-                : 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-500 hover:to-indigo-600 shadow-indigo-600/30'
-            }`}
-          >
-            {copied ? (
-              <>
-                <Check className="h-4 w-4" />
-                <span>Tersalin!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-4 w-4" />
-                <span>Salin Alamat</span>
-              </>
-            )}
-          </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="submit"
+                  title="Simpan & Buka Alias Ini (Enter)"
+                  className="flex items-center justify-center gap-1 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-500 active:scale-95 transition-all"
+                >
+                  <Check className="h-4 w-4" />
+                  <span>Simpan</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEditingAlias(false)}
+                  title="Batal (Esc)"
+                  className="flex items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white active:scale-95 transition-all"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+          ) : (
+            /* View & Click-To-Edit Mode */
+            <>
+              <div
+                onClick={() => setIsEditingAlias(true)}
+                title="Klik untuk langsung mengubah nama alias depan"
+                className="min-w-0 flex-1 cursor-pointer flex flex-wrap items-center gap-2 group/alias"
+              >
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate font-mono text-sm sm:text-lg md:text-xl font-bold tracking-tight text-white group-hover/alias:text-indigo-200 transition-colors">
+                    <span className="text-white border-b-2 border-dashed border-indigo-500/70 pb-0.5 group-hover/alias:border-indigo-400">
+                      {localPart}
+                    </span>
+                    <span className="text-cyan-400">@{domain}</span>
+                  </p>
+
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 group-hover/alias:bg-indigo-500/20 group-hover/alias:text-indigo-300 transition-all">
+                    <Edit3 className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+
+                <span className="hidden lg:inline text-[11px] text-slate-400 group-hover/alias:text-indigo-300 transition-colors">
+                  (Klik untuk ganti alias depan)
+                </span>
+              </div>
+
+              {/* Action Buttons: Copy & Edit */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setIsEditingAlias(true)}
+                  title="Ubah nama alias depan"
+                  className="flex sm:hidden items-center justify-center gap-1.5 rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 py-2.5 text-xs font-semibold text-indigo-300 active:scale-95 transition-all"
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                  <span>Ubah</span>
+                </button>
+
+                <button
+                  onClick={handleCopy}
+                  className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-md active:scale-95 ${
+                    copied
+                      ? 'bg-emerald-500 text-white shadow-emerald-500/25'
+                      : 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-500 hover:to-indigo-600 shadow-indigo-600/30'
+                  }`}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      <span>Tersalin!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      <span>Salin Alamat</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Bottom Row: Action Buttons Grid */}
@@ -214,23 +321,23 @@ export function MailboxHeader({
             <span className="truncate">Acak Baru</span>
           </button>
 
-          {/* Custom Alias */}
+          {/* Custom Alias Button */}
           <button
-            onClick={onOpenCustomAlias}
-            title="Buat alamat email kustom"
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/80 px-3 py-2.5 text-xs font-semibold text-slate-200 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
+            onClick={() => setIsEditingAlias(true)}
+            title="Ketik nama alias kustom secara langsung"
+            className="flex items-center justify-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 py-2.5 text-xs font-semibold text-indigo-300 shadow-md transition-all hover:bg-indigo-500/25 hover:text-indigo-200 active:scale-95"
           >
-            <Edit3 className="h-3.5 w-3.5 text-sky-400 shrink-0" />
-            <span className="truncate">Custom Alias</span>
+            <Edit3 className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+            <span className="truncate">Ubah Alias</span>
           </button>
 
           {/* History / Search Old Mailboxes */}
           <button
             onClick={onOpenHistory}
             title="Cari dan buka kotak masuk yang pernah dipakai sebelumnya"
-            className="flex items-center justify-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 py-2.5 text-xs font-semibold text-indigo-300 shadow-md transition-all hover:bg-indigo-500/25 hover:text-indigo-200 active:scale-95"
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/80 px-3 py-2.5 text-xs font-semibold text-slate-200 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
           >
-            <History className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+            <History className="h-3.5 w-3.5 text-sky-400 shrink-0" />
             <span className="truncate">Riwayat Email</span>
           </button>
 

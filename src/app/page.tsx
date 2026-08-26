@@ -301,6 +301,7 @@ export default function Home() {
           domains={domains}
           activeDomain={activeDomain}
           onSelectDomain={handleSelectDomain}
+          onSelectMailbox={(address) => initMailbox(address)}
           onGenerateRandom={handleGenerateRandom}
           onOpenCustomAlias={() => setCustomAliasModalOpen(true)}
           onOpenHistory={() => setHistoryModalOpen(true)}
