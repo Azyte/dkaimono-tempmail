@@ -15,6 +15,7 @@ import {
   Lock,
   Flame,
   Filter,
+  Zap,
 } from 'lucide-react';
 import { User } from '@/types';
 import { fireConfetti } from '@/lib/confetti';
@@ -46,6 +47,9 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
   // Test Telegram state
   const [testLoading, setTestLoading] = useState(false);
   const [testMsg, setTestMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Sync Webhook state
+  const [syncLoading, setSyncLoading] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -181,6 +185,39 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
     }
   };
 
+  // 4. Handle Sync Telegram Webhook
+  const handleSyncWebhook = async () => {
+    const cleanToken = botToken.trim().replace(/^bot/i, '');
+    if (!cleanToken) {
+      setTestMsg({ type: 'error', text: 'Masukkan Bot Token terlebih dahulu untuk sinkronisasi webhook!' });
+      return;
+    }
+
+    setSyncLoading(true);
+    setTestMsg(null);
+    try {
+      const res = await fetch('/api/telegram/sync-webhook', {
+        method: 'POST',
+        headers: getSessionHeaders(),
+        body: JSON.stringify({ botToken: cleanToken }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTestMsg({
+          type: 'success',
+          text: '✅ Webhook bot Telegram berhasil disinkronkan & diaktifkan! Anda sekarang bisa mengetik perintah /amprem atau /new di bot Telegram.',
+        });
+        fireConfetti();
+      } else {
+        setTestMsg({ type: 'error', text: data.error || 'Gagal mengaktifkan webhook.' });
+      }
+    } catch (err: any) {
+      setTestMsg({ type: 'error', text: err.message || 'Gagal menghubungi server.' });
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Top Banner: Membership Status */}
@@ -286,7 +323,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bot className="h-4 w-4 text-sky-400" />
-            <h4 className="text-xs sm:text-sm font-bold text-white">Bot Telegram Pribadi (Realtime OTP & Link Notifier)</h4>
+            <h4 className="text-xs sm:text-sm font-bold text-white">Bot Telegram Pribadi (Auto Creator & Notifier)</h4>
           </div>
 
           <label className="relative inline-flex cursor-pointer items-center">
@@ -301,7 +338,7 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
         </div>
 
         <p className="text-xs text-slate-400">
-          Setiap email, kode OTP, dan tombol <b>Sign In / Magic Link</b> yang masuk ke mailbox Anda akan langsung dikirim ke Telegram dengan <b>Tombol Klik Langsung</b>!
+          Setiap email, kode OTP, dan tombol <b>Sign In / Magic Link</b> yang masuk ke mailbox Anda akan langsung dikirim ke Telegram. Anda juga bisa membuat akun AM Premium otomatis dengan perintah <code>/amprem</code> di bot Anda!
         </p>
 
         {saveMsg && (
@@ -382,14 +419,14 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
         <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-[11px] text-slate-400 space-y-1.5">
           <div className="font-semibold text-slate-200 flex items-center gap-1">
             <MessageSquare className="h-3.5 w-3.5 text-sky-400" />
-            <span>Cara menyetel Bot Telegram (Wajib ikuti langkah ke-4):</span>
+            <span>Panduan Bot Telegram:</span>
           </div>
           <ol className="list-inside list-decimal space-y-1 text-slate-400">
             <li>Buka Telegram, cari bot <b>@BotFather</b> lalu kirim perintah <code>/newbot</code>.</li>
             <li>Salin <b>HTTP API Token</b> yang diberikan ke kolom Bot Token di atas.</li>
             <li>Cari bot <b>@userinfobot</b> untuk melihat angka <b>ID</b> Anda, lalu masukkan ke Chat ID di atas.</li>
             <li className="text-amber-300 font-semibold">
-              ⚠️ PENTING: Buka bot baru Anda di Telegram lalu klik <u>START</u> atau kirim pesan <u>/start</u> agar bot diizinkan mengirim pesan ke Anda!
+              ⚠️ PENTING: Buka bot baru Anda di Telegram lalu klik <u>START</u> atau kirim pesan <u>/start</u> terlebih dahulu.
             </li>
           </ol>
         </div>
@@ -429,15 +466,28 @@ export function ProTab({ currentUser, onRefreshUser, onOpenAuthModal }: ProTabPr
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-          <button
-            type="button"
-            onClick={handleTestTelegram}
-            disabled={testLoading || !botToken || !chatId}
-            className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-300 hover:bg-sky-500/20 active:scale-95 transition-all disabled:opacity-50"
-          >
-            {testLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            <span>🧪 Test Notifikasi Telegram</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSyncWebhook}
+              disabled={syncLoading || !botToken}
+              className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 active:scale-95 transition-all disabled:opacity-50"
+              title="Aktifkan respons interaktif bot Telegram"
+            >
+              {syncLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+              <span>⚡ Hubungkan &amp; Aktifkan Bot</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleTestTelegram}
+              disabled={testLoading || !botToken || !chatId}
+              className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 text-xs font-semibold text-sky-300 hover:bg-sky-500/20 active:scale-95 transition-all disabled:opacity-50"
+            >
+              {testLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+              <span>🧪 Test Notifikasi</span>
+            </button>
+          </div>
 
           <button
             type="submit"

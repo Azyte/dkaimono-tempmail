@@ -29,9 +29,9 @@ export function Navbar({
 }: NavbarProps) {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-2.5 sm:px-6 lg:px-8">
         {/* Left: Brand Logo */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
           <div className="relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 p-0.5 shadow-md shadow-indigo-500/20 shrink-0">
             <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-slate-950">
               <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400" />
@@ -64,12 +64,12 @@ export function Navbar({
           </div>
         </div>
 
-        {/* Right: Action Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Right: Action Controls (Optimized for Mobile Screens) */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Auto AM Premium Button */}
           <button
             onClick={onOpenAmPremiumModal}
-            className="flex items-center gap-1 rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-600/25 to-cyan-500/25 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-bold text-emerald-300 hover:from-emerald-600/35 hover:to-cyan-500/35 active:scale-95 transition-all shadow-sm"
+            className="flex items-center gap-1 rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-600/25 to-cyan-500/25 px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-bold text-emerald-300 hover:from-emerald-600/35 hover:to-cyan-500/35 active:scale-95 transition-all shadow-sm"
             title="Auto Alight Motion Premium Creator"
           >
             <Zap className="h-3.5 w-3.5 fill-emerald-400 text-emerald-400 shrink-0" />
@@ -79,7 +79,7 @@ export function Navbar({
           {/* PRO Badge / Upgrade Button */}
           <button
             onClick={() => onOpenSettings('pro')}
-            className={`flex items-center gap-1 rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-bold transition-all active:scale-95 ${
+            className={`flex items-center gap-1 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-bold transition-all active:scale-95 ${
               currentUser?.isPro
                 ? 'border border-amber-500/40 bg-amber-500/15 text-amber-300 shadow-sm'
                 : 'border border-amber-500/40 bg-gradient-to-r from-amber-600/25 to-amber-500/25 text-amber-300 hover:from-amber-600/35 hover:to-amber-500/35'
@@ -92,13 +92,13 @@ export function Navbar({
           {/* User Account Button */}
           <button
             onClick={onOpenAuthModal}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-medium text-slate-200 hover:border-slate-700 hover:bg-slate-800 active:scale-95 transition-all"
+            className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-900/90 px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-medium text-slate-200 hover:border-slate-700 hover:bg-slate-800 active:scale-95 transition-all"
             title={currentUser ? `Akun: @${currentUser.username}` : 'Masuk / Daftar'}
           >
             {currentUser ? (
               <>
                 <UserIcon className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-                <span className="max-w-[70px] sm:max-w-[100px] truncate text-[11px] sm:text-xs font-semibold">
+                <span className="hidden sm:inline max-w-[90px] truncate text-xs font-semibold">
                   @{currentUser.username}
                 </span>
               </>
@@ -126,7 +126,7 @@ export function Navbar({
           {/* Settings Button */}
           <button
             onClick={() => onOpenSettings()}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 p-2 sm:px-3.5 sm:py-2 text-xs font-semibold text-white shadow-md shadow-indigo-600/25 transition-all hover:from-indigo-500 hover:to-indigo-600 active:scale-95"
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 p-2 sm:px-3 sm:py-2 text-xs font-semibold text-white shadow-md shadow-indigo-600/25 transition-all hover:from-indigo-500 hover:to-indigo-600 active:scale-95"
             title="Pengaturan"
           >
             <Settings className="h-4 w-4 shrink-0" />
