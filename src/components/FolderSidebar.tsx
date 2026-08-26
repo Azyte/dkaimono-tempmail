@@ -73,16 +73,25 @@ export function FolderSidebar({
     },
   ];
 
-  // Only add AM Accounts folder for PRO users
   if (isPro) {
     navItems.push({
       id: 'am_accounts' as FolderType,
-      label: 'Akun AM Prem',
-      sublabel: 'Riwayat Generator',
+      label: '⚡ Auto Pro Hub',
+      sublabel: 'AM, Canva, ElevenLabs, Cursor',
       icon: Zap,
       count: counts.amAccounts || 0,
       color: 'text-emerald-400',
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+    });
+  } else {
+    navItems.push({
+      id: 'am_accounts' as FolderType,
+      label: '⚡ Auto Pro Hub',
+      sublabel: 'Generator Akun (PRO)',
+      icon: Zap,
+      count: 0,
+      color: 'text-amber-400',
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     });
   }
 

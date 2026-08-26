@@ -17,6 +17,7 @@ import {
   Lock,
   Link,
   Share2,
+  Zap,
 } from 'lucide-react';
 import { DomainConfig, Mailbox } from '@/types';
 import { fireConfetti } from '@/lib/confetti';
@@ -34,6 +35,7 @@ interface MailboxHeaderProps {
   onRefresh: () => void;
   onClearMailbox: () => void;
   onOpenSettings: (tab?: string) => void;
+  onOpenAmPremiumModal?: () => void;
   isRefreshing: boolean;
   refreshCountdown: number;
   totalMessages: number;
@@ -52,6 +54,7 @@ export function MailboxHeader({
   onRefresh,
   onClearMailbox,
   onOpenSettings,
+  onOpenAmPremiumModal,
   isRefreshing,
   refreshCountdown,
   totalMessages,
@@ -297,6 +300,41 @@ export function MailboxHeader({
             </div>
           )}
         </div>
+
+        {/* Auto Pro Generator Quick Launch Bar */}
+        {onOpenAmPremiumModal && (
+          <div
+            onClick={onOpenAmPremiumModal}
+            className="group/hub flex items-center justify-between gap-2.5 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/60 via-slate-900/80 to-cyan-950/60 p-2.5 sm:p-3 shadow-md hover:border-emerald-400 hover:shadow-emerald-500/10 cursor-pointer active:scale-[0.99] transition-all"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 shadow-md shadow-emerald-500/20 text-white font-bold">
+                <Zap className="h-4 w-4 fill-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-white group-hover/hub:text-emerald-300 transition-colors truncate">
+                    ⚡ Auto Pro &amp; Trial Generator Hub
+                  </p>
+                  <span className="rounded bg-emerald-500/20 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-extrabold text-emerald-300 uppercase">
+                    PRO
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 truncate">
+                  Alight Motion, Canva Pro, ElevenLabs, Cursor AI + Password Otomatis.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="shrink-0 flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-emerald-500 hover:to-cyan-500 transition-all"
+            >
+              <span>Buka Hub</span>
+              <span className="text-[10px]">➔</span>
+            </button>
+          </div>
+        )}
 
         {/* Bottom Row: Mobile-Friendly Action Buttons Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

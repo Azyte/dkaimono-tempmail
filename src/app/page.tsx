@@ -396,6 +396,7 @@ export default function Home() {
               onRefresh={() => mailbox && fetchMessages(mailbox.address)}
               onClearMailbox={handleClearMailbox}
               onOpenSettings={handleOpenSettings}
+              onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
               isRefreshing={isRefreshing}
               refreshCountdown={refreshCountdown}
               totalMessages={messages.length}
@@ -411,9 +412,7 @@ export default function Home() {
               { id: 'inbox' as FolderType, label: 'Inbox', count: counts.inbox, icon: Inbox },
               { id: 'spam' as FolderType, label: 'Spam', count: counts.spam, icon: ShieldAlert },
               { id: 'starred' as FolderType, label: 'Favorit', count: counts.starred, icon: Star },
-              ...(currentUser?.isPro
-                ? [{ id: 'am_accounts' as FolderType, label: '⚡ AM Prem', count: counts.amAccounts, icon: Zap }]
-                : []),
+              { id: 'am_accounts' as FolderType, label: '⚡ Auto Pro Hub', count: counts.amAccounts, icon: Zap },
             ].map((item) => {
               const Icon = item.icon;
               const isActive = currentFolder === item.id;
