@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Server, Globe, Key, Activity, Zap, Sliders, Crown } from 'lucide-react';
+import { X, Server, Globe, Key, Activity, Zap, Sliders, Crown, Users } from 'lucide-react';
 import { AppSettings, DomainConfig, User } from '@/types';
 import { DnsTab } from './settings/DnsTab';
 import { CloudflareTab } from './settings/CloudflareTab';
@@ -9,6 +9,7 @@ import { PoliciesTab } from './settings/PoliciesTab';
 import { ApiTab } from './settings/ApiTab';
 import { LogsTab } from './settings/LogsTab';
 import { ProTab } from './settings/ProTab';
+import { UsersTab } from './settings/UsersTab';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -70,6 +71,7 @@ export function SettingsModal({
         <div className="flex border-b border-slate-800/80 bg-slate-900/40 px-3 sm:px-6 overflow-x-auto custom-scrollbar">
           {[
             { id: 'pro', label: '👑 Konfigurasi PRO & Bot', icon: Crown, highlight: true },
+            { id: 'users', label: '👥 Akun Terdaftar', icon: Users },
             { id: 'dns', label: 'Domain & MX', icon: Globe },
             { id: 'cloudflare', label: 'Cloudflare Worker', icon: Zap },
             { id: 'policies', label: 'Filter Spam', icon: Sliders },
@@ -90,7 +92,13 @@ export function SettingsModal({
               >
                 <Icon
                   className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
-                    isActive ? (tab.highlight ? 'text-amber-400' : 'text-indigo-400') : tab.highlight ? 'text-amber-400' : 'text-slate-400'
+                    isActive
+                      ? tab.highlight
+                        ? 'text-amber-400'
+                        : 'text-indigo-400'
+                      : tab.highlight
+                      ? 'text-amber-400'
+                      : 'text-slate-400'
                   }`}
                 />
                 <span>{tab.label}</span>
@@ -108,6 +116,8 @@ export function SettingsModal({
               onOpenAuthModal={onOpenAuthModal}
             />
           )}
+
+          {activeTab === 'users' && <UsersTab />}
 
           {activeTab === 'dns' && (
             <DnsTab
