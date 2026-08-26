@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Mail, Settings, Volume2, VolumeX, Globe, Crown, User as UserIcon, LogIn } from 'lucide-react';
+import { Mail, Settings, Volume2, VolumeX, Globe, Crown, User as UserIcon, LogIn, Zap } from 'lucide-react';
 import { AppSettings, User } from '@/types';
 
 interface NavbarProps {
@@ -9,6 +9,7 @@ interface NavbarProps {
   currentUser: User | null;
   onOpenSettings: (tab?: string) => void;
   onOpenAuthModal: () => void;
+  onOpenAmPremiumModal: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
   activeDomain: string;
@@ -20,6 +21,7 @@ export function Navbar({
   currentUser,
   onOpenSettings,
   onOpenAuthModal,
+  onOpenAmPremiumModal,
   soundEnabled,
   onToggleSound,
   activeDomain,
@@ -62,8 +64,18 @@ export function Navbar({
           </div>
         </div>
 
-        {/* Right: Action Controls (Responsive for Mobile) */}
+        {/* Right: Action Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Auto AM Premium Button */}
+          <button
+            onClick={onOpenAmPremiumModal}
+            className="flex items-center gap-1 rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-600/25 to-cyan-500/25 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-bold text-emerald-300 hover:from-emerald-600/35 hover:to-cyan-500/35 active:scale-95 transition-all shadow-sm"
+            title="Auto Alight Motion Premium Creator"
+          >
+            <Zap className="h-3.5 w-3.5 fill-emerald-400 text-emerald-400 shrink-0" />
+            <span className="text-[11px] sm:text-xs">AM Prem</span>
+          </button>
+
           {/* PRO Badge / Upgrade Button */}
           <button
             onClick={() => onOpenSettings('pro')}

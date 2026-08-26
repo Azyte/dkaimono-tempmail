@@ -11,9 +11,10 @@ import { TestEmailModal } from '@/components/TestEmailModal';
 import { CustomAliasModal } from '@/components/CustomAliasModal';
 import { QrCodeModal } from '@/components/QrCodeModal';
 import { AuthModal } from '@/components/AuthModal';
+import { AmPremiumModal } from '@/components/AmPremiumModal';
 import { AppSettings, DomainConfig, EmailMessage, Mailbox, User } from '@/types';
 import { playNotificationSound } from '@/lib/sound';
-import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical, Crown } from 'lucide-react';
+import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical, Crown, Zap } from 'lucide-react';
 
 export default function Home() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -45,6 +46,7 @@ export default function Home() {
   const [testEmailModalOpen, setTestEmailModalOpen] = useState(false);
   const [customAliasModalOpen, setCustomAliasModalOpen] = useState(false);
   const [qrCodeModalOpen, setQrCodeModalOpen] = useState(false);
+  const [amPremiumModalOpen, setAmPremiumModalOpen] = useState(false);
 
   // Keep previous messages count to detect incoming mail and play chime
   const prevCountRef = useRef<number>(0);
@@ -399,6 +401,7 @@ export default function Home() {
         currentUser={currentUser}
         onOpenSettings={handleOpenSettings}
         onOpenAuthModal={() => setAuthModalOpen(true)}
+        onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
         activeDomain={activeDomain}
@@ -519,6 +522,14 @@ export default function Home() {
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800/90 bg-slate-950/95 p-1.5 backdrop-blur-xl md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around gap-1">
           <button
+            onClick={() => setAmPremiumModalOpen(true)}
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-bold text-emerald-400 active:scale-95 transition-all hover:bg-slate-900"
+          >
+            <Zap className="h-4 w-4 text-emerald-400 fill-emerald-400/20" />
+            <span>AM Prem</span>
+          </button>
+
+          <button
             onClick={handleGenerateRandom}
             className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
@@ -539,15 +550,7 @@ export default function Home() {
             className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-amber-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <Crown className="h-4 w-4 text-amber-400 fill-amber-400" />
-            <span>PRO</span>
-          </button>
-
-          <button
-            onClick={() => setTestEmailModalOpen(true)}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
-          >
-            <FlaskConical className="h-4 w-4 text-emerald-400" />
-            <span>Test Mail</span>
+            <span>VIP</span>
           </button>
 
           <button
@@ -561,6 +564,12 @@ export default function Home() {
       </div>
 
       {/* Modals */}
+      <AmPremiumModal
+        isOpen={amPremiumModalOpen}
+        onClose={() => setAmPremiumModalOpen(false)}
+        onSuccessCreated={() => mailbox && fetchMessages(mailbox.address)}
+      />
+
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
