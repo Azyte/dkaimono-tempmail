@@ -19,8 +19,10 @@ import {
   Tablet,
   Smartphone,
   Info,
+  KeyRound,
 } from 'lucide-react';
 import { EmailMessage } from '@/types';
+import { fireConfetti } from '@/lib/confetti';
 
 interface EmailViewerProps {
   message: EmailMessage | null;
@@ -39,7 +41,22 @@ export function EmailViewer({
   const [viewportMode, setViewportMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [copiedRaw, setCopiedRaw] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  const [copiedOtp, setCopiedOtp] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Extract OTP / verification code if present
+  const extractOtp = (text: string, subject: string): string | null => {
+    const combined = `${subject} ${text}`;
+    const keywordMatch = combined.match(/(?:code|kode|otp|token|pin|verification|verifikasi)[^\d]{1,15}(\d{4,8})\b/i);
+    if (keywordMatch && keywordMatch[1]) return keywordMatch[1];
+
+    const digit6Match = combined.match(/\b(\d{6})\b/);
+    if (digit6Match && digit6Match[1]) return digit6Match[1];
+
+    return null;
+  };
+
+  const detectedOtp = message ? extractOtp(message.text || '', message.subject || '') : null;
 
   useEffect(() => {
     if (activeTab === 'preview' && iframeRef.current && message) {
@@ -92,6 +109,15 @@ export function EmailViewer({
       </div>
     );
   }
+
+  const handleCopyOtp = () => {
+    if (detectedOtp) {
+      navigator.clipboard.writeText(detectedOtp);
+      setCopiedOtp(true);
+      fireConfetti();
+      setTimeout(() => setCopiedOtp(false), 2000);
+    }
+  };
 
   const handleCopyRaw = () => {
     if (message.rawSource) {
@@ -352,6 +378,46 @@ export function EmailViewer({
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-950/60 p-3 sm:p-5">
+        {/* OTP / Verification Code Extractor Card (if detected) */}
+        {detectedOtp && (
+          <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-indigo-500/50 bg-gradient-to-r from-indigo-950/80 via-slate-900/90 to-cyan-950/80 p-3.5 sm:p-4 shadow-xl backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 shadow-md">
+                <KeyRound className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-indigo-300">
+                  Kode OTP / Verifikasi Terdeteksi:
+                </div>
+                <div className="font-mono text-xl sm:text-2xl font-black text-cyan-300 tracking-widest selection:bg-indigo-500">
+                  {detectedOtp}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleCopyOtp}
+              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-md active:scale-95 shrink-0 ${
+                copiedOtp
+                  ? 'bg-emerald-500 text-white shadow-emerald-500/25'
+                  : 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-500 hover:to-indigo-600 shadow-indigo-600/30'
+              }`}
+            >
+              {copiedOtp ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  <span>OTP Tersalin!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  <span>Salin Kode OTP</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Tab 1: HTML Preview (Sandboxed Iframe) */}
         {activeTab === 'preview' && (
           <div className="flex justify-center h-full min-h-[350px]">

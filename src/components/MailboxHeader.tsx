@@ -17,6 +17,8 @@ import {
   History,
   X,
   Lock,
+  Link,
+  Share2,
 } from 'lucide-react';
 import { DomainConfig, Mailbox } from '@/types';
 import { fireConfetti } from '@/lib/confetti';
@@ -59,6 +61,7 @@ export function MailboxHeader({
   totalMessages,
 }: MailboxHeaderProps) {
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [domainDropdownOpen, setDomainDropdownOpen] = useState(false);
   const [isEditingAlias, setIsEditingAlias] = useState(false);
   const [aliasInputValue, setAliasInputValue] = useState('');
@@ -88,6 +91,21 @@ export function MailboxHeader({
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
       console.error('Failed to copy', e);
+    }
+  };
+
+  const handleCopyShareLink = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (typeof window !== 'undefined') {
+        const shareUrl = `${window.location.origin}/?mail=${encodeURIComponent(localPart)}`;
+        await navigator.clipboard.writeText(shareUrl);
+        setLinkCopied(true);
+        fireConfetti();
+        setTimeout(() => setLinkCopied(false), 2500);
+      }
+    } catch (e) {
+      console.error('Failed to copy share link', e);
     }
   };
 
@@ -269,21 +287,36 @@ export function MailboxHeader({
                 </div>
 
                 <span className="hidden lg:inline text-[11px] text-slate-400 group-hover/alias:text-indigo-300 transition-colors">
-                  (Klik untuk ganti alias depan)
+                  (Klik untuk ganti alias)
                 </span>
               </div>
 
-              {/* Action Buttons: Copy & Edit */}
+              {/* Action Buttons: Share Link & Copy */}
               <div className="flex items-center gap-2 shrink-0">
+                {/* Shareable Link Button */}
                 <button
-                  onClick={() => setIsEditingAlias(true)}
-                  title="Ubah nama alias depan"
-                  className="flex sm:hidden items-center justify-center gap-1.5 rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 py-2.5 text-xs font-semibold text-indigo-300 active:scale-95 transition-all"
+                  onClick={handleCopyShareLink}
+                  title="Salin link langsung ke inbox ini (Bisa langsung dikirim ke pembeli / teman)"
+                  className={`flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all active:scale-95 ${
+                    linkCopied
+                      ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300'
+                      : 'border-slate-700 bg-slate-850 text-slate-300 hover:border-slate-600 hover:bg-slate-800 hover:text-white'
+                  }`}
                 >
-                  <Edit3 className="h-3.5 w-3.5" />
-                  <span>Ubah</span>
+                  {linkCopied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      <span>Link Tersalin!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link className="h-3.5 w-3.5 text-cyan-400" />
+                      <span className="hidden sm:inline">Bagikan Link</span>
+                    </>
+                  )}
                 </button>
 
+                {/* Copy Address */}
                 <button
                   onClick={handleCopy}
                   className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all shadow-md active:scale-95 ${

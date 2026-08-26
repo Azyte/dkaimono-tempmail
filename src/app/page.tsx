@@ -133,23 +133,38 @@ export default function Home() {
 
   // Initial load
   useEffect(() => {
-    fetchSettingsAndDomains();
-  }, [fetchSettingsAndDomains]);
-
-  useEffect(() => {
     if (domains.length > 0 && !mailbox) {
-      // Check URL query param ?mailbox=
+      // Check URL query param ?mailbox= / ?mail= / ?alias= / ?name=
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
-        const paramBox = params.get('mailbox');
+        const paramBox =
+          params.get('mailbox') ||
+          params.get('mail') ||
+          params.get('alias') ||
+          params.get('name') ||
+          params.get('user');
+
         if (paramBox) {
-          initMailbox(paramBox);
+          const dom = activeDomain || domains[0]?.name || 'loginptn.xyz';
+          const full = paramBox.includes('@')
+            ? paramBox.toLowerCase().trim()
+            : `${paramBox.toLowerCase().trim()}@${dom}`;
+          initMailbox(full);
           return;
         }
       }
       initMailbox();
     }
-  }, [domains, mailbox, initMailbox]);
+  }, [domains, mailbox, activeDomain, initMailbox]);
+
+  // Sync browser URL parameter when active mailbox changes
+  useEffect(() => {
+    if (mailbox?.name && typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('mail', mailbox.name);
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [mailbox?.name]);
 
   // Handle auto-refresh countdown
   useEffect(() => {
