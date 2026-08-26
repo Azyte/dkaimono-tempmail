@@ -47,10 +47,27 @@ export async function POST(req: NextRequest) {
       monitoredAliases: cleanAliases !== undefined ? cleanAliases : user.monitoredAliases,
     });
 
+    // Auto-register Telegram Webhook for interactive commands
+    if (cleanBotToken) {
+      try {
+        const webhookUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/api/telegram/webhook?token=${cleanBotToken}`;
+        await fetch(`https://api.telegram.org/bot${cleanBotToken}/setWebhook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: webhookUrl,
+            allowed_updates: ['message', 'edited_message', 'callback_query'],
+          }),
+        });
+      } catch (e) {
+        console.error('Failed to set Telegram webhook:', e);
+      }
+    }
+
     const token = createSessionToken(updatedUser!);
     const response = NextResponse.json({
       success: true,
-      message: 'Konfigurasi PRO berhasil disimpan!',
+      message: 'Konfigurasi PRO & Bot Telegram Interaktif berhasil disimpan!',
       token,
       user: {
         id: updatedUser!.id,

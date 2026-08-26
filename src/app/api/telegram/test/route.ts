@@ -19,11 +19,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const testMessage = `🤖 <b>TEST NOTIFIKASI TELEGRAM BERHASIL!</b> 🎉\n\n` +
+    // Auto-register Telegram Webhook
+    try {
+      const webhookUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/api/telegram/webhook?token=${botToken}`;
+      await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: webhookUrl,
+          allowed_updates: ['message', 'edited_message', 'callback_query'],
+        }),
+      });
+    } catch (e) {
+      console.error('Failed to set webhook:', e);
+    }
+
+    const testMessage = `🤖 <b>TEST NOTIFIKASI & INTERAKSI BOT TELEGRAM BERHASIL!</b> 🎉\n\n` +
       `✅ <b>Status:</b> Terhubung Sukses ke TempMail Pro!\n` +
       `📧 <b>Domain:</b> <code>loginptn.xyz</code>\n` +
       `🕒 <b>Waktu:</b> ${new Date().toLocaleString('id-ID')}\n\n` +
-      `Setiap ada email masuk atau kode OTP baru, bot Telegram Anda akan otomatis mengirimkan notifikasi ke chat ini secara realtime! 🚀`;
+      `<b>💡 Anda sekarang bisa membuat email langsung dari chat ini!</b>\n` +
+      `• Ketik <code>/new</code> untuk membuat email acak baru.\n` +
+      `• Ketik <code>/custom nama_alias</code> untuk membuat alias tertentu.\n` +
+      `• Ketik <code>/inbox</code> untuk melihat isi email masuk.\n\n` +
+      `Coba kirim perintah atau pilih tombol di bawah: 👇`;
+
+    const mainReplyKeyboard = {
+      keyboard: [
+        [{ text: '🎲 Buat Email Acak' }, { text: '✏️ Buat Alias Kustom' }],
+        [{ text: '📬 Cek Inbox Terakhir' }, { text: '📧 Email Aktif Saya' }],
+      ],
+      resize_keyboard: true,
+      persistent: true,
+    };
 
     const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
@@ -32,6 +60,7 @@ export async function POST(req: NextRequest) {
         chat_id: chatId,
         text: testMessage,
         parse_mode: 'HTML',
+        reply_markup: mainReplyKeyboard,
       }),
     });
 
@@ -60,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Test notifikasi berhasil dikirim! Silakan cek chat bot Telegram Anda.',
+      message: 'Test notifikasi & fitur interaktif berhasil diaktifkan! Silakan cek chat bot Telegram Anda.',
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Gagal menghubungi server Telegram' }, { status: 500 });
