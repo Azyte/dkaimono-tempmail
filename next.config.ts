@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   serverExternalPackages: ['mailparser'],
   eslint: {
     ignoreDuringBuilds: true,
@@ -11,4 +12,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
