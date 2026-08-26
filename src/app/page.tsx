@@ -10,10 +10,9 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { TestEmailModal } from '@/components/TestEmailModal';
 import { CustomAliasModal } from '@/components/CustomAliasModal';
 import { QrCodeModal } from '@/components/QrCodeModal';
-import { MailboxHistoryModal } from '@/components/MailboxHistoryModal';
 import { AppSettings, DomainConfig, EmailMessage, Mailbox } from '@/types';
 import { playNotificationSound } from '@/lib/sound';
-import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical, History } from 'lucide-react';
+import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical } from 'lucide-react';
 
 export default function Home() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -33,7 +32,6 @@ export default function Home() {
   const [testEmailModalOpen, setTestEmailModalOpen] = useState(false);
   const [customAliasModalOpen, setCustomAliasModalOpen] = useState(false);
   const [qrCodeModalOpen, setQrCodeModalOpen] = useState(false);
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
   // Keep previous messages count to detect incoming mail and play chime
   const prevCountRef = useRef<number>(0);
@@ -132,6 +130,10 @@ export default function Home() {
   }, [activeDomain, fetchMessages]);
 
   // Initial load
+  useEffect(() => {
+    fetchSettingsAndDomains();
+  }, [fetchSettingsAndDomains]);
+
   useEffect(() => {
     if (domains.length > 0 && !mailbox) {
       // Check URL query param ?mailbox= / ?mail= / ?alias= / ?name=
@@ -319,7 +321,6 @@ export default function Home() {
           onSelectMailbox={(address) => initMailbox(address)}
           onGenerateRandom={handleGenerateRandom}
           onOpenCustomAlias={() => setCustomAliasModalOpen(true)}
-          onOpenHistory={() => setHistoryModalOpen(true)}
           onOpenQrCode={() => setQrCodeModalOpen(true)}
           onOpenTestEmail={() => setTestEmailModalOpen(true)}
           onRefresh={() => mailbox && fetchMessages(mailbox.address)}
@@ -433,14 +434,6 @@ export default function Home() {
           </button>
 
           <button
-            onClick={() => setHistoryModalOpen(true)}
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
-          >
-            <History className="h-4 w-4 text-indigo-400" />
-            <span>Riwayat</span>
-          </button>
-
-          <button
             onClick={() => setTestEmailModalOpen(true)}
             className="flex flex-1 flex-col items-center gap-1 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
@@ -459,15 +452,6 @@ export default function Home() {
       </div>
 
       {/* Modals */}
-      <MailboxHistoryModal
-        isOpen={historyModalOpen}
-        onClose={() => setHistoryModalOpen(false)}
-        currentAddress={mailbox?.address || ''}
-        activeDomain={activeDomain}
-        domains={domains}
-        onSelectMailbox={(address) => initMailbox(address)}
-      />
-
       <SettingsModal
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
