@@ -14,6 +14,7 @@ import {
   Globe,
   Clock,
   Sparkles,
+  History,
   Inbox,
 } from 'lucide-react';
 import { DomainConfig, Mailbox } from '@/types';
@@ -26,6 +27,7 @@ interface MailboxHeaderProps {
   onSelectDomain: (domain: string) => void;
   onGenerateRandom: () => void;
   onOpenCustomAlias: () => void;
+  onOpenHistory: () => void;
   onOpenQrCode: () => void;
   onOpenTestEmail: () => void;
   onRefresh: () => void;
@@ -43,6 +45,7 @@ export function MailboxHeader({
   onSelectDomain,
   onGenerateRandom,
   onOpenCustomAlias,
+  onOpenHistory,
   onOpenQrCode,
   onOpenTestEmail,
   onRefresh,
@@ -55,7 +58,7 @@ export function MailboxHeader({
   const [copied, setCopied] = useState(false);
   const [domainDropdownOpen, setDomainDropdownOpen] = useState(false);
 
-  const address = mailbox?.address || `temp@${activeDomain || 'yourdomain.com'}`;
+  const address = mailbox?.address || `temp@${activeDomain || 'loginptn.xyz'}`;
 
   const handleCopy = async () => {
     try {
@@ -90,7 +93,7 @@ export function MailboxHeader({
                 className="inline-flex items-center gap-1.5 rounded-full border border-slate-700/80 bg-slate-800/90 px-3 py-1 text-[11px] font-medium text-slate-200 transition-all hover:border-slate-600 hover:bg-slate-700 active:scale-95"
               >
                 <Globe className="h-3 w-3 text-sky-400" />
-                <span className="truncate max-w-[150px]">@{activeDomain || 'default'}</span>
+                <span className="truncate max-w-[150px]">@{activeDomain || 'loginptn.xyz'}</span>
                 <ChevronDown className="h-3 w-3 text-slate-400" />
               </button>
 
@@ -136,8 +139,19 @@ export function MailboxHeader({
             </div>
           </div>
 
-          {/* Auto Refresh Indicator Pill */}
+          {/* Right Top Actions (History & Auto Refresh) */}
           <div className="flex items-center gap-2">
+            {/* Riwayat / Switcher Button */}
+            <button
+              onClick={onOpenHistory}
+              title="Buka daftar email yang pernah dipakai / cari email lama"
+              className="flex items-center gap-1.5 rounded-full border border-indigo-500/40 bg-indigo-500/15 px-3 py-1 text-[11px] font-semibold text-indigo-300 hover:bg-indigo-500/25 hover:text-indigo-200 active:scale-95 transition-all shadow-sm"
+            >
+              <History className="h-3 w-3 text-indigo-400" />
+              <span>Cari Email Lama</span>
+            </button>
+
+            {/* Auto Refresh Indicator Pill */}
             <button
               onClick={onRefresh}
               title="Refresh inbox sekarang"
@@ -188,7 +202,7 @@ export function MailboxHeader({
           </button>
         </div>
 
-        {/* Bottom Row: Action Buttons Grid (Fully responsive 2-col or 4-col) */}
+        {/* Bottom Row: Action Buttons Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:flex lg:flex-wrap items-center gap-2">
           {/* Random New Mailbox */}
           <button
@@ -210,13 +224,23 @@ export function MailboxHeader({
             <span className="truncate">Custom Alias</span>
           </button>
 
+          {/* History / Search Old Mailboxes */}
+          <button
+            onClick={onOpenHistory}
+            title="Cari dan buka kotak masuk yang pernah dipakai sebelumnya"
+            className="flex items-center justify-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 py-2.5 text-xs font-semibold text-indigo-300 shadow-md transition-all hover:bg-indigo-500/25 hover:text-indigo-200 active:scale-95"
+          >
+            <History className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+            <span className="truncate">Riwayat Email</span>
+          </button>
+
           {/* Test Simulation Email */}
           <button
             onClick={onOpenTestEmail}
             title="Simulasikan email masuk (OTP, Newsletter, Spam, dll)"
-            className="flex items-center justify-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/15 px-3 py-2.5 text-xs font-semibold text-indigo-300 shadow-md transition-all hover:bg-indigo-500/25 hover:text-indigo-200 active:scale-95"
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-700/80 bg-slate-800/80 px-3 py-2.5 text-xs font-semibold text-slate-200 shadow-md transition-all hover:border-slate-600 hover:bg-slate-700 hover:text-white active:scale-95"
           >
-            <FlaskConical className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+            <FlaskConical className="h-3.5 w-3.5 text-amber-400 shrink-0" />
             <span className="truncate">Test Email</span>
           </button>
 

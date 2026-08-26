@@ -20,6 +20,9 @@ export interface Mailbox {
   createdAt: string;
   expiresAt: string | null; // ISO timestamp or null
   isStarred?: boolean;
+  messageCount?: number;
+  unreadCount?: number;
+  lastActive?: string;
 }
 
 // Security & Spam Assessment

@@ -192,13 +192,30 @@ export const db = {
   // Mailboxes
   getMailboxes(): Mailbox[] {
     const data = loadDb();
-    return data.mailboxes;
+    return (data.mailboxes || []).map(mb => {
+      const msgs = (data.messages || []).filter(m => m.mailboxAddress === mb.address);
+      const unread = msgs.filter(m => !m.isRead).length;
+      return {
+        ...mb,
+        messageCount: msgs.length,
+        unreadCount: unread,
+        lastActive: msgs[0]?.receivedAt || mb.createdAt,
+      };
+    });
   },
 
   getMailbox(address: string): Mailbox | null {
     const data = loadDb();
     const normalized = address.toLowerCase().trim();
-    return data.mailboxes.find(m => m.address === normalized) || null;
+    const mb = data.mailboxes.find(m => m.address === normalized);
+    if (!mb) return null;
+    const msgs = (data.messages || []).filter(m => m.mailboxAddress === normalized);
+    return {
+      ...mb,
+      messageCount: msgs.length,
+      unreadCount: msgs.filter(m => !m.isRead).length,
+      lastActive: msgs[0]?.receivedAt || mb.createdAt,
+    };
   },
 
   createOrGetMailbox(address: string): Mailbox {
