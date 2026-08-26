@@ -17,6 +17,8 @@ import {
   Eye,
   EyeOff,
   Link as LinkIcon,
+  HelpCircle,
+  ArrowRight,
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
 import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
@@ -37,7 +39,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [copiedPass, setCopiedPass] = useState<string | null>(null);
-  const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [copiedCombo, setCopiedCombo] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
 
@@ -92,7 +94,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     }
   };
 
-  const handleCopyText = (text: string, type: 'email' | 'pass' | 'link' | 'all') => {
+  const handleCopyText = (text: string, type: 'email' | 'pass' | 'combo' | 'all') => {
     navigator.clipboard.writeText(text);
     if (type === 'email') {
       setCopiedEmail(text);
@@ -100,9 +102,9 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     } else if (type === 'pass') {
       setCopiedPass(text);
       setTimeout(() => setCopiedPass(null), 2000);
-    } else if (type === 'link') {
-      setCopiedLink(text);
-      setTimeout(() => setCopiedLink(null), 2000);
+    } else if (type === 'combo') {
+      setCopiedCombo(text);
+      setTimeout(() => setCopiedCombo(null), 2000);
     } else {
       setCopiedAll(true);
       setTimeout(() => setCopiedAll(false), 2000);
@@ -114,7 +116,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
       .filter((r) => r.success)
       .map(
         (r, i) =>
-          `[${i + 1}] Layanan: ${r.serviceName || currentService.name}\n    Email: ${r.email}\n    Password: ${r.password || '(Tanpa Password / Magic Link)'}\n    Link Inbox: ${r.inboxUrl}\n    Durasi: ${r.duration || 'Pro/Trial'}`
+          `[${i + 1}] Layanan: ${r.serviceName || currentService.name}\n    Email: ${r.email}\n    Password: ${r.password || '(Magic Link Auth)'}\n    Format: ${r.email}:${r.password || ''}\n    Link Inbox: ${r.inboxUrl}\n    Durasi: ${r.duration || 'Pro/Trial'}`
       )
       .join('\n\n');
     handleCopyText(text, 'all');
@@ -137,7 +139,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-white">Auto Pro &amp; Trial Generator</h3>
                 <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                  PRO Feature
+                  PRO VIP
                 </span>
               </div>
               <p className="text-xs text-slate-400">Generate akun premium &amp; password otomatis.</p>
@@ -153,11 +155,11 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
         </div>
 
         {/* Modal Body (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {/* Service Selector Tabs */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Pilih Layanan yang Ingin Digenerate:
+              Pilih Layanan Target:
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {(Object.keys(SUPPORTED_SERVICES) as ServiceType[]).map((st) => {
@@ -190,12 +192,23 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             </div>
           </div>
 
+          {/* Workflow Guide Banner */}
+          <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/30 p-3 text-xs text-indigo-200">
+            <div className="flex items-center gap-1.5 font-bold text-indigo-300 mb-1">
+              <HelpCircle className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+              <span>Cara Kerja {currentService.name}:</span>
+            </div>
+            <p className="text-[11px] text-slate-300 whitespace-pre-line leading-relaxed">
+              {currentService.instructions}
+            </p>
+          </div>
+
           {/* Form Controls */}
-          <form onSubmit={handleGenerate} className="space-y-4">
+          <form onSubmit={handleGenerate} className="space-y-3.5">
             {/* Canva Invite Link (If Canva selected) */}
             {currentService.requiresInviteUrl && (
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
                   <LinkIcon className="h-3.5 w-3.5 text-cyan-400" />
                   <span>Link Undangan Tim Canva (Opsional):</span>
                 </label>
@@ -206,9 +219,6 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                   placeholder="https://www.canva.com/brand/join?token=..."
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Masukkan link undangan tim jika ada, sistem akan menyematkannya ke akun baru.
-                </p>
               </div>
             )}
 
@@ -238,7 +248,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             {/* Custom Alias (Single account only) */}
             {count === 1 && (
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Nama Alias Kustom (Opsional):
                 </label>
                 <div className="flex items-center rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 focus-within:border-emerald-500">
@@ -255,12 +265,12 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             )}
 
             {/* Password Info Box */}
-            <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5">
+            <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2">
               <div className="flex items-center gap-2">
-                <Key className="h-4 w-4 text-emerald-400" />
+                <Key className="h-4 w-4 text-amber-400" />
                 <div>
                   <p className="text-xs font-bold text-slate-200">Password Otomatis</p>
-                  <p className="text-[10px] text-slate-400">Password kuat &amp; unik digenerate untuk setiap akun.</p>
+                  <p className="text-[10px] text-slate-400">Password aman unik digenerate untuk setiap akun.</p>
                 </div>
               </div>
               <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
@@ -314,7 +324,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-slate-200"
                   >
                     {showPasswords ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                    <span>{showPasswords ? 'Sembunyikan' : 'Lihat Pass'}</span>
+                    <span>{showPasswords ? 'Tutup Pass' : 'Lihat Pass'}</span>
                   </button>
 
                   <button
@@ -332,16 +342,14 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                 {results.map((acc, idx) => {
                   const isEmailCopied = copiedEmail === acc.email;
                   const isPassCopied = copiedPass === acc.password;
-                  const isLinkCopied = copiedLink === acc.inboxUrl;
+                  const comboText = `${acc.email}:${acc.password || ''}`;
+                  const isComboCopied = copiedCombo === comboText;
+                  const signupTarget = inviteUrl || currentService.signupUrl;
 
                   return (
                     <div
                       key={acc.id || idx}
-                      className={`rounded-2xl border p-3 text-xs transition-all ${
-                        acc.success
-                          ? 'border-emerald-500/40 bg-slate-950/90'
-                          : 'border-rose-500/40 bg-rose-950/20'
-                      }`}
+                      className="rounded-2xl border border-emerald-500/40 bg-slate-950/90 p-3.5 text-xs space-y-2.5 shadow-md"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-1.5 flex-1 min-w-0">
@@ -362,7 +370,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                           {acc.password && (
                             <div className="flex items-center gap-2 text-slate-300">
                               <span className="text-[11px] text-slate-400">🔑 Pass:</span>
-                              <span className="font-mono font-bold text-amber-300">
+                              <span className="font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
                                 {showPasswords ? acc.password : '••••••••••••'}
                               </span>
                               <button
@@ -377,7 +385,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
 
                           {/* Inbox Link */}
                           <div className="flex items-center gap-1 text-[11px] text-slate-400 truncate">
-                            <span className="shrink-0">🔗 Inbox:</span>
+                            <span className="shrink-0">📬 Inbox OTP:</span>
                             <a
                               href={acc.inboxUrl}
                               target="_blank"
@@ -389,26 +397,50 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                           </div>
                         </div>
 
-                        {/* Quick Copy Action */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleCopyText(acc.email, 'email')}
-                            className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:bg-slate-700"
-                            title="Salin Email"
-                          >
-                            {isEmailCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-                          </button>
+                        {/* Quick Copy Single Email */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopyText(acc.email, 'email')}
+                          className="rounded-lg border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:bg-slate-700 shrink-0"
+                          title="Salin Email"
+                        >
+                          {isEmailCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+
+                      {/* Direct Action Buttons on Result Card */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80 flex-wrap sm:flex-nowrap">
+                        {signupTarget ? (
                           <a
-                            href={acc.inboxUrl}
+                            href={signupTarget}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-1.5 text-indigo-300 hover:bg-indigo-500/20"
-                            title="Buka Inbox"
+                            className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-cyan-500 hover:to-indigo-500 active:scale-95 transition-all text-center"
                           >
+                            <span>🚀 Buka Sign-Up {currentService.name.split(' ')[0]}</span>
                             <ExternalLink className="h-3 w-3" />
                           </a>
-                        </div>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopyText(comboText, 'combo')}
+                          className="flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-850 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-800 active:scale-95 transition-all"
+                          title="Salin dalam format email:password"
+                        >
+                          {isComboCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                          <span>{isComboCopied ? 'Tersalin!' : 'Salin Email:Pass'}</span>
+                        </button>
+
+                        <a
+                          href={acc.inboxUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-1 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-3 py-2 text-xs font-bold text-indigo-300 hover:bg-indigo-500/20 active:scale-95 transition-all"
+                        >
+                          <Mail className="h-3.5 w-3.5 text-indigo-400" />
+                          <span>Buka Inbox</span>
+                        </a>
                       </div>
                     </div>
                   );
