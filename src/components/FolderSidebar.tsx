@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Mail, Inbox, ShieldAlert, Star, Activity, ShieldCheck } from 'lucide-react';
+import { Mail, Inbox, ShieldAlert, Star, Activity, ShieldCheck, Zap } from 'lucide-react';
 
-export type FolderType = 'all' | 'inbox' | 'spam' | 'starred' | 'logs';
+export type FolderType = 'all' | 'inbox' | 'spam' | 'starred' | 'logs' | 'am_accounts';
 
 interface FolderSidebarProps {
   currentFolder: FolderType;
@@ -14,13 +14,16 @@ interface FolderSidebarProps {
     spam: number;
     starred: number;
     logs: number;
+    amAccounts?: number;
   };
+  isPro?: boolean;
 }
 
 export function FolderSidebar({
   currentFolder,
   onSelectFolder,
   counts,
+  isPro,
 }: FolderSidebarProps) {
   const navItems = [
     {
@@ -70,6 +73,19 @@ export function FolderSidebar({
     },
   ];
 
+  // Only add AM Accounts folder for PRO users
+  if (isPro) {
+    navItems.push({
+      id: 'am_accounts' as FolderType,
+      label: 'Akun AM Prem',
+      sublabel: 'Riwayat Generator',
+      icon: Zap,
+      count: counts.amAccounts || 0,
+      color: 'text-emerald-400',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+    });
+  }
+
   return (
     <div className="flex flex-col justify-between h-full space-y-4 rounded-2xl sm:rounded-3xl border border-slate-800/80 bg-slate-950/80 p-3.5 sm:p-4 shadow-xl backdrop-blur-xl">
       {/* Navigation Folder List */}
@@ -100,7 +116,7 @@ export function FolderSidebar({
                 </div>
               </div>
 
-              {item.count > 0 && (
+              {item.count !== undefined && item.count > 0 && (
                 <span className={`ml-2 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-mono font-bold ${item.badgeColor}`}>
                   {item.count}
                 </span>

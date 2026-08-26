@@ -237,6 +237,7 @@ function loadDb(): DatabaseSchema {
         logs: parsed.logs || [],
         users: parsed.users || [],
         vouchers: parsed.vouchers && parsed.vouchers.length > 0 ? parsed.vouchers : DEFAULT_VOUCHERS,
+        amAccounts: Array.isArray(parsed.amAccounts) ? parsed.amAccounts : [],
       };
       return memoryDbCache;
     } catch (e) {
@@ -253,6 +254,7 @@ function loadDb(): DatabaseSchema {
     logs: [],
     users: [],
     vouchers: DEFAULT_VOUCHERS,
+    amAccounts: [],
   };
 
   saveDbSync(initialDb);
@@ -802,6 +804,59 @@ export const db = {
   clearLogs() {
     const data = loadDb();
     data.logs = [];
+    saveDb(data);
+  },
+
+  // AM Premium Accounts History
+  getAmAccounts(userId?: string, deviceId?: string) {
+    const data = loadDb();
+    const all = data.amAccounts || [];
+    if (userId) {
+      return all.filter((a) => a.userId === userId);
+    }
+    if (deviceId) {
+      return all.filter((a) => a.deviceFingerprint === deviceId);
+    }
+    return all;
+  },
+
+  saveAmAccount(account: any) {
+    const data = loadDb();
+    if (!data.amAccounts) data.amAccounts = [];
+    data.amAccounts = data.amAccounts.filter((a) => a.id !== account.id && a.email !== account.email);
+    data.amAccounts.unshift(account);
+    if (data.amAccounts.length > 500) {
+      data.amAccounts = data.amAccounts.slice(0, 500);
+    }
+    saveDb(data);
+  },
+
+  deleteAmAccount(id: string, userId?: string): boolean {
+    const data = loadDb();
+    if (!data.amAccounts) return false;
+    const initialLen = data.amAccounts.length;
+    data.amAccounts = data.amAccounts.filter((a) => {
+      if (a.id === id) {
+        if (userId && a.userId && a.userId !== userId) return true;
+        return false;
+      }
+      return true;
+    });
+    if (data.amAccounts.length !== initialLen) {
+      saveDb(data);
+      return true;
+    }
+    return false;
+  },
+
+  clearAmAccounts(userId?: string) {
+    const data = loadDb();
+    if (!data.amAccounts) return;
+    if (userId) {
+      data.amAccounts = data.amAccounts.filter((a) => a.userId !== userId);
+    } else {
+      data.amAccounts = [];
+    }
     saveDb(data);
   },
 

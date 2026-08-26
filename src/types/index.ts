@@ -91,6 +91,19 @@ export interface AppSettings {
   }>;
 }
 
+// Alight Motion Premium Account History Item
+export interface AmPremiumAccount {
+  id: string;
+  email: string;
+  alias: string;
+  inboxUrl: string;
+  duration: string;
+  status: 'active' | 'failed';
+  createdAt: string;
+  userId?: string;
+  deviceFingerprint?: string;
+}
+
 // User Subscription & Profile Model
 export interface User {
   id: string;
@@ -107,6 +120,7 @@ export interface User {
   keepEmailsForever?: boolean;
   savedMailboxes?: string[];
   monitoredAliases?: string[]; // list of alias prefixes to send to Telegram
+  amAccounts?: AmPremiumAccount[];
   createdAt: string;
 }
 
@@ -145,4 +159,5 @@ export interface DatabaseSchema {
   logs: InboundLog[];
   users: User[];
   vouchers: Voucher[];
+  amAccounts?: AmPremiumAccount[];
 }

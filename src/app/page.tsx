@@ -12,6 +12,7 @@ import { CustomAliasModal } from '@/components/CustomAliasModal';
 import { QrCodeModal } from '@/components/QrCodeModal';
 import { AuthModal } from '@/components/AuthModal';
 import { AmPremiumModal } from '@/components/AmPremiumModal';
+import { AmAccountsTab } from '@/components/AmAccountsTab';
 import { AppSettings, DomainConfig, EmailMessage, Mailbox, User } from '@/types';
 import { playNotificationSound } from '@/lib/sound';
 import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical, Crown, Zap } from 'lucide-react';
@@ -27,6 +28,7 @@ export default function Home() {
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [refreshCountdown, setRefreshCountdown] = useState<number>(10);
+  const [amAccountsCount, setAmAccountsCount] = useState<number>(0);
 
   // User Auth & Subscription State
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -51,6 +53,28 @@ export default function Home() {
   // Keep previous messages count to detect incoming mail and play chime
   const prevCountRef = useRef<number>(0);
 
+  // Fetch count of AM Premium accounts
+  const fetchAmAccountsCount = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('tempmail_session_token');
+    const deviceId = localStorage.getItem('tempmail_device_id') || 'dev_' + Math.random().toString(36).substring(2, 9);
+    localStorage.setItem('tempmail_device_id', deviceId);
+
+    const headers: Record<string, string> = { 'x-device-id': deviceId };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      headers['x-session-token'] = token;
+    }
+
+    try {
+      const res = await fetch('/api/am-premium', { headers });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.accounts)) {
+        setAmAccountsCount(data.accounts.length);
+      }
+    } catch (e) {}
+  }, []);
+
   // Fetch current user session with token from localStorage
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -72,7 +96,6 @@ export default function Home() {
           localStorage.setItem('tempmail_saved_user', JSON.stringify(data.user));
         }
       } else {
-        // If server says null and we had no valid token
         if (typeof window !== 'undefined' && !localStorage.getItem('tempmail_session_token')) {
           setCurrentUser(null);
           localStorage.removeItem('tempmail_saved_user');
@@ -114,6 +137,7 @@ export default function Home() {
   // 2. Fetch messages for active mailbox
   const fetchMessages = useCallback(async (mailboxAddress: string, folder = currentFolder) => {
     if (!mailboxAddress) return;
+    if (folder === 'am_accounts') return;
     setIsRefreshing(true);
     try {
       const res = await fetch(
@@ -123,7 +147,6 @@ export default function Home() {
       if (data.success && Array.isArray(data.messages)) {
         setMessages(data.messages);
 
-        // If new messages arrived, trigger sound notification
         if (data.messages.length > prevCountRef.current && prevCountRef.current !== 0) {
           if (soundEnabled) {
             playNotificationSound();
@@ -131,7 +154,6 @@ export default function Home() {
         }
         prevCountRef.current = data.messages.length;
 
-        // Auto select first message on desktop only if none selected
         if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
           if (!selectedMessageId && data.messages.length > 0) {
             setSelectedMessageId(data.messages[0].id);
@@ -154,7 +176,6 @@ export default function Home() {
       if (targetAddress) {
         url = `/api/mailboxes/${encodeURIComponent(targetAddress)}`;
       } else {
-        // Create or get random mailbox
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -171,7 +192,6 @@ export default function Home() {
         prevCountRef.current = 0;
         fetchMessages(data.mailbox.address);
 
-        // Auto associate with logged-in user if token exists
         if (typeof window !== 'undefined') {
           const token = localStorage.getItem('tempmail_session_token');
           if (token) {
@@ -179,124 +199,73 @@ export default function Home() {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
                 'x-session-token': token,
               },
-              body: JSON.stringify({ mailboxAddress: data.mailbox.address }),
+              body: JSON.stringify({ emailAddress: data.mailbox.address }),
             }).catch(() => {});
           }
         }
       }
-    } catch (e) {
-      console.error('Error init mailbox:', e);
+    } catch (err) {
+      console.error('Error initializing mailbox:', err);
     }
   }, [activeDomain, fetchMessages]);
 
-  // Initial load
   useEffect(() => {
     fetchSettingsAndDomains();
     fetchCurrentUser();
-  }, [fetchSettingsAndDomains, fetchCurrentUser]);
+    fetchAmAccountsCount();
+  }, [fetchSettingsAndDomains, fetchCurrentUser, fetchAmAccountsCount]);
 
   useEffect(() => {
     if (domains.length > 0 && !mailbox) {
-      // Check URL query param ?mailbox= / ?mail= / ?alias= / ?name=
       if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        const paramBox =
-          params.get('mailbox') ||
-          params.get('mail') ||
-          params.get('alias') ||
-          params.get('name') ||
-          params.get('user');
-
-        if (paramBox) {
-          const dom = activeDomain || domains[0]?.name || 'loginptn.xyz';
-          const full = paramBox.includes('@')
-            ? paramBox.toLowerCase().trim()
-            : `${paramBox.toLowerCase().trim()}@${dom}`;
-          initMailbox(full);
+        const urlParams = new URLSearchParams(window.location.search);
+        const mailParam = urlParams.get('mail');
+        if (mailParam) {
+          const cleanAlias = mailParam.split('@')[0];
+          const targetDomain = mailParam.includes('@') ? mailParam.split('@')[1] : activeDomain || domains[0].name;
+          initMailbox(`${cleanAlias}@${targetDomain}`);
           return;
         }
       }
       initMailbox();
     }
-  }, [domains, mailbox, activeDomain, initMailbox]);
+  }, [domains, mailbox, initMailbox, activeDomain]);
 
-  // Sync browser URL parameter when active mailbox changes
+  // Periodic Auto-refresh Timer
   useEffect(() => {
-    if (mailbox?.name && typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('mail', mailbox.name);
-      window.history.replaceState({}, '', url.toString());
-    }
-  }, [mailbox?.name]);
+    const intervalSeconds = settings?.autoRefreshSeconds || 10;
+    setRefreshCountdown(intervalSeconds);
 
-  // Handle auto-refresh countdown (faster for PRO users: 4s instead of 10s)
-  useEffect(() => {
-    const intervalSecs = currentUser?.isPro ? 4 : (settings?.autoRefreshSeconds || 10);
     const timer = setInterval(() => {
       setRefreshCountdown((prev) => {
         if (prev <= 1) {
-          if (mailbox?.address) {
-            fetchMessages(mailbox.address);
+          if (mailbox && currentFolder !== 'am_accounts') {
+            fetchMessages(mailbox.address, currentFolder);
           }
-          return intervalSecs;
+          return intervalSeconds;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentUser?.isPro, settings?.autoRefreshSeconds, mailbox?.address, fetchMessages]);
+  }, [mailbox, currentFolder, settings?.autoRefreshSeconds, fetchMessages]);
 
-  // Handle switching folder
+  // Switch folder
   const handleSelectFolder = (folder: FolderType) => {
     setCurrentFolder(folder);
-    if (folder === 'logs') {
-      setSettingsInitialTab('logs');
-      setSettingsModalOpen(true);
-      return;
-    }
-    if (mailbox?.address) {
+    setSelectedMessageId(null);
+    if (mailbox && folder !== 'am_accounts') {
       fetchMessages(mailbox.address, folder);
     }
   };
 
   // Generate random new mailbox
-  const handleGenerateRandom = async () => {
-    try {
-      const res = await fetch('/api/mailboxes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ generateRandom: true, domain: activeDomain || 'loginptn.xyz' }),
-      });
-      const data = await res.json();
-      if (data.success && data.mailbox) {
-        setMailbox(data.mailbox);
-        setSelectedMessageId(null);
-        prevCountRef.current = 0;
-        fetchMessages(data.mailbox.address);
-
-        // Auto associate with logged-in user if token exists
-        if (typeof window !== 'undefined') {
-          const token = localStorage.getItem('tempmail_session_token');
-          if (token) {
-            fetch('/api/auth/save-mailbox', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'x-session-token': token,
-              },
-              body: JSON.stringify({ mailboxAddress: data.mailbox.address }),
-            }).catch(() => {});
-          }
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  const handleGenerateRandom = () => {
+    initMailbox();
   };
 
   // Switch domain
@@ -391,6 +360,7 @@ export default function Home() {
     spam: messages.filter((m) => m.isSpam).length,
     starred: messages.filter((m) => m.isStarred).length,
     logs: 0,
+    amAccounts: amAccountsCount,
   };
 
   return (
@@ -410,28 +380,30 @@ export default function Home() {
 
       {/* Main Container */}
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-3 sm:gap-5 p-2.5 sm:p-5 lg:p-8">
-        {/* Hero Mailbox Bar (Hidden on Mobile when viewing an individual email for maximum reading space) */}
-        <div className={selectedMessageId ? 'hidden md:block' : 'block'}>
-          <MailboxHeader
-            mailbox={mailbox}
-            domains={domains}
-            activeDomain={activeDomain}
-            onSelectDomain={handleSelectDomain}
-            onSelectMailbox={(address) => initMailbox(address)}
-            onGenerateRandom={handleGenerateRandom}
-            onOpenCustomAlias={() => setCustomAliasModalOpen(true)}
-            onOpenQrCode={() => setQrCodeModalOpen(true)}
-            onOpenTestEmail={() => setTestEmailModalOpen(true)}
-            onRefresh={() => mailbox && fetchMessages(mailbox.address)}
-            onClearMailbox={handleClearMailbox}
-            onOpenSettings={handleOpenSettings}
-            isRefreshing={isRefreshing}
-            refreshCountdown={refreshCountdown}
-            totalMessages={messages.length}
-          />
-        </div>
+        {/* Hero Mailbox Bar (Hidden when in AM Accounts tab or viewing individual email) */}
+        {currentFolder !== 'am_accounts' && (
+          <div className={selectedMessageId ? 'hidden md:block' : 'block'}>
+            <MailboxHeader
+              mailbox={mailbox}
+              domains={domains}
+              activeDomain={activeDomain}
+              onSelectDomain={handleSelectDomain}
+              onSelectMailbox={(address) => initMailbox(address)}
+              onGenerateRandom={handleGenerateRandom}
+              onOpenCustomAlias={() => setCustomAliasModalOpen(true)}
+              onOpenQrCode={() => setQrCodeModalOpen(true)}
+              onOpenTestEmail={() => setTestEmailModalOpen(true)}
+              onRefresh={() => mailbox && fetchMessages(mailbox.address)}
+              onClearMailbox={handleClearMailbox}
+              onOpenSettings={handleOpenSettings}
+              isRefreshing={isRefreshing}
+              refreshCountdown={refreshCountdown}
+              totalMessages={messages.length}
+            />
+          </div>
+        )}
 
-        {/* Mobile Folder Filter Bar (Visible only on mobile when browsing email list) */}
+        {/* Mobile Folder Filter Bar */}
         {!selectedMessageId && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:hidden custom-scrollbar">
             {[
@@ -439,6 +411,9 @@ export default function Home() {
               { id: 'inbox' as FolderType, label: 'Inbox', count: counts.inbox, icon: Inbox },
               { id: 'spam' as FolderType, label: 'Spam', count: counts.spam, icon: ShieldAlert },
               { id: 'starred' as FolderType, label: 'Favorit', count: counts.starred, icon: Star },
+              ...(currentUser?.isPro
+                ? [{ id: 'am_accounts' as FolderType, label: '⚡ AM Prem', count: counts.amAccounts, icon: Zap }]
+                : []),
             ].map((item) => {
               const Icon = item.icon;
               const isActive = currentFolder === item.id;
@@ -448,7 +423,9 @@ export default function Home() {
                   onClick={() => handleSelectFolder(item.id)}
                   className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all active:scale-95 ${
                     isActive
-                      ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-600/30'
+                      ? item.id === 'am_accounts'
+                        ? 'bg-gradient-to-r from-emerald-600 to-cyan-600 text-white shadow-md'
+                        : 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-600/30'
                       : 'border border-slate-800 bg-slate-900/90 text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -477,61 +454,82 @@ export default function Home() {
               currentFolder={currentFolder}
               onSelectFolder={handleSelectFolder}
               counts={counts}
+              isPro={currentUser?.isPro}
             />
           </div>
 
-          {/* Email List Column */}
-          <div
-            className={`h-full ${
-              selectedMessageId
-                ? 'hidden md:block md:col-span-8 lg:col-span-4'
-                : 'col-span-1 md:col-span-8 lg:col-span-4'
-            }`}
-          >
-            <EmailList
-              messages={messages}
-              selectedMessageId={selectedMessageId}
-              onSelectMessage={(id) => setSelectedMessageId(id)}
-              onToggleStar={handleToggleStar}
-              onDeleteMessage={handleDeleteMessage}
-              onOpenTestEmail={() => setTestEmailModalOpen(true)}
-              currentFolder={currentFolder}
-              isLoading={isRefreshing}
-            />
-          </div>
+          {/* Main Area: Render AM Accounts Tab OR Normal Email Views */}
+          {currentFolder === 'am_accounts' ? (
+            <div className="col-span-1 md:col-span-8 lg:col-span-9 h-full">
+              <AmAccountsTab
+                currentUser={currentUser}
+                onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
+                onOpenMailbox={(alias) => {
+                  initMailbox(`${alias}@${activeDomain || 'loginptn.xyz'}`);
+                  setCurrentFolder('inbox');
+                }}
+                onOpenAuthModal={() => setAuthModalOpen(true)}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Email List Column */}
+              <div
+                className={`h-full ${
+                  selectedMessageId
+                    ? 'hidden md:block md:col-span-8 lg:col-span-4'
+                    : 'col-span-1 md:col-span-8 lg:col-span-4'
+                }`}
+              >
+                <EmailList
+                  messages={messages}
+                  selectedMessageId={selectedMessageId}
+                  onSelectMessage={(id) => setSelectedMessageId(id)}
+                  onToggleStar={handleToggleStar}
+                  onDeleteMessage={handleDeleteMessage}
+                  onOpenTestEmail={() => setTestEmailModalOpen(true)}
+                  currentFolder={currentFolder}
+                  isLoading={isRefreshing}
+                />
+              </div>
 
-          {/* Right Email Detail Viewer Column */}
-          <div
-            className={`h-full ${
-              !selectedMessageId
-                ? 'hidden lg:block lg:col-span-5'
-                : 'col-span-1 md:col-span-12 lg:col-span-5'
-            }`}
-          >
-            <EmailViewer
-              message={selectedMessage}
-              onBack={() => setSelectedMessageId(null)}
-              onToggleStar={(id) => handleToggleStar(id)}
-              onDelete={(id) => handleDeleteMessage(id)}
-            />
-          </div>
+              {/* Right Email Detail Viewer Column */}
+              <div
+                className={`h-full ${
+                  !selectedMessageId
+                    ? 'hidden lg:block lg:col-span-5'
+                    : 'col-span-1 md:col-span-12 lg:col-span-5'
+                }`}
+              >
+                <EmailViewer
+                  message={selectedMessage}
+                  onBack={() => setSelectedMessageId(null)}
+                  onToggleStar={(id) => handleToggleStar(id)}
+                  onDelete={(id) => handleDeleteMessage(id)}
+                />
+              </div>
+            </>
+          )}
         </div>
       </main>
 
       {/* Floating Bottom Quick Action Bar for Mobile View */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800/90 bg-slate-950/95 p-1.5 backdrop-blur-xl md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800/90 bg-slate-950/95 p-1.5 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around gap-1">
-          <button
-            onClick={() => setAmPremiumModalOpen(true)}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-bold text-emerald-400 active:scale-95 transition-all hover:bg-slate-900"
-          >
-            <Zap className="h-4 w-4 text-emerald-400 fill-emerald-400/20" />
-            <span>AM Prem</span>
-          </button>
+          {/* ONLY show AM Prem button if user is PRO */}
+          {currentUser?.isPro && (
+            <button
+              onClick={() => setAmPremiumModalOpen(true)}
+              className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-bold text-emerald-400 active:scale-95 transition-all hover:bg-slate-900"
+            >
+              <Zap className="h-4 w-4 text-emerald-400 fill-emerald-400/20" />
+              <span>AM Prem</span>
+            </button>
+          )}
 
           <button
             onClick={handleGenerateRandom}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <Shuffle className="h-4 w-4 text-amber-400" />
             <span>Acak</span>
@@ -539,7 +537,7 @@ export default function Home() {
 
           <button
             onClick={() => setCustomAliasModalOpen(true)}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <Mail className="h-4 w-4 text-sky-400" />
             <span>Custom</span>
@@ -547,7 +545,7 @@ export default function Home() {
 
           <button
             onClick={() => handleOpenSettings('pro')}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-amber-300 active:scale-95 transition-all hover:bg-slate-900"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-medium text-amber-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <Crown className="h-4 w-4 text-amber-400 fill-amber-400" />
             <span>VIP</span>
@@ -555,7 +553,7 @@ export default function Home() {
 
           <button
             onClick={() => handleOpenSettings()}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <Settings className="h-4 w-4 text-cyan-400" />
             <span>Setting</span>
@@ -567,7 +565,10 @@ export default function Home() {
       <AmPremiumModal
         isOpen={amPremiumModalOpen}
         onClose={() => setAmPremiumModalOpen(false)}
-        onSuccessCreated={() => mailbox && fetchMessages(mailbox.address)}
+        onSuccessCreated={() => {
+          fetchAmAccountsCount();
+          if (mailbox) fetchMessages(mailbox.address);
+        }}
       />
 
       <AuthModal
@@ -580,6 +581,7 @@ export default function Home() {
             localStorage.setItem('tempmail_session_token', token);
             localStorage.setItem('tempmail_saved_user', JSON.stringify(user));
           }
+          fetchAmAccountsCount();
         }}
         onLogout={handleLogout}
         onOpenProTab={() => handleOpenSettings('pro')}
@@ -594,7 +596,10 @@ export default function Home() {
         currentUser={currentUser}
         onRefreshSettings={fetchSettingsAndDomains}
         onRefreshDomains={fetchSettingsAndDomains}
-        onRefreshUser={fetchCurrentUser}
+        onRefreshUser={() => {
+          fetchCurrentUser();
+          fetchAmAccountsCount();
+        }}
         onOpenAuthModal={() => setAuthModalOpen(true)}
       />
 

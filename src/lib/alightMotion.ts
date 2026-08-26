@@ -1,7 +1,11 @@
 import { db } from './db';
+import { AmPremiumAccount } from '@/types';
 
 export interface AmAccountResult {
+  id: string;
   email: string;
+  alias: string;
+  inboxUrl: string;
   success: boolean;
   statusText: string;
   duration?: string;
@@ -28,7 +32,6 @@ function extractMagicLinkFromEmail(html: string, text: string): string | null {
       html.match(/href=["'](https:\/\/[^"'>\s]*oobCode=[^"'>\s]+)["']/i);
 
     if (linkMatch) {
-      // Decode HTML entities if any (e.g. &amp; -> &)
       return linkMatch[1].replace(/&amp;/g, '&');
     }
   }
@@ -47,14 +50,21 @@ function extractMagicLinkFromEmail(html: string, text: string): string | null {
   return null;
 }
 
-export async function createSingleAmPremium(customAlias?: string, domain = 'loginptn.xyz'): Promise<AmAccountResult> {
+export async function createSingleAmPremium(
+  customAlias?: string,
+  domain = 'loginptn.xyz',
+  userId?: string,
+  deviceFingerprint?: string
+): Promise<AmAccountResult> {
   const alias = customAlias || getRandomAmAlias();
   const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
   const emailAddress = `${cleanAlias}@${domain}`;
   const now = new Date().toISOString();
+  const accountId = 'am_' + Math.random().toString(36).substring(2, 11);
+  const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
 
   // 1. Ensure mailbox exists
-  db.createOrGetMailbox(emailAddress);
+  db.createOrGetMailbox(emailAddress, userId);
 
   try {
     // 2. Request Magic Link from dapjimotionpro generator v2
@@ -73,10 +83,13 @@ export async function createSingleAmPremium(customAlias?: string, domain = 'logi
     const sendData = await sendRes.json().catch(() => ({}));
     if (!sendData.success && !sendData.status) {
       return {
+        id: accountId,
         email: emailAddress,
+        alias: cleanAlias,
+        inboxUrl,
         success: false,
-        statusText: 'Gagal mengirim magic link dari server generator.',
-        error: sendData.error || sendData.message || 'Generator error',
+        statusText: 'Gagal meminta magic link ke server generator.',
+        error: sendData.error || sendData.message || 'Generator service error',
         createdAt: now,
       };
     }
@@ -103,9 +116,12 @@ export async function createSingleAmPremium(customAlias?: string, domain = 'logi
 
     if (!magicLink) {
       return {
+        id: accountId,
         email: emailAddress,
+        alias: cleanAlias,
+        inboxUrl,
         success: false,
-        statusText: 'Timeout: Email magic link dari Alight Motion tidak kunjung tiba dalam 40 detik.',
+        statusText: 'Timeout: Email tautan verifikasi dari Alight Motion tidak kunjung tiba dalam 40 detik.',
         error: 'Email not received',
         createdAt: now,
       };
@@ -133,17 +149,39 @@ export async function createSingleAmPremium(customAlias?: string, domain = 'logi
         verifyData.message ||
         '1 Tahun Premium (Aktif)';
 
-      return {
+      const successResult: AmAccountResult = {
+        id: accountId,
         email: emailAddress,
+        alias: cleanAlias,
+        inboxUrl,
         success: true,
         statusText: 'Sukses Diaktivasi',
         duration: durationStr,
         message: verifyData.message || 'Premium sudah diaktifkan!',
         createdAt: now,
       };
+
+      // Save to database history
+      const amRecord: AmPremiumAccount = {
+        id: accountId,
+        email: emailAddress,
+        alias: cleanAlias,
+        inboxUrl,
+        duration: durationStr,
+        status: 'active',
+        createdAt: now,
+        userId,
+        deviceFingerprint,
+      };
+      db.saveAmAccount(amRecord);
+
+      return successResult;
     } else {
       return {
+        id: accountId,
         email: emailAddress,
+        alias: cleanAlias,
+        inboxUrl,
         success: false,
         statusText: 'Verifikasi Gagal',
         error: verifyData.error || verifyData.message || 'Aktivasi gagal diproses',
@@ -152,7 +190,10 @@ export async function createSingleAmPremium(customAlias?: string, domain = 'logi
     }
   } catch (err: any) {
     return {
+      id: accountId,
       email: emailAddress,
+      alias: cleanAlias,
+      inboxUrl,
       success: false,
       statusText: 'Error Koneksi',
       error: err.message || 'Terjadi kesalahan sistem',
