@@ -10,16 +10,19 @@ import {
   Download,
   RefreshCw,
   Sparkles,
-  ShieldCheck,
   Clock,
   Mail,
-  AlertCircle,
   Plus,
   Crown,
   Play,
+  Key,
+  Eye,
+  EyeOff,
+  Filter,
 } from 'lucide-react';
 import { AmPremiumAccount, User } from '@/types';
 import { fireConfetti } from '@/lib/confetti';
+import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
 
 interface AmAccountsTabProps {
   currentUser: User | null;
@@ -39,9 +42,12 @@ export function AmAccountsTab({
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [activatingAll, setActivatingAll] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+  const [copiedPass, setCopiedPass] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedService, setSelectedService] = useState<string>('all');
+  const [showPasswords, setShowPasswords] = useState(false);
 
   const getSessionHeaders = () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -60,7 +66,6 @@ export function AmAccountsTab({
 
   const fetchAccounts = async () => {
     if (!currentUser?.isPro) {
-      // Load from local storage fallback
       if (typeof window !== 'undefined') {
         const local = localStorage.getItem('tempmail_local_am_accounts');
         if (local) {
@@ -85,7 +90,7 @@ export function AmAccountsTab({
         }
       }
     } catch (e) {
-      console.error('Failed to load AM accounts:', e);
+      console.error('Failed to load accounts:', e);
     } finally {
       setLoading(false);
     }
@@ -95,7 +100,6 @@ export function AmAccountsTab({
     fetchAccounts();
   }, [currentUser]);
 
-  // Handle single account activation retry
   const handleActivateAccount = async (id: string) => {
     setActivatingId(id);
     try {
@@ -118,7 +122,6 @@ export function AmAccountsTab({
     }
   };
 
-  // Handle batch activation of all pending accounts
   const handleActivateAllPending = async () => {
     setActivatingAll(true);
     try {
@@ -141,11 +144,14 @@ export function AmAccountsTab({
     }
   };
 
-  const handleCopy = (text: string, type: 'email' | 'link' | 'all') => {
+  const handleCopy = (text: string, type: 'email' | 'pass' | 'link' | 'all') => {
     navigator.clipboard.writeText(text);
     if (type === 'email') {
       setCopiedEmail(text);
       setTimeout(() => setCopiedEmail(null), 2000);
+    } else if (type === 'pass') {
+      setCopiedPass(text);
+      setTimeout(() => setCopiedPass(null), 2000);
     } else if (type === 'link') {
       setCopiedLink(text);
       setTimeout(() => setCopiedLink(null), 2000);
@@ -156,22 +162,22 @@ export function AmAccountsTab({
   };
 
   const handleCopyAll = () => {
-    if (accounts.length === 0) return;
-    const text = accounts
+    if (filteredAccounts.length === 0) return;
+    const text = filteredAccounts
       .map(
         (a, i) =>
-          `[${i + 1}] Email: ${a.email}\n    Link Inbox: ${a.inboxUrl}\n    Durasi: ${a.duration}\n    Status: ${a.status === 'active' ? 'Aktif' : 'Menunggu Aktivasi'}\n    Dibuat: ${new Date(a.createdAt).toLocaleString('id-ID')}`
+          `[${i + 1}] Layanan: ${a.serviceName || 'Premium Account'}\n    Email: ${a.email}\n    Password: ${a.password || '(Tanpa Password / Magic Link)'}\n    Link Inbox: ${a.inboxUrl}\n    Durasi: ${a.duration}\n    Dibuat: ${new Date(a.createdAt).toLocaleString('id-ID')}`
       )
       .join('\n\n');
     handleCopy(text, 'all');
   };
 
   const handleDownloadTxt = () => {
-    if (accounts.length === 0) return;
-    const text = accounts
+    if (filteredAccounts.length === 0) return;
+    const text = filteredAccounts
       .map(
         (a, i) =>
-          `=== AKUN ALIGHT MOTION PREMIUM #${i + 1} ===\nEmail: ${a.email}\nLink Inbox: ${a.inboxUrl}\nDurasi: ${a.duration}\nStatus: ${a.status === 'active' ? 'Aktif' : 'Menunggu Aktivasi'}\nTanggal: ${new Date(a.createdAt).toISOString()}\n`
+          `=== AKUN PREMIUM #${i + 1} (${a.serviceName || 'Universal Pro'}) ===\nEmail: ${a.email}\nPassword: ${a.password || '(Magic Link Auth)'}\nLink Inbox: ${a.inboxUrl}\nDurasi: ${a.duration}\nStatus: ${a.status === 'active' ? 'Aktif' : 'Menunggu Aktivasi'}\nTanggal: ${new Date(a.createdAt).toISOString()}\n`
       )
       .join('\n');
 
@@ -179,7 +185,7 @@ export function AmAccountsTab({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `am_premium_accounts_${Date.now()}.txt`;
+    link.download = `premium_accounts_${Date.now()}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -204,7 +210,7 @@ export function AmAccountsTab({
   };
 
   const handleClearAll = async () => {
-    if (!confirm('Yakin ingin mengosongkan semua riwayat akun AM Premium?')) return;
+    if (!confirm('Yakin ingin mengosongkan semua riwayat akun Premium?')) return;
     try {
       await fetch('/api/am-premium', {
         method: 'DELETE',
@@ -223,9 +229,17 @@ export function AmAccountsTab({
   const pendingCount = accounts.filter((a) => a.status === 'pending').length;
 
   const filteredAccounts = accounts.filter((a) => {
+    if (selectedService !== 'all') {
+      const matchService = (a.serviceType || 'alight_motion') === selectedService;
+      if (!matchService) return false;
+    }
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return a.email.toLowerCase().includes(q) || a.duration.toLowerCase().includes(q);
+    return (
+      a.email.toLowerCase().includes(q) ||
+      a.duration.toLowerCase().includes(q) ||
+      (a.serviceName && a.serviceName.toLowerCase().includes(q))
+    );
   });
 
   if (!currentUser?.isPro) {
@@ -238,7 +252,7 @@ export function AmAccountsTab({
           Fitur Khusus Member PRO / VIP
         </h3>
         <p className="mt-1 max-w-md text-xs text-slate-400">
-          Generator dan manajemen riwayat Akun Alight Motion (AM) Premium otomatis hanya tersedia untuk pengguna berstatus PRO/VIP.
+          Generator dan manajemen riwayat Akun Premium &amp; Trial otomatis (Alight Motion, Canva, ElevenLabs, Cursor AI) hanya tersedia untuk pengguna berstatus PRO/VIP.
         </p>
 
         <button
@@ -266,7 +280,7 @@ export function AmAccountsTab({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm sm:text-base font-bold text-white">
-                  Riwayat Akun AM Premium
+                  Riwayat Akun Pro &amp; Trial
                 </h3>
                 <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-extrabold text-emerald-300">
                   {accounts.length} Akun
@@ -278,7 +292,7 @@ export function AmAccountsTab({
                 )}
               </div>
               <p className="text-xs text-slate-300 mt-0.5">
-                Daftar akun Alight Motion 1 Tahun Premium yang dibuat otomatis via TempMail.
+                Daftar akun Alight Motion, Canva Pro, ElevenLabs, Cursor AI &amp; password otomatis.
               </p>
             </div>
           </div>
@@ -301,7 +315,7 @@ export function AmAccountsTab({
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:from-emerald-500 hover:to-cyan-500 active:scale-95 transition-all"
             >
               <Plus className="h-4 w-4" />
-              <span>Buat Akun Baru</span>
+              <span>⚡ Buat Akun Baru</span>
             </button>
 
             <button
@@ -316,21 +330,66 @@ export function AmAccountsTab({
         </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+        <button
+          onClick={() => setSelectedService('all')}
+          className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+            selectedService === 'all'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
+          }`}
+        >
+          Semua Layanan ({accounts.length})
+        </button>
+
+        {(Object.keys(SUPPORTED_SERVICES) as ServiceType[]).map((st) => {
+          const s = SUPPORTED_SERVICES[st];
+          const c = accounts.filter((a) => (a.serviceType || 'alight_motion') === st).length;
+          if (c === 0 && st !== 'alight_motion' && st !== 'canva_pro' && st !== 'elevenlabs') return null;
+
+          return (
+            <button
+              key={st}
+              onClick={() => setSelectedService(st)}
+              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                selectedService === st
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>{s.icon}</span>
+              <span>{s.name}</span>
+              <span className="opacity-70 text-[10px]">({c})</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Control Bar: Search & Batch Exports */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cari email akun..."
+          placeholder="Cari email atau layanan..."
           className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
         />
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+          <button
+            type="button"
+            onClick={() => setShowPasswords(!showPasswords)}
+            className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-all"
+          >
+            {showPasswords ? <EyeOff className="h-3.5 w-3.5 text-amber-400" /> : <Eye className="h-3.5 w-3.5 text-slate-400" />}
+            <span>{showPasswords ? 'Sembunyikan Pass' : 'Lihat Pass'}</span>
+          </button>
+
           <button
             onClick={handleCopyAll}
-            disabled={accounts.length === 0}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-40"
+            disabled={filteredAccounts.length === 0}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-40"
           >
             {copiedAll ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5 text-slate-400" />}
             <span>{copiedAll ? 'Tersalin!' : 'Salin Semua'}</span>
@@ -338,8 +397,8 @@ export function AmAccountsTab({
 
           <button
             onClick={handleDownloadTxt}
-            disabled={accounts.length === 0}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-40"
+            disabled={filteredAccounts.length === 0}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-40"
           >
             <Download className="h-3.5 w-3.5 text-sky-400" />
             <span>Unduh .TXT</span>
@@ -364,12 +423,12 @@ export function AmAccountsTab({
             <Mail className="h-6 w-6" />
           </div>
           <h4 className="text-sm font-semibold text-slate-200">
-            {searchQuery ? 'Tidak ada akun yang cocok' : 'Belum ada akun AM Premium'}
+            {searchQuery ? 'Tidak ada akun yang cocok' : 'Belum ada akun yang digenerate'}
           </h4>
           <p className="mt-1 max-w-xs text-xs text-slate-400">
             {searchQuery
               ? 'Coba kata kunci pencarian yang lain.'
-              : 'Klik tombol "Buat Akun Baru" di atas untuk generate akun Alight Motion 1 Tahun secara otomatis!'}
+              : 'Klik tombol "Buat Akun Baru" di atas untuk generate akun Alight Motion, Canva, ElevenLabs, atau Cursor Pro secara instan!'}
           </p>
 
           {!searchQuery && (
@@ -386,10 +445,13 @@ export function AmAccountsTab({
         <div className="grid grid-cols-1 gap-3">
           {filteredAccounts.map((acc, index) => {
             const isEmailCopied = copiedEmail === acc.email;
+            const isPassCopied = copiedPass === acc.password;
             const isLinkCopied = copiedLink === acc.inboxUrl;
             const alias = acc.alias || acc.email.split('@')[0];
             const isPending = acc.status === 'pending';
             const isActivating = activatingId === acc.id;
+            const st = (acc.serviceType as ServiceType) || 'alight_motion';
+            const serviceDef = SUPPORTED_SERVICES[st] || SUPPORTED_SERVICES.custom;
 
             return (
               <div
@@ -401,7 +463,7 @@ export function AmAccountsTab({
                 }`}
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  {/* Left: Email and Details */}
+                  {/* Left: Email, Password and Details */}
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
@@ -411,6 +473,13 @@ export function AmAccountsTab({
                       >
                         {index + 1}
                       </span>
+
+                      {/* Service Badge */}
+                      <span className="rounded-md border border-cyan-500/40 bg-cyan-500/15 px-2 py-0.5 text-[9px] font-bold text-cyan-300 flex items-center gap-1">
+                        <span>{serviceDef.icon}</span>
+                        <span>{acc.serviceName || serviceDef.name}</span>
+                      </span>
+
                       <p className="font-mono text-sm sm:text-base font-bold text-white truncate max-w-full">
                         {acc.email}
                       </p>
@@ -421,10 +490,29 @@ export function AmAccountsTab({
                         </span>
                       ) : (
                         <span className="rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-300">
-                          {acc.duration || '1 Tahun Premium'}
+                          {acc.duration || 'Aktif'}
                         </span>
                       )}
                     </div>
+
+                    {/* Password Display (If available) */}
+                    {acc.password && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-slate-400 flex items-center gap-1">
+                          <Key className="h-3 w-3 text-amber-400" />
+                          <span>Password:</span>
+                        </span>
+                        <span className="font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+                          {showPasswords ? acc.password : '••••••••••••'}
+                        </span>
+                        <button
+                          onClick={() => handleCopy(acc.password!, 'pass')}
+                          className="text-[10px] text-slate-400 hover:text-emerald-400 transition-colors"
+                        >
+                          {isPassCopied ? 'Tersalin' : 'Salin Pass'}
+                        </button>
+                      </div>
+                    )}
 
                     {/* Inbox Link Display */}
                     <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
@@ -471,6 +559,22 @@ export function AmAccountsTab({
                       <span>{isEmailCopied ? 'Tersalin' : 'Salin Email'}</span>
                     </button>
 
+                    {/* Copy Pass Button (if present) */}
+                    {acc.password && (
+                      <button
+                        onClick={() => handleCopy(acc.password!, 'pass')}
+                        className={`flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
+                          isPassCopied
+                            ? 'border border-amber-500/40 bg-amber-500/20 text-amber-300'
+                            : 'border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                        }`}
+                        title="Salin password"
+                      >
+                        {isPassCopied ? <Check className="h-3.5 w-3.5 text-amber-400" /> : <Key className="h-3.5 w-3.5" />}
+                        <span>{isPassCopied ? 'Tersalin' : 'Password'}</span>
+                      </button>
+                    )}
+
                     {/* Copy Link Button */}
                     <button
                       onClick={() => handleCopy(acc.inboxUrl, 'link')}
@@ -482,7 +586,7 @@ export function AmAccountsTab({
                       title="Salin URL kotak masuk"
                     >
                       {isLinkCopied ? <Check className="h-3.5 w-3.5 text-cyan-400" /> : <ExternalLink className="h-3.5 w-3.5" />}
-                      <span>{isLinkCopied ? 'Link Disalin' : 'Salin Link'}</span>
+                      <span>{isLinkCopied ? 'Link Disalin' : 'Link'}</span>
                     </button>
 
                     {/* Open Mailbox Button */}

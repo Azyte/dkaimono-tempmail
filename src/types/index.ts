@@ -96,12 +96,16 @@ export interface AmPremiumAccount {
   id: string;
   email: string;
   alias: string;
+  password?: string;
+  serviceType?: 'alight_motion' | 'canva_pro' | 'elevenlabs' | 'cursor_ai' | 'leonardo_ai' | 'custom' | string;
+  serviceName?: string;
   inboxUrl: string;
   duration: string;
   status: 'active' | 'pending' | 'failed';
   magicLink?: string;
   orderId?: string;
   error?: string;
+  inviteUrl?: string;
   createdAt: string;
   userId?: string;
   deviceFingerprint?: string;

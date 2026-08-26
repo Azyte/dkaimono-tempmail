@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSingleAmPremium, verifyExistingAmAccount, AmAccountResult } from '@/lib/alightMotion';
+import { verifyExistingAmAccount } from '@/lib/alightMotion';
+import { createMultiServiceAccount, ServiceType } from '@/lib/accountGenerator';
 import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 
@@ -19,7 +20,7 @@ async function extractUserAndDevice(req: NextRequest) {
   return { user, deviceId };
 }
 
-// 1. GET /api/am-premium -> List history of AM Premium accounts
+// 1. GET /api/am-premium -> List history of Premium & Trial accounts
 export async function GET(req: NextRequest) {
   try {
     const { user, deviceId } = await extractUserAndDevice(req);
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     if (!user?.isPro) {
       return NextResponse.json(
         {
-          error: 'Fitur Auto AM Premium Creator eksklusif untuk member PRO/VIP.',
+          error: 'Fitur Auto Premium Creator eksklusif untuk member PRO/VIP.',
           isProRequired: true,
         },
         { status: 403 }
@@ -41,11 +42,11 @@ export async function GET(req: NextRequest) {
       accounts,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Gagal mengambil riwayat akun AM' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Gagal mengambil riwayat akun' }, { status: 500 });
   }
 }
 
-// 2. POST /api/am-premium -> Generate AM Premium accounts or retry activation
+// 2. POST /api/am-premium -> Generate Premium accounts or retry activation
 export async function POST(req: NextRequest) {
   try {
     const { user, deviceId } = await extractUserAndDevice(req);
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
     if (!user?.isPro) {
       return NextResponse.json(
         {
-          error: 'Fitur Auto AM Premium Creator eksklusif untuk member PRO/VIP. Silakan klaim voucher VIP terlebih dahulu.',
+          error: 'Fitur Auto Premium Creator eksklusif untuk member PRO/VIP. Silakan klaim voucher VIP terlebih dahulu.',
           isProRequired: true,
         },
         { status: 403 }
@@ -104,19 +105,21 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Standard Batch Generation
+    // Multi-Service Batch Generation
     let count = parseInt(body.count || '1', 10);
+    const serviceType: ServiceType = body.serviceType || 'alight_motion';
     const customAlias = body.customAlias ? String(body.customAlias).trim() : undefined;
+    const inviteUrl = body.inviteUrl ? String(body.inviteUrl).trim() : undefined;
 
     if (isNaN(count) || count < 1) count = 1;
     if (count > 10) count = 10; // Max 10 per batch
 
     const domain = db.getSettings().defaultDomain || 'loginptn.xyz';
-    const results: AmAccountResult[] = [];
+    const results = [];
 
     for (let i = 0; i < count; i++) {
       const alias = count === 1 ? customAlias : undefined;
-      const result = await createSingleAmPremium(alias, domain, user.id, deviceId);
+      const result = await createMultiServiceAccount(serviceType, alias, inviteUrl, domain, user.id, deviceId);
       results.push(result);
 
       if (result.success) {
@@ -140,7 +143,7 @@ export async function POST(req: NextRequest) {
       accounts: results,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Gagal memproses pembuatan akun AM' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Gagal memproses pembuatan akun' }, { status: 500 });
   }
 }
 
@@ -157,7 +160,7 @@ export async function DELETE(req: NextRequest) {
 
     if (id === 'all' || body.clearAll) {
       db.clearAmAccounts(user.id);
-      return NextResponse.json({ success: true, message: 'Semua riwayat akun AM berhasil dihapus.' });
+      return NextResponse.json({ success: true, message: 'Semua riwayat akun berhasil dihapus.' });
     }
 
     if (id) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { createSingleAmPremium, verifyExistingAmAccount } from '@/lib/alightMotion';
+import { verifyExistingAmAccount } from '@/lib/alightMotion';
+import { createMultiServiceAccount, SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGenerator';
 
 function escapeTgHtml(str: string): string {
   if (!str) return '';
@@ -42,18 +43,21 @@ async function sendTelegramMessage(botToken: string, chatId: string | number, te
   }
 }
 
-// Background handler for processing AM Premium without blocking Telegram Webhook HTTP 200 response
-async function processAmPremiumBackground(
+// Background handler for processing multi-service accounts without blocking Telegram Webhook HTTP 200 response
+async function processAccountGenerationBackground(
   botToken: string,
   chatId: string | number,
   userId: string | undefined,
+  serviceType: ServiceType,
   count: number,
   customAlias: string | undefined,
   primaryDomain: string
 ) {
+  const serviceDef = SUPPORTED_SERVICES[serviceType] || SUPPORTED_SERVICES.custom;
+
   const mainReplyKeyboard = {
     keyboard: [
-      [{ text: '⚡ Buat AM Premium Otomatis' }, { text: '🎲 Buat Email Acak' }],
+      [{ text: '⚡ Buat Akun Pro / Trial' }, { text: '🎲 Buat Email Acak' }],
       [{ text: '✏️ Buat Alias Kustom' }, { text: '📬 Cek Inbox Terakhir' }],
       [{ text: '📧 Email Aktif Saya' }],
     ],
@@ -64,34 +68,35 @@ async function processAmPremiumBackground(
   await sendTelegramMessage(
     botToken,
     chatId,
-    `🚀 <b>MEMULAI PEMBUATAN OTOMATIS ${count} AKUN ALIGHT MOTION PREMIUM...</b>\n\n` +
-      `⚡ <i>Direct Magic Link &amp; Fast Activation diaktifkan!</i>\n` +
+    `🚀 <b>MEMULAI PEMBUATAN OTOMATIS ${count} AKUN ${serviceDef.name.toUpperCase()}...</b>\n\n` +
+      `⚡ <i>Auto-Mailbox + Secure Password Generator diaktifkan!</i>\n` +
       `⚙️ <b>Tahapan Otomatis:</b>\n` +
       `1. Generate email baru di <code>@${primaryDomain}</code>\n` +
-      `2. Kirim permintaan Magic Link langsung via Firebase\n` +
-      `3. Tangkap email masuk &amp; link Sign In\n` +
-      `4. Aktivasi &amp; kunci masa aktif Premium 1 Tahun!\n\n` +
+      `2. Buat password acak yang kuat &amp; aman\n` +
+      `3. Aktifkan kotak masuk penerima OTP &amp; verifikasi realtime\n` +
+      `${serviceType === 'alight_motion' ? '4. Eksekusi aktivasi lisensi 1 Tahun via Magic Link\n\n' : '\n'}` +
       `⏳ <i>Mohon tunggu sebentar, proses sedang berjalan...</i>`
   );
 
-  const successfulAccounts: Array<{ email: string; inboxUrl: string; duration: string; isPending?: boolean; id: string }> = [];
+  const successfulAccounts: Array<{ email: string; password?: string; inboxUrl: string; duration: string; isPending?: boolean; id: string }> = [];
 
   for (let i = 0; i < count; i++) {
     const currentAlias = count === 1 ? customAlias : undefined;
     await sendTelegramMessage(
       botToken,
       chatId,
-      `⏳ <b>[${i + 1}/${count}] Mengenerate &amp; Memverifikasi Akun AM Premium...</b>`
+      `⏳ <b>[${i + 1}/${count}] Mengenerate Akun ${serviceDef.name}...</b>`
     );
 
-    const result = await createSingleAmPremium(currentAlias, primaryDomain, userId);
+    const result = await createMultiServiceAccount(serviceType, currentAlias, undefined, primaryDomain, userId);
 
     if (result.success) {
       successfulAccounts.push({
         id: result.id,
         email: result.email,
+        password: result.password,
         inboxUrl: result.inboxUrl,
-        duration: result.duration || '1 Tahun Premium',
+        duration: result.duration || serviceDef.defaultDuration,
         isPending: result.isPending,
       });
 
@@ -110,38 +115,35 @@ async function processAmPremiumBackground(
 
       if (result.isPending) {
         const pendingMsg =
-          `⏳ <b>AKUN AM [${i + 1}/${count}] EMAIL &amp; MAGIC LINK SIAP!</b> ✨\n\n` +
+          `⏳ <b>AKUN [${i + 1}/${count}] EMAIL &amp; MAGIC LINK SIAP!</b> ✨\n\n` +
+          `🏷️ <b>Layanan:</b> ${serviceDef.icon} ${serviceDef.name}\n` +
           `📧 <b>Email:</b> <code>${result.email}</code>\n` +
+          `${result.password ? `🔑 <b>Password:</b> <code>${result.password}</code>\n` : ''}` +
           `🔗 <b>Link Inbox:</b> ${result.inboxUrl}\n` +
           `⚠️ <b>Status:</b> <code>Siap Diaktivasi (Server Antrean Cooldown)</code>\n\n` +
-          `<i>Magic link sudah tertangkap di kotak masuk. Anda dapat langsung menekan tombol aktivasi di bawah ini:</i>`;
+          `<i>Magic link sudah tertangkap di kotak masuk. Tekan tombol aktivasi di bawah ini:</i>`;
 
         const pendingButtons = {
           inline_keyboard: [
-            [
-              { text: '⚡ Aktivasi Akun Ini Sekarang', callback_data: `cb_retry_am_${result.id}` },
-            ],
-            [
-              { text: '📬 Buka Inbox Email Ini', url: result.inboxUrl },
-            ],
+            [{ text: '⚡ Aktivasi Akun Ini Sekarang', callback_data: `cb_retry_am_${result.id}` }],
+            [{ text: '📬 Buka Inbox Email Ini', url: result.inboxUrl }],
           ],
         };
 
         await sendTelegramMessage(botToken, chatId, pendingMsg, pendingButtons);
       } else {
         const singleSuccessMsg =
-          `🎉 <b>AKUN AM PREMIUM [${i + 1}/${count}] BERHASIL AKTIF!</b> ✨\n\n` +
+          `🎉 <b>AKUN ${serviceDef.name.toUpperCase()} [${i + 1}/${count}] BERHASIL DIBUAT!</b> ✨\n\n` +
+          `🏷️ <b>Layanan:</b> ${serviceDef.icon} ${serviceDef.name}\n` +
           `📧 <b>Email:</b> <code>${result.email}</code>\n` +
-          `🔗 <b>Link Inbox:</b> ${result.inboxUrl}\n` +
-          `✨ <b>Masa Aktif:</b> <code>${escapeTgHtml(result.duration || '1 Tahun (Aktif)')}</code>\n` +
-          `✅ <b>Status:</b> Premium Activated\n\n` +
-          `<i>(Ketuk alamat email di atas untuk menyalin dan login di aplikasi Alight Motion)</i>`;
+          `${result.password ? `🔑 <b>Password:</b> <code>${result.password}</code>\n` : ''}` +
+          `✨ <b>Status / Kuota:</b> <code>${escapeTgHtml(result.duration || serviceDef.defaultDuration)}</code>\n` +
+          `🔗 <b>Link Inbox:</b> ${result.inboxUrl}\n\n` +
+          `<i>(Ketuk email atau password di atas untuk langsung menyalin ke clipboard!)</i>`;
 
         const accountButtons = {
           inline_keyboard: [
-            [
-              { text: '📬 Buka Inbox Email Ini', url: result.inboxUrl },
-            ],
+            [{ text: '📬 Buka Inbox Email Ini', url: result.inboxUrl }],
           ],
         };
 
@@ -158,22 +160,24 @@ async function processAmPremiumBackground(
 
   // Final Batch Summary
   if (successfulAccounts.length > 0) {
-    let summaryText = `📋 <b>REKAP AKUN AM PREMIUM SELESAI (${successfulAccounts.length}/${count} Akun Terdaftar)</b>\n\n`;
+    let summaryText = `📋 <b>REKAP AKUN ${serviceDef.name.toUpperCase()} SELESAI (${successfulAccounts.length}/${count} Akun)</b>\n\n`;
     successfulAccounts.forEach((acc, idx) => {
       summaryText += `<b>${idx + 1}.</b> <code>${acc.email}</code>\n`;
-      summaryText += `   🔗 Link: ${acc.inboxUrl}\n`;
+      if (acc.password) summaryText += `   🔑 Pass: <code>${acc.password}</code>\n`;
+      summaryText += `   🔗 Inbox: ${acc.inboxUrl}\n`;
       summaryText += `   ✨ Status: ${acc.isPending ? '⏳ Siap Diaktivasi' : '✅ ' + acc.duration}\n\n`;
     });
-    summaryText += `💡 <i>Semua akun di atas tersimpan aman di menu <b>🎬 Akun AM Prem</b> web TempMail dan dapat diaktivasi kapan saja!</i>`;
+    summaryText += `💡 <i>Semua akun di atas tersimpan aman di menu <b>🎬 Riwayat Akun</b> web TempMail!</i>`;
 
     const summaryKeyboard = {
       inline_keyboard: [
         [
-          { text: '⚡ Buat 1 Lagi', callback_data: 'cb_do_amprem_1' },
-          { text: '⚡ Buat 3 Akun', callback_data: 'cb_do_amprem_3' },
-          { text: '⚡ Buat 5 Akun', callback_data: 'cb_do_amprem_5' },
+          { text: '⚡ Buat 1 Lagi', callback_data: `cb_exec_${serviceType}_1` },
+          { text: '⚡ Buat 3 Akun', callback_data: `cb_exec_${serviceType}_3` },
+          { text: '⚡ Buat 5 Akun', callback_data: `cb_exec_${serviceType}_5` },
         ],
         [
+          { text: '⚡ Ganti Layanan', callback_data: 'cb_hub_services' },
           { text: '📬 Cek Inbox', callback_data: 'cb_inbox' },
         ],
       ],
@@ -184,7 +188,7 @@ async function processAmPremiumBackground(
     await sendTelegramMessage(
       botToken,
       chatId,
-      `❌ Maaf, pembuatan akun AM Premium gagal diproses oleh server generator. Silakan coba beberapa saat lagi.`,
+      `❌ Maaf, pembuatan akun gagal diproses. Silakan coba beberapa saat lagi.`,
       mainReplyKeyboard
     );
   }
@@ -247,10 +251,10 @@ export async function POST(req: NextRequest) {
 
     const primaryDomain = db.getSettings().defaultDomain || 'loginptn.xyz';
 
-    // Standard Reply Keyboard for 1-tap usage in Telegram (Only show AM Prem button if user is PRO)
+    // Standard Reply Keyboard
     const mainReplyKeyboard = {
       keyboard: [
-        user?.isPro ? [{ text: '⚡ Buat AM Premium Otomatis' }, { text: '🎲 Buat Email Acak' }] : [{ text: '🎲 Buat Email Acak' }],
+        user?.isPro ? [{ text: '⚡ Buat Akun Pro / Trial' }, { text: '🎲 Buat Email Acak' }] : [{ text: '🎲 Buat Email Acak' }],
         [{ text: '✏️ Buat Alias Kustom' }, { text: '📬 Cek Inbox Terakhir' }],
         [{ text: '📧 Email Aktif Saya' }],
       ],
@@ -267,10 +271,12 @@ export async function POST(req: NextRequest) {
       if (user?.isPro) {
         welcomeText +=
           `<b>👑 Status Member: PRO / VIP AKTIF</b>\n\n` +
-          `<b>⚡ Fitur Eksklusif Alight Motion (AM) Premium:</b>\n` +
-          `• <code>/amprem</code> ➡️ Pilih &amp; buat akun AM Premium otomatis!\n` +
-          `• <code>/amprem &lt;jumlah&gt;</code> (Contoh: <code>/amprem 3</code> atau <code>/amprem 10</code>)\n` +
-          `• <code>/amprem &lt;alias&gt;</code> (Contoh: <code>/amprem ravenedit</code>)\n\n`;
+          `<b>⚡ Fitur Generator Akun Premium &amp; Password:</b>\n` +
+          `• <code>/pro</code> ➡️ Buka Hub Generator Akun (AM, Canva, ElevenLabs, Cursor)\n` +
+          `• <code>/amprem</code> ➡️ Buat Akun Alight Motion 1 Tahun\n` +
+          `• <code>/elevenlabs</code> ➡️ Buat Akun ElevenLabs (10K Voice)\n` +
+          `• <code>/cursor</code> ➡️ Buat Akun Cursor AI Pro (14 Hari)\n` +
+          `• <code>/canva</code> ➡️ Buat Akun Canva Pro\n\n`;
       }
 
       welcomeText +=
@@ -285,12 +291,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 2. COMMAND: AM Premium Count Selection Prompt
-    if (text === '⚡ Buat AM Premium Otomatis' || text === '/amprem' || text === 'cb_ask_amprem' || text === 'cb_amprem') {
+    // 2. COMMAND: Service Picker Hub (/pro, '⚡ Buat Akun Pro / Trial', 'cb_hub_services')
+    if (
+      text === '⚡ Buat Akun Pro / Trial' ||
+      text === '⚡ Buat AM Premium Otomatis' ||
+      text === '/pro' ||
+      text === '/generator' ||
+      text === 'cb_hub_services'
+    ) {
       if (!user?.isPro) {
         const proOnlyText =
           `👑 <b>FITUR KHUSUS PENGGUNA PRO / VIP</b>\n\n` +
-          `Fitur <b>Auto AM Premium Creator</b> hanya dapat digunakan oleh member yang memiliki status PRO/VIP.\n\n` +
+          `Fitur <b>Auto Pro &amp; Trial Generator</b> hanya dapat digunakan oleh member yang memiliki status PRO/VIP.\n\n` +
           `💡 <i>Cara Mengaktifkan:</i>\n` +
           `1. Buka website TempMail\n` +
           `2. Masuk ke menu <b>Pengaturan ⚙️ ➡️ Tab PRO</b>\n` +
@@ -301,48 +313,87 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
-      const promptText =
-        `⚡ <b>GENERATOR ALIGHT MOTION PREMIUM 1 TAHUN</b> 🎬\n\n` +
-        `Berapa jumlah akun AM Premium yang ingin Anda buat?\n\n` +
-        `<i>Silakan pilih salah satu tombol di bawah untuk langsung mengeksekusi tanpa jeda:</i>`;
+      const hubText =
+        `🚀 <b>AUTO PRO &amp; TRIAL ACCOUNT GENERATOR</b> ✨\n\n` +
+        `Pilih layanan yang ingin kamu generate secara otomatis:\n\n` +
+        `🎬 <b>Alight Motion:</b> 1 Tahun Full Auto Magic Link\n` +
+        `🎨 <b>Canva Pro:</b> Akun Tim Canva Pro\n` +
+        `🤖 <b>ElevenLabs:</b> 10.000 Karakter AI Voice Text-to-Speech\n` +
+        `💻 <b>Cursor AI:</b> 14 Hari Pro Trial (Claude 3.5 &amp; GPT-4o)\n` +
+        `✨ <b>Leonardo AI:</b> 150 Token Fast Image Gen\n` +
+        `⚡ <b>Kustom:</b> Email + Password acak siap pakai\n\n` +
+        `<i>Pilih layanan di bawah ini:</i>`;
 
-      const countKeyboard = {
+      const hubKeyboard = {
         inline_keyboard: [
           [
-            { text: '⚡ 1 Akun', callback_data: 'cb_do_amprem_1' },
-            { text: '⚡ 2 Akun', callback_data: 'cb_do_amprem_2' },
-            { text: '⚡ 3 Akun', callback_data: 'cb_do_amprem_3' },
+            { text: '🎬 Alight Motion 1 Tahun', callback_data: 'cb_pick_srv_alight_motion' },
+            { text: '🎨 Canva Pro Team', callback_data: 'cb_pick_srv_canva_pro' },
           ],
           [
-            { text: '⚡ 5 Akun', callback_data: 'cb_do_amprem_5' },
-            { text: '⚡ 10 Akun (Batch)', callback_data: 'cb_do_amprem_10' },
+            { text: '🤖 ElevenLabs (10K Voice)', callback_data: 'cb_pick_srv_elevenlabs' },
+            { text: '💻 Cursor AI Pro (14 Hari)', callback_data: 'cb_pick_srv_cursor_ai' },
           ],
           [
-            { text: '✏️ Pakai Custom Alias', callback_data: 'cb_amprem_custom_guide' },
+            { text: '✨ Leonardo AI', callback_data: 'cb_pick_srv_leonardo_ai' },
+            { text: '⚡ Akun Kustom / Lainnya', callback_data: 'cb_pick_srv_custom' },
           ],
         ],
       };
 
-      sendTelegramMessage(botToken, chatId, promptText, countKeyboard);
+      sendTelegramMessage(botToken, chatId, hubText, hubKeyboard);
       return NextResponse.json({ ok: true });
     }
 
-    // Custom Alias Guide for AM Prem
-    if (text === 'cb_amprem_custom_guide') {
-      const guideText =
-        `✏️ <b>Cara Membuat Akun AM Premium dengan Nama Alias Kustom:</b>\n\n` +
-        `Ketik perintah:\n<code>/amprem nama_alias</code>\n\n` +
-        `<b>Contoh:</b>\n` +
-        `• <code>/amprem rayyenpro</code>\n` +
-        `• <code>/amprem alightedit</code>\n` +
-        `• <code>/amprem ravenvfx</code>\n\n` +
-        `<i>Bot akan langsung membuatkan email tersebut dan mengaktifkannya menjadi Premium 1 Tahun!</i>`;
+    // 3. SERVICE COUNT SELECTION: cb_pick_srv_<serviceType> OR direct shortcuts (/amprem, /elevenlabs, /cursor, /canva)
+    let selectedServiceType: ServiceType | null = null;
+    if (text.startsWith('cb_pick_srv_')) {
+      selectedServiceType = text.replace('cb_pick_srv_', '').trim() as ServiceType;
+    } else if (text === '/amprem' || text === 'cb_ask_amprem' || text === 'cb_amprem') {
+      selectedServiceType = 'alight_motion';
+    } else if (text === '/elevenlabs' || text === '/voice') {
+      selectedServiceType = 'elevenlabs';
+    } else if (text === '/cursor' || text === '/cursorai') {
+      selectedServiceType = 'cursor_ai';
+    } else if (text === '/canva' || text === '/canvapro') {
+      selectedServiceType = 'canva_pro';
+    }
 
-      sendTelegramMessage(botToken, chatId, guideText, mainReplyKeyboard);
+    if (selectedServiceType) {
+      if (!user?.isPro) {
+        sendTelegramMessage(botToken, chatId, '👑 Fitur ini khusus member PRO / VIP.', mainReplyKeyboard);
+        return NextResponse.json({ ok: true });
+      }
+
+      const sDef = SUPPORTED_SERVICES[selectedServiceType] || SUPPORTED_SERVICES.custom;
+      const countPrompt =
+        `⚡ <b>GENERATOR AKUN ${sDef.name.toUpperCase()}</b> ${sDef.icon}\n\n` +
+        `Deskripsi: <i>${sDef.description}</i>\n\n` +
+        `Berapa jumlah akun yang ingin dibuat?\n` +
+        `<i>(Password akan digenerate otomatis secara acak dan aman)</i>`;
+
+      const countKeyboard = {
+        inline_keyboard: [
+          [
+            { text: '⚡ 1 Akun', callback_data: `cb_exec_${selectedServiceType}_1` },
+            { text: '⚡ 2 Akun', callback_data: `cb_exec_${selectedServiceType}_2` },
+            { text: '⚡ 3 Akun', callback_data: `cb_exec_${selectedServiceType}_3` },
+          ],
+          [
+            { text: '⚡ 5 Akun', callback_data: `cb_exec_${selectedServiceType}_5` },
+            { text: '⚡ 10 Akun (Batch)', callback_data: `cb_exec_${selectedServiceType}_10` },
+          ],
+          [
+            { text: '⬅️ Kembali Pilih Layanan', callback_data: 'cb_hub_services' },
+          ],
+        ],
+      };
+
+      sendTelegramMessage(botToken, chatId, countPrompt, countKeyboard);
       return NextResponse.json({ ok: true });
     }
 
-    // 3. RETRY ACTIVATION: cb_retry_am_<id>
+    // 4. RETRY ACTIVATION: cb_retry_am_<id>
     if (text.startsWith('cb_retry_am_')) {
       const accountId = text.replace('cb_retry_am_', '').trim();
       const retryResult = await verifyExistingAmAccount(accountId, user?.id);
@@ -350,8 +401,9 @@ export async function POST(req: NextRequest) {
       if (retryResult.success && retryResult.account) {
         const acc = retryResult.account;
         const msg =
-          `🎉 <b>AKUN AM PREMIUM BERHASIL AKTIF!</b> ✨\n\n` +
+          `🎉 <b>AKUN ALIGHT MOTION BERHASIL DIAKTIVASI!</b> ✨\n\n` +
           `📧 <b>Email:</b> <code>${acc.email}</code>\n` +
+          `${acc.password ? `🔑 <b>Password:</b> <code>${acc.password}</code>\n` : ''}` +
           `🔗 <b>Link Inbox:</b> ${acc.inboxUrl}\n` +
           `✨ <b>Masa Aktif:</b> <code>${escapeTgHtml(acc.duration || '1 Tahun Premium (Aktif)')}</code>\n` +
           `✅ <b>Status:</b> Premium Activated\n\n` +
@@ -367,7 +419,7 @@ export async function POST(req: NextRequest) {
         const failMsg =
           `⏳ <b>Server Aktivasi Masih Dalam Antrean / Cooldown</b>\n\n` +
           `Keterangan: ${escapeTgHtml(retryResult.error || 'Silakan tunggu sebentar.')}\n\n` +
-          `<i>Tautan magic link Anda tersimpan aman. Silakan klik tombol di bawah dalam 10-30 detik untuk mencoba aktivasi lagi:</i>`;
+          `<i>Tautan magic link Anda tersimpan aman. Tekan tombol di bawah untuk mencoba aktivasi lagi:</i>`;
 
         const retryBtn = {
           inline_keyboard: [
@@ -379,40 +431,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 4. EXECUTE AM Premium: /amprem <count|alias> OR cb_do_amprem_<count>
-    if (text.startsWith('/amprem ') || text.startsWith('cb_do_amprem_') || text.startsWith('cb_amprem_')) {
+    // 5. EXECUTE GENERATION: cb_exec_<serviceType>_<count> OR legacy cb_do_amprem_<count>
+    if (text.startsWith('cb_exec_') || text.startsWith('cb_do_amprem_') || text.startsWith('/amprem ')) {
       if (!user?.isPro) {
-        const proOnlyText =
-          `👑 <b>FITUR KHUSUS PENGGUNA PRO / VIP</b>\n\n` +
-          `Fitur <b>Auto AM Premium Creator</b> hanya dapat digunakan oleh member yang memiliki status PRO/VIP.`;
-        sendTelegramMessage(botToken, chatId, proOnlyText, mainReplyKeyboard);
+        sendTelegramMessage(botToken, chatId, '👑 Fitur ini khusus member PRO / VIP.', mainReplyKeyboard);
         return NextResponse.json({ ok: true });
       }
 
-      let param = text
-        .replace(/^\/amprem\s*/i, '')
-        .replace(/^cb_do_amprem_/, '')
-        .replace(/^cb_amprem_/, '')
-        .trim();
-
+      let serviceType: ServiceType = 'alight_motion';
       let count = 1;
       let customAlias: string | undefined = undefined;
 
-      if (param) {
+      if (text.startsWith('cb_exec_')) {
+        const parts = text.replace('cb_exec_', '').split('_');
+        const countStr = parts.pop();
+        serviceType = parts.join('_') as ServiceType;
+        count = parseInt(countStr || '1', 10) || 1;
+      } else if (text.startsWith('cb_do_amprem_')) {
+        serviceType = 'alight_motion';
+        count = parseInt(text.replace('cb_do_amprem_', ''), 10) || 1;
+      } else if (text.startsWith('/amprem ')) {
+        serviceType = 'alight_motion';
+        const param = text.replace(/^\/amprem\s*/i, '').trim();
         const num = parseInt(param, 10);
         if (!isNaN(num) && num > 0) {
-          count = Math.min(num, 10); // Max 10 per batch
+          count = Math.min(num, 10);
         } else if (param.length >= 2) {
           customAlias = param;
         }
       }
 
-      // Run asynchronously without blocking Telegram webhook response
-      processAmPremiumBackground(botToken, chatId, user?.id, count, customAlias, primaryDomain);
+      // Run background generator
+      processAccountGenerationBackground(botToken, chatId, user?.id, serviceType, Math.min(count, 10), customAlias, primaryDomain);
       return NextResponse.json({ ok: true });
     }
 
-    // 5. COMMAND: /new, /random, '🎲 Buat Email Acak', or callback 'cb_new'
+    // 6. COMMAND: /new, /random, '🎲 Buat Email Acak', or callback 'cb_new'
     if (text === '/new' || text === '/random' || text === '🎲 Buat Email Acak' || text === 'cb_new') {
       const alias = getRandomAlias();
       const emailAddress = `${alias}@${primaryDomain}`;
@@ -420,7 +474,6 @@ export async function POST(req: NextRequest) {
       // Create mailbox in DB
       db.createOrGetMailbox(emailAddress, user?.id);
 
-      // Associate with user
       if (user) {
         const saved = user.savedMailboxes || [];
         if (!saved.includes(emailAddress)) saved.unshift(emailAddress);
@@ -454,7 +507,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 6. COMMAND: /custom <alias>, /alias <alias>, or '✏️ Buat Alias Kustom'
+    // 7. COMMAND: /custom <alias>, /alias <alias>, or '✏️ Buat Alias Kustom'
     if (text.startsWith('/custom') || text.startsWith('/alias') || text === '✏️ Buat Alias Kustom') {
       let customName = text.replace(/^\/(custom|alias)/i, '').trim();
 
@@ -471,7 +524,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
-      // Clean the alias
       const cleanAlias = customName.toLowerCase().replace(/[^a-z0-9._-]/g, '');
       if (cleanAlias.length < 2) {
         sendTelegramMessage(
@@ -484,11 +536,8 @@ export async function POST(req: NextRequest) {
       }
 
       const emailAddress = `${cleanAlias}@${primaryDomain}`;
-
-      // Create mailbox in DB
       db.createOrGetMailbox(emailAddress, user?.id);
 
-      // Associate with user
       if (user) {
         const saved = user.savedMailboxes || [];
         if (!saved.includes(emailAddress)) saved.unshift(emailAddress);
@@ -500,7 +549,7 @@ export async function POST(req: NextRequest) {
       const responseText =
         `🎯 <b>EMAIL ALIAS KUSTOM BERHASIL DIBUAT!</b> 🎉\n\n` +
         `📧 <b>Alamat Email:</b>\n<code>${emailAddress}</code>\n<i>(Ketuk teks di atas untuk menyalin)</i>\n\n` +
-        `✅ <b>Status:</b> Siap menerima verifikasi &amp; Sign In dari aplikasi/layanan (misal Alight Motion).\n` +
+        `✅ <b>Status:</b> Siap menerima verifikasi &amp; Sign In.\n` +
         `Pesan masuk akan langsung dikirimkan ke chat ini secara realtime! 🚀`;
 
       const inlineKeyboard = {
@@ -519,7 +568,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 7. COMMAND: /myemail, '📧 Email Aktif Saya', or 'cb_myemail'
+    // 8. COMMAND: /myemail, '📧 Email Aktif Saya', or 'cb_myemail'
     if (text === '/myemail' || text === '/email' || text === '📧 Email Aktif Saya' || text === 'cb_myemail') {
       const saved = user?.savedMailboxes || [];
       const primaryEmail = saved[0] || `${user?.username || 'user'}@${primaryDomain}`;
@@ -539,7 +588,7 @@ export async function POST(req: NextRequest) {
 
       const inlineKeyboard = {
         inline_keyboard: [
-          user?.isPro ? [{ text: '⚡ Buat AM Premium', callback_data: 'cb_ask_amprem' }, { text: '🎲 Buat Acak Baru', callback_data: 'cb_new' }] : [{ text: '🎲 Buat Acak Baru', callback_data: 'cb_new' }],
+          user?.isPro ? [{ text: '⚡ Generator Akun', callback_data: 'cb_hub_services' }, { text: '🎲 Buat Acak Baru', callback_data: 'cb_new' }] : [{ text: '🎲 Buat Acak Baru', callback_data: 'cb_new' }],
           [
             { text: '📬 Cek Inbox', callback_data: 'cb_inbox' },
           ],
@@ -550,7 +599,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 8. COMMAND: /inbox, '📬 Cek Inbox Terakhir', or callback 'cb_inbox' / 'inbox_<alias>'
+    // 9. COMMAND: /inbox, '📬 Cek Inbox Terakhir', or callback 'cb_inbox' / 'inbox_<alias>'
     if (text === '/inbox' || text === '📬 Cek Inbox Terakhir' || text === 'cb_inbox' || text.startsWith('inbox_')) {
       let targetAlias = '';
       if (text.startsWith('inbox_')) {
@@ -586,7 +635,6 @@ export async function POST(req: NextRequest) {
 
       messages.slice(0, 3).forEach((m, idx) => {
         const time = new Date(m.receivedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        // Extract OTP
         const combined = `${m.subject} ${m.text}`;
         const otpMatch =
           combined.match(/(?:code|kode|otp|token|pin|verification|verifikasi)[^\d]{1,15}(\d{4,8})\b/i) ||
@@ -618,7 +666,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // Default fallback: if user just types any word like "alightmotion" or "netflix"
+    // Default fallback
     if (text.length >= 2 && text.length <= 30 && !text.includes(' ') && !text.startsWith('/')) {
       const cleanAlias = text.toLowerCase().replace(/[^a-z0-9._-]/g, '');
       const emailAddress = `${cleanAlias}@${primaryDomain}`;
