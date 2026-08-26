@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Server, Globe, Key, Activity, Zap, Sliders } from 'lucide-react';
-import { AppSettings, DomainConfig } from '@/types';
+import { X, Server, Globe, Key, Activity, Zap, Sliders, Crown } from 'lucide-react';
+import { AppSettings, DomainConfig, User } from '@/types';
 import { DnsTab } from './settings/DnsTab';
 import { CloudflareTab } from './settings/CloudflareTab';
 import { PoliciesTab } from './settings/PoliciesTab';
 import { ApiTab } from './settings/ApiTab';
 import { LogsTab } from './settings/LogsTab';
+import { ProTab } from './settings/ProTab';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -15,8 +16,11 @@ interface SettingsModalProps {
   initialTab?: string;
   settings: AppSettings | null;
   domains: DomainConfig[];
+  currentUser: User | null;
   onRefreshSettings: () => void;
   onRefreshDomains: () => void;
+  onRefreshUser: () => void;
+  onOpenAuthModal: () => void;
 }
 
 export function SettingsModal({
@@ -25,8 +29,11 @@ export function SettingsModal({
   initialTab = 'dns',
   settings,
   domains,
+  currentUser,
   onRefreshSettings,
   onRefreshDomains,
+  onRefreshUser,
+  onOpenAuthModal,
 }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -47,7 +54,7 @@ export function SettingsModal({
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-bold text-white">Dashboard &amp; Setting TempMail</h3>
-              <p className="text-[11px] sm:text-xs text-slate-400">Konfigurasi Domain, Cloudflare, Spam &amp; API</p>
+              <p className="text-[11px] sm:text-xs text-slate-400">Konfigurasi Domain, Bot Telegram PRO, Spam &amp; API</p>
             </div>
           </div>
 
@@ -62,6 +69,7 @@ export function SettingsModal({
         {/* Tab Navigation Menu */}
         <div className="flex border-b border-slate-800/80 bg-slate-900/40 px-3 sm:px-6 overflow-x-auto custom-scrollbar">
           {[
+            { id: 'pro', label: '👑 Konfigurasi PRO & Bot', icon: Crown, highlight: true },
             { id: 'dns', label: 'Domain & MX', icon: Globe },
             { id: 'cloudflare', label: 'Cloudflare Worker', icon: Zap },
             { id: 'policies', label: 'Filter Spam', icon: Sliders },
@@ -78,9 +86,13 @@ export function SettingsModal({
                   isActive
                     ? 'border-indigo-500 text-white bg-indigo-500/10'
                     : 'border-transparent text-slate-400 hover:text-slate-200'
-                }`}
+                } ${tab.highlight && !isActive ? 'text-amber-400 font-bold' : ''}`}
               >
-                <Icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
+                <Icon
+                  className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
+                    isActive ? (tab.highlight ? 'text-amber-400' : 'text-indigo-400') : tab.highlight ? 'text-amber-400' : 'text-slate-400'
+                  }`}
+                />
                 <span>{tab.label}</span>
               </button>
             );
@@ -89,6 +101,14 @@ export function SettingsModal({
 
         {/* Tab Content Body */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 sm:p-6">
+          {activeTab === 'pro' && (
+            <ProTab
+              currentUser={currentUser}
+              onRefreshUser={onRefreshUser}
+              onOpenAuthModal={onOpenAuthModal}
+            />
+          )}
+
           {activeTab === 'dns' && (
             <DnsTab
               domains={domains}

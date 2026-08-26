@@ -23,6 +23,8 @@ export interface Mailbox {
   messageCount?: number;
   unreadCount?: number;
   lastActive?: string;
+  pinLock?: string | null; // 4-6 digit PIN for PRO locked mailboxes
+  ownerId?: string | null; // User ID who owns this mailbox
 }
 
 // Security & Spam Assessment
@@ -89,6 +91,36 @@ export interface AppSettings {
   }>;
 }
 
+// User Subscription & Profile Model
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  passwordHash: string;
+  isPro: boolean;
+  proPlan?: 'monthly' | 'yearly' | 'lifetime';
+  proExpiresAt?: string | null; // null if lifetime or expired
+  telegramBotToken?: string;
+  telegramChatId?: string;
+  telegramEnabled?: boolean;
+  customPin?: string;
+  keepEmailsForever?: boolean;
+  savedMailboxes?: string[];
+  createdAt: string;
+}
+
+// Voucher / Subscription License Key Model
+export interface Voucher {
+  id: string;
+  code: string; // e.g. "PRO-30DAYS-VIP"
+  plan: 'monthly' | 'yearly' | 'lifetime';
+  durationDays: number; // 30, 365, 0 (lifetime)
+  isUsed: boolean;
+  usedBy?: string;
+  usedAt?: string;
+  createdAt: string;
+}
+
 // Inbound Audit / Diagnostic Log
 export interface InboundLog {
   id: string;
@@ -110,4 +142,6 @@ export interface DatabaseSchema {
   messages: EmailMessage[];
   settings: AppSettings;
   logs: InboundLog[];
+  users: User[];
+  vouchers: Voucher[];
 }

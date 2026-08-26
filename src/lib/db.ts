@@ -1,6 +1,15 @@
 import fs from 'fs';
 import path from 'path';
-import { DatabaseSchema, DomainConfig, Mailbox, EmailMessage, AppSettings, InboundLog } from '@/types';
+import {
+  DatabaseSchema,
+  DomainConfig,
+  Mailbox,
+  EmailMessage,
+  AppSettings,
+  InboundLog,
+  User,
+  Voucher,
+} from '@/types';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
 
@@ -36,6 +45,33 @@ const DEFAULT_DOMAINS: DomainConfig[] = [
   },
 ];
 
+const DEFAULT_VOUCHERS: Voucher[] = [
+  {
+    id: 'vouch_1',
+    code: 'VIP-PRO-2026',
+    plan: 'lifetime',
+    durationDays: 0,
+    isUsed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'vouch_2',
+    code: 'PRO-30HARI-PASS',
+    plan: 'monthly',
+    durationDays: 30,
+    isUsed: false,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'vouch_3',
+    code: 'PRO-LIFETIME-DKA',
+    plan: 'lifetime',
+    durationDays: 0,
+    isUsed: false,
+    createdAt: new Date().toISOString(),
+  },
+];
+
 let memoryDbCache: DatabaseSchema | null = null;
 let lastMtimeMs = 0;
 
@@ -64,6 +100,8 @@ function loadDb(): DatabaseSchema {
         messages: parsed.messages || [],
         settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
         logs: parsed.logs || [],
+        users: parsed.users || [],
+        vouchers: parsed.vouchers && parsed.vouchers.length > 0 ? parsed.vouchers : DEFAULT_VOUCHERS,
       };
       return memoryDbCache;
     } catch (e) {
@@ -78,6 +116,8 @@ function loadDb(): DatabaseSchema {
     messages: [],
     settings: DEFAULT_SETTINGS,
     logs: [],
+    users: [],
+    vouchers: DEFAULT_VOUCHERS,
   };
 
   saveDbSync(initialDb);
@@ -124,9 +164,9 @@ export const db = {
   addDomain(name: string, isCatchAll = true): DomainConfig {
     const data = loadDb();
     const cleanName = name.toLowerCase().trim().replace(/^@/, '');
-    
+
     // Check if already exists
-    const existing = data.domains.find(d => d.name === cleanName);
+    const existing = data.domains.find((d) => d.name === cleanName);
     if (existing) return existing;
 
     const newDomain: DomainConfig = {
@@ -146,7 +186,7 @@ export const db = {
 
   updateDomain(id: string, updates: Partial<DomainConfig>): DomainConfig | null {
     const data = loadDb();
-    const idx = data.domains.findIndex(d => d.id === id);
+    const idx = data.domains.findIndex((d) => d.id === id);
     if (idx === -1) return null;
 
     data.domains[idx] = { ...data.domains[idx], ...updates };
@@ -157,7 +197,7 @@ export const db = {
   setPrimaryDomain(id: string): boolean {
     const data = loadDb();
     let found = false;
-    data.domains = data.domains.map(d => {
+    data.domains = data.domains.map((d) => {
       if (d.id === id) {
         found = true;
         data.settings.defaultDomain = d.name;
@@ -174,17 +214,17 @@ export const db = {
 
   deleteDomain(id: string): boolean {
     const data = loadDb();
-    const target = data.domains.find(d => d.id === id);
+    const target = data.domains.find((d) => d.id === id);
     if (!target) return false;
-    
-    data.domains = data.domains.filter(d => d.id !== id);
-    
+
+    data.domains = data.domains.filter((d) => d.id !== id);
+
     // If deleted domain was primary, pick the first one
     if (target.isPrimary && data.domains.length > 0) {
       data.domains[0].isPrimary = true;
       data.settings.defaultDomain = data.domains[0].name;
     }
-    
+
     saveDb(data);
     return true;
   },
@@ -192,9 +232,9 @@ export const db = {
   // Mailboxes
   getMailboxes(): Mailbox[] {
     const data = loadDb();
-    return (data.mailboxes || []).map(mb => {
-      const msgs = (data.messages || []).filter(m => m.mailboxAddress === mb.address);
-      const unread = msgs.filter(m => !m.isRead).length;
+    return (data.mailboxes || []).map((mb) => {
+      const msgs = (data.messages || []).filter((m) => m.mailboxAddress === mb.address);
+      const unread = msgs.filter((m) => !m.isRead).length;
       return {
         ...mb,
         messageCount: msgs.length,
@@ -207,22 +247,28 @@ export const db = {
   getMailbox(address: string): Mailbox | null {
     const data = loadDb();
     const normalized = address.toLowerCase().trim();
-    const mb = data.mailboxes.find(m => m.address === normalized);
+    const mb = data.mailboxes.find((m) => m.address === normalized);
     if (!mb) return null;
-    const msgs = (data.messages || []).filter(m => m.mailboxAddress === normalized);
+    const msgs = (data.messages || []).filter((m) => m.mailboxAddress === normalized);
     return {
       ...mb,
       messageCount: msgs.length,
-      unreadCount: msgs.filter(m => !m.isRead).length,
+      unreadCount: msgs.filter((m) => !m.isRead).length,
       lastActive: msgs[0]?.receivedAt || mb.createdAt,
     };
   },
 
-  createOrGetMailbox(address: string): Mailbox {
+  createOrGetMailbox(address: string, ownerId?: string): Mailbox {
     const data = loadDb();
     const normalized = address.toLowerCase().trim();
-    const existing = data.mailboxes.find(m => m.address === normalized);
-    if (existing) return existing;
+    const existing = data.mailboxes.find((m) => m.address === normalized);
+    if (existing) {
+      if (ownerId && !existing.ownerId) {
+        existing.ownerId = ownerId;
+        saveDb(data);
+      }
+      return existing;
+    }
 
     const [name, domain] = normalized.split('@');
     const newMailbox: Mailbox = {
@@ -231,10 +277,12 @@ export const db = {
       name: name || 'temp',
       domain: domain || data.settings.defaultDomain,
       createdAt: new Date().toISOString(),
-      expiresAt: data.settings.retentionHours > 0 
-        ? new Date(Date.now() + data.settings.retentionHours * 3600 * 1000).toISOString()
-        : null,
+      expiresAt:
+        data.settings.retentionHours > 0
+          ? new Date(Date.now() + data.settings.retentionHours * 3600 * 1000).toISOString()
+          : null,
       isStarred: false,
+      ownerId: ownerId || null,
     };
 
     data.mailboxes.unshift(newMailbox);
@@ -245,8 +293,8 @@ export const db = {
   deleteMailbox(address: string): boolean {
     const data = loadDb();
     const normalized = address.toLowerCase().trim();
-    data.mailboxes = data.mailboxes.filter(m => m.address !== normalized);
-    data.messages = data.messages.filter(msg => msg.mailboxAddress !== normalized);
+    data.mailboxes = data.mailboxes.filter((m) => m.address !== normalized);
+    data.messages = data.messages.filter((msg) => msg.mailboxAddress !== normalized);
     saveDb(data);
     return true;
   },
@@ -261,20 +309,20 @@ export const db = {
   ): EmailMessage[] {
     const data = loadDb();
     const normalized = mailboxAddress.toLowerCase().trim();
-    let list = data.messages.filter(m => m.mailboxAddress === normalized);
+    let list = data.messages.filter((m) => m.mailboxAddress === normalized);
 
     if (options?.folder === 'inbox') {
-      list = list.filter(m => !m.isSpam);
+      list = list.filter((m) => !m.isSpam);
     } else if (options?.folder === 'spam') {
-      list = list.filter(m => m.isSpam);
+      list = list.filter((m) => m.isSpam);
     } else if (options?.folder === 'starred') {
-      list = list.filter(m => m.isStarred);
+      list = list.filter((m) => m.isStarred);
     }
 
     if (options?.search) {
       const q = options.search.toLowerCase();
       list = list.filter(
-        m =>
+        (m) =>
           m.subject.toLowerCase().includes(q) ||
           m.from.address.toLowerCase().includes(q) ||
           m.from.name.toLowerCase().includes(q) ||
@@ -288,17 +336,17 @@ export const db = {
 
   getMessage(id: string): EmailMessage | null {
     const data = loadDb();
-    return data.messages.find(m => m.id === id) || null;
+    return data.messages.find((m) => m.id === id) || null;
   },
 
   saveMessage(msg: EmailMessage): EmailMessage {
     const data = loadDb();
-    
+
     // Auto-create mailbox if Catch-All received message for non-existing mailbox
     this.createOrGetMailbox(msg.mailboxAddress);
 
     // If message exists, update it, otherwise prepend
-    const existingIndex = data.messages.findIndex(m => m.id === msg.id);
+    const existingIndex = data.messages.findIndex((m) => m.id === msg.id);
     if (existingIndex >= 0) {
       data.messages[existingIndex] = msg;
     } else {
@@ -319,12 +367,20 @@ export const db = {
     });
 
     saveDb(data);
+
+    // Check if any PRO user should receive Telegram Notification
+    try {
+      this.dispatchTelegramNotification(msg);
+    } catch (e) {
+      console.error('Error dispatching telegram notification:', e);
+    }
+
     return msg;
   },
 
   markMessageRead(id: string, isRead = true): boolean {
     const data = loadDb();
-    const msg = data.messages.find(m => m.id === id);
+    const msg = data.messages.find((m) => m.id === id);
     if (!msg) return false;
     msg.isRead = isRead;
     saveDb(data);
@@ -333,7 +389,7 @@ export const db = {
 
   toggleMessageStar(id: string): boolean {
     const data = loadDb();
-    const msg = data.messages.find(m => m.id === id);
+    const msg = data.messages.find((m) => m.id === id);
     if (!msg) return false;
     msg.isStarred = !msg.isStarred;
     saveDb(data);
@@ -343,7 +399,7 @@ export const db = {
   deleteMessage(id: string): boolean {
     const data = loadDb();
     const initialLen = data.messages.length;
-    data.messages = data.messages.filter(m => m.id !== id);
+    data.messages = data.messages.filter((m) => m.id !== id);
     saveDb(data);
     return data.messages.length < initialLen;
   },
@@ -352,10 +408,172 @@ export const db = {
     const data = loadDb();
     const normalized = mailboxAddress.toLowerCase().trim();
     const before = data.messages.length;
-    data.messages = data.messages.filter(m => m.mailboxAddress !== normalized);
+    data.messages = data.messages.filter((m) => m.mailboxAddress !== normalized);
     const count = before - data.messages.length;
     saveDb(data);
     return count;
+  },
+
+  // Users & Authentication
+  getUsers(): User[] {
+    const data = loadDb();
+    return data.users || [];
+  },
+
+  getUserById(id: string): User | null {
+    const data = loadDb();
+    return (data.users || []).find((u) => u.id === id) || null;
+  },
+
+  getUserByUsername(username: string): User | null {
+    const data = loadDb();
+    const q = username.toLowerCase().trim();
+    return (data.users || []).find((u) => u.username.toLowerCase() === q) || null;
+  },
+
+  getUserByEmail(email: string): User | null {
+    const data = loadDb();
+    const q = email.toLowerCase().trim();
+    return (data.users || []).find((u) => u.email.toLowerCase() === q) || null;
+  },
+
+  createUser(user: Omit<User, 'id' | 'createdAt'>): User {
+    const data = loadDb();
+    if (!data.users) data.users = [];
+
+    const newUser: User = {
+      ...user,
+      id: 'usr_' + Math.random().toString(36).substring(2, 11),
+      createdAt: new Date().toISOString(),
+    };
+
+    data.users.push(newUser);
+    saveDb(data);
+    return newUser;
+  },
+
+  updateUser(id: string, updates: Partial<User>): User | null {
+    const data = loadDb();
+    const idx = (data.users || []).findIndex((u) => u.id === id);
+    if (idx === -1) return null;
+
+    data.users[idx] = { ...data.users[idx], ...updates };
+    saveDb(data);
+    return data.users[idx];
+  },
+
+  // Vouchers
+  getVouchers(): Voucher[] {
+    const data = loadDb();
+    return data.vouchers || [];
+  },
+
+  createVoucher(plan: 'monthly' | 'yearly' | 'lifetime', durationDays = 30, customCode?: string): Voucher {
+    const data = loadDb();
+    if (!data.vouchers) data.vouchers = [];
+
+    const code = customCode || `VIP-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const newVoucher: Voucher = {
+      id: 'vouch_' + Math.random().toString(36).substring(2, 9),
+      code: code.toUpperCase().trim(),
+      plan,
+      durationDays,
+      isUsed: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    data.vouchers.push(newVoucher);
+    saveDb(data);
+    return newVoucher;
+  },
+
+  redeemVoucher(code: string, userId: string): { success: boolean; message: string; user?: User } {
+    const data = loadDb();
+    const cleanCode = code.toUpperCase().trim();
+    const voucher = (data.vouchers || []).find((v) => v.code === cleanCode);
+
+    if (!voucher) {
+      return { success: false, message: 'Kode voucher tidak valid atau tidak ditemukan.' };
+    }
+
+    if (voucher.isUsed) {
+      return { success: false, message: 'Kode voucher ini sudah pernah digunakan sebelumnya.' };
+    }
+
+    const user = (data.users || []).find((u) => u.id === userId);
+    if (!user) {
+      return { success: false, message: 'Pengguna tidak ditemukan.' };
+    }
+
+    // Mark voucher used
+    voucher.isUsed = true;
+    voucher.usedBy = userId;
+    voucher.usedAt = new Date().toISOString();
+
+    // Activate PRO on user
+    user.isPro = true;
+    user.proPlan = voucher.plan;
+
+    if (voucher.durationDays > 0) {
+      const currentExpiry = user.proExpiresAt ? new Date(user.proExpiresAt).getTime() : Date.now();
+      const baseTime = currentExpiry > Date.now() ? currentExpiry : Date.now();
+      user.proExpiresAt = new Date(baseTime + voucher.durationDays * 24 * 3600 * 1000).toISOString();
+    } else {
+      user.proExpiresAt = null; // Lifetime
+    }
+
+    saveDb(data);
+    return { success: true, message: `Selamat! Akun PRO (${voucher.plan.toUpperCase()}) Anda berhasil aktif!`, user };
+  },
+
+  // Telegram Notifications Dispatcher
+  async dispatchTelegramNotification(msg: EmailMessage) {
+    const data = loadDb();
+    const localPart = msg.mailboxAddress.split('@')[0];
+
+    // Find PRO users with Telegram Bot Token & Chat ID configured
+    const targetUsers = (data.users || []).filter(
+      (u) =>
+        u.isPro &&
+        u.telegramEnabled &&
+        u.telegramBotToken &&
+        u.telegramChatId &&
+        (u.savedMailboxes?.includes(msg.mailboxAddress) ||
+          u.savedMailboxes?.includes(localPart) ||
+          (data.users.length === 1 && u.isPro)) // if single user configured, notify
+    );
+
+    // Extract OTP if present
+    const combined = `${msg.subject} ${msg.text}`;
+    const otpMatch =
+      combined.match(/(?:code|kode|otp|token|pin|verification|verifikasi)[^\d]{1,15}(\d{4,8})\b/i) ||
+      combined.match(/\b(\d{6})\b/);
+    const otpCode = otpMatch ? otpMatch[1] : null;
+
+    for (const user of targetUsers) {
+      try {
+        const text = `📬 <b>EMAIL BARU DITERIMA!</b>\n\n` +
+          `📧 <b>Mailbox:</b> <code>${msg.mailboxAddress}</code>\n` +
+          `👤 <b>Pengirim:</b> ${msg.from.name || msg.from.address} &lt;${msg.from.address}&gt;\n` +
+          `📋 <b>Subjek:</b> ${msg.subject || '(Tanpa Subjek)'}\n\n` +
+          (otpCode ? `🔑 <b>KODE OTP TERDETEKSI:</b> <code>${otpCode}</code>\n\n` : '') +
+          `📄 <b>Cuplikan Pesan:</b>\n<i>${(msg.text || '').substring(0, 200)}...</i>\n\n` +
+          `🔗 <a href="https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(localPart)}">Buka Kotak Masuk Sekarang</a>`;
+
+        await fetch(`https://api.telegram.org/bot${user.telegramBotToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: user.telegramChatId,
+            text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: false,
+          }),
+        });
+      } catch (err) {
+        console.error(`Failed to send Telegram notification to user ${user.id}:`, err);
+      }
+    }
   },
 
   // Logs
@@ -383,8 +601,8 @@ export const db = {
   getStats() {
     const data = loadDb();
     const totalMessages = data.messages.length;
-    const spamCount = data.messages.filter(m => m.isSpam).length;
-    const unreadCount = data.messages.filter(m => !m.isRead).length;
+    const spamCount = data.messages.filter((m) => m.isSpam).length;
+    const unreadCount = data.messages.filter((m) => !m.isRead).length;
     const mailboxesCount = data.mailboxes.length;
     const domainsCount = data.domains.length;
 

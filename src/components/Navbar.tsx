@@ -1,12 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Mail, ShieldCheck, Settings, Volume2, VolumeX, Globe, Server, Sparkles } from 'lucide-react';
-import { AppSettings } from '@/types';
+import { Mail, ShieldCheck, Settings, Volume2, VolumeX, Globe, Crown, User as UserIcon, LogIn } from 'lucide-react';
+import { AppSettings, User } from '@/types';
 
 interface NavbarProps {
   settings: AppSettings | null;
+  currentUser: User | null;
   onOpenSettings: (tab?: string) => void;
+  onOpenAuthModal: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
   activeDomain: string;
@@ -15,7 +17,9 @@ interface NavbarProps {
 
 export function Navbar({
   settings,
+  currentUser,
   onOpenSettings,
+  onOpenAuthModal,
   soundEnabled,
   onToggleSound,
   activeDomain,
@@ -45,7 +49,7 @@ export function Navbar({
                 PRO
               </span>
             </div>
-            <p className="hidden sm:block text-[11px] text-slate-400">Catch-All Inbound & Spam Safe</p>
+            <p className="hidden sm:block text-[11px] text-slate-400">Catch-All Inbound &amp; Realtime Telegram Bot</p>
           </div>
         </div>
 
@@ -66,6 +70,37 @@ export function Navbar({
 
         {/* Action Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* VIP / PRO Upgrade Button */}
+          <button
+            onClick={() => onOpenSettings('pro')}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all active:scale-95 ${
+              currentUser?.isPro
+                ? 'border-amber-500/40 bg-amber-500/15 text-amber-300 shadow-sm hover:bg-amber-500/25'
+                : 'border-amber-500/50 bg-gradient-to-r from-amber-600/20 to-amber-500/30 text-amber-300 hover:from-amber-600/30 hover:to-amber-500/40'
+            }`}
+          >
+            <Crown className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <span>{currentUser?.isPro ? 'PRO VIP' : 'Upgrade PRO'}</span>
+          </button>
+
+          {/* User Profile / Login Button */}
+          <button
+            onClick={onOpenAuthModal}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2 text-xs font-medium text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-all active:scale-95"
+          >
+            {currentUser ? (
+              <>
+                <UserIcon className="h-3.5 w-3.5 text-cyan-400" />
+                <span className="font-semibold text-white max-w-[90px] truncate">@{currentUser.username}</span>
+              </>
+            ) : (
+              <>
+                <LogIn className="h-3.5 w-3.5 text-sky-400" />
+                <span>Masuk / Daftar</span>
+              </>
+            )}
+          </button>
+
           {/* Sound Toggle */}
           <button
             onClick={onToggleSound}
@@ -77,15 +112,6 @@ export function Navbar({
             }`}
           >
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </button>
-
-          {/* Quick DNS Button */}
-          <button
-            onClick={() => onOpenSettings('dns')}
-            className="hidden sm:flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2 text-xs font-medium text-slate-300 transition-all hover:border-slate-700 hover:bg-slate-800 hover:text-white active:scale-95"
-          >
-            <Server className="h-3.5 w-3.5 text-sky-400" />
-            <span>Setting MX</span>
           </button>
 
           {/* Settings Dashboard Button */}

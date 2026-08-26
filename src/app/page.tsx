@@ -10,9 +10,10 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { TestEmailModal } from '@/components/TestEmailModal';
 import { CustomAliasModal } from '@/components/CustomAliasModal';
 import { QrCodeModal } from '@/components/QrCodeModal';
-import { AppSettings, DomainConfig, EmailMessage, Mailbox } from '@/types';
+import { AuthModal } from '@/components/AuthModal';
+import { AppSettings, DomainConfig, EmailMessage, Mailbox, User } from '@/types';
 import { playNotificationSound } from '@/lib/sound';
-import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical } from 'lucide-react';
+import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical, Crown } from 'lucide-react';
 
 export default function Home() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -26,6 +27,10 @@ export default function Home() {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [refreshCountdown, setRefreshCountdown] = useState<number>(10);
 
+  // User Auth & Subscription State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
   // Modals state
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState('dns');
@@ -35,6 +40,21 @@ export default function Home() {
 
   // Keep previous messages count to detect incoming mail and play chime
   const prevCountRef = useRef<number>(0);
+
+  // Fetch current user session
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.success && data.user) {
+        setCurrentUser(data.user);
+      } else {
+        setCurrentUser(null);
+      }
+    } catch (e) {
+      console.error('Error fetching user:', e);
+    }
+  }, []);
 
   // 1. Fetch settings & domains
   const fetchSettingsAndDomains = useCallback(async () => {
@@ -132,7 +152,8 @@ export default function Home() {
   // Initial load
   useEffect(() => {
     fetchSettingsAndDomains();
-  }, [fetchSettingsAndDomains]);
+    fetchCurrentUser();
+  }, [fetchSettingsAndDomains, fetchCurrentUser]);
 
   useEffect(() => {
     if (domains.length > 0 && !mailbox) {
@@ -168,9 +189,9 @@ export default function Home() {
     }
   }, [mailbox?.name]);
 
-  // Handle auto-refresh countdown
+  // Handle auto-refresh countdown (faster for PRO users: 4s instead of 10s)
   useEffect(() => {
-    const intervalSecs = settings?.autoRefreshSeconds || 10;
+    const intervalSecs = currentUser?.isPro ? 4 : (settings?.autoRefreshSeconds || 10);
     const timer = setInterval(() => {
       setRefreshCountdown((prev) => {
         if (prev <= 1) {
@@ -184,7 +205,7 @@ export default function Home() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [settings?.autoRefreshSeconds, mailbox?.address, fetchMessages]);
+  }, [currentUser?.isPro, settings?.autoRefreshSeconds, mailbox?.address, fetchMessages]);
 
   // Handle switching folder
   const handleSelectFolder = (folder: FolderType) => {
@@ -288,6 +309,17 @@ export default function Home() {
     setSoundEnabled(!soundEnabled);
   };
 
+  // Handle Logout
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setCurrentUser(null);
+      setAuthModalOpen(false);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const selectedMessage = messages.find((m) => m.id === selectedMessageId) || null;
 
   const counts = {
@@ -303,7 +335,9 @@ export default function Home() {
       {/* Top Navbar */}
       <Navbar
         settings={settings}
+        currentUser={currentUser}
         onOpenSettings={handleOpenSettings}
+        onOpenAuthModal={() => setAuthModalOpen(true)}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
         activeDomain={activeDomain}
@@ -354,9 +388,11 @@ export default function Home() {
                 <Icon className="h-3.5 w-3.5" />
                 <span>{item.label}</span>
                 {item.count > 0 && (
-                  <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
-                  }`}>
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
+                    }`}
+                  >
                     {item.count}
                   </span>
                 )}
@@ -434,6 +470,14 @@ export default function Home() {
           </button>
 
           <button
+            onClick={() => handleOpenSettings('pro')}
+            className="flex flex-1 flex-col items-center gap-1 rounded-xl p-1.5 text-[10px] font-medium text-amber-300 active:scale-95 transition-all hover:bg-slate-900"
+          >
+            <Crown className="h-4 w-4 text-amber-400 fill-amber-400" />
+            <span>PRO</span>
+          </button>
+
+          <button
             onClick={() => setTestEmailModalOpen(true)}
             className="flex flex-1 flex-col items-center gap-1 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
@@ -452,14 +496,28 @@ export default function Home() {
       </div>
 
       {/* Modals */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        currentUser={currentUser}
+        onAuthSuccess={(user) => {
+          setCurrentUser(user);
+        }}
+        onLogout={handleLogout}
+        onOpenProTab={() => handleOpenSettings('pro')}
+      />
+
       <SettingsModal
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
         initialTab={settingsInitialTab}
         settings={settings}
         domains={domains}
+        currentUser={currentUser}
         onRefreshSettings={fetchSettingsAndDomains}
         onRefreshDomains={fetchSettingsAndDomains}
+        onRefreshUser={fetchCurrentUser}
+        onOpenAuthModal={() => setAuthModalOpen(true)}
       />
 
       <TestEmailModal
