@@ -6,6 +6,20 @@ import { User } from '@/types';
 const AUTH_SECRET = process.env.AUTH_SECRET || 'tempmail_super_secret_jwt_key_2026_dkaimono_production';
 export const COOKIE_NAME = 'tempmail_user_session';
 
+function ensureTelegramWebhook(botToken: string) {
+  if (!botToken) return;
+  const clean = botToken.replace(/^bot/i, '').trim();
+  const webhookUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/api/telegram/webhook?token=${clean}`;
+  fetch(`https://api.telegram.org/bot${clean}/setWebhook`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      url: webhookUrl,
+      allowed_updates: ['message', 'edited_message', 'callback_query'],
+    }),
+  }).catch(() => {});
+}
+
 export function hashPassword(password: string): string {
   const salt = 'dkaimono_salt_2026_';
   return crypto.createHmac('sha256', AUTH_SECRET).update(salt + password).digest('hex');
@@ -28,6 +42,7 @@ export function createSessionToken(user: User): string {
     telegramChatId: user.telegramChatId,
     telegramEnabled: Boolean(user.telegramEnabled),
     customPin: user.customPin,
+    monitoredAliases: user.monitoredAliases,
     ts: Date.now(),
   };
   const jsonStr = JSON.stringify(payloadObj);
@@ -68,7 +83,12 @@ export function verifySessionToken(token: string): User | null {
         telegramEnabled: payload.telegramEnabled || false,
         customPin: payload.customPin,
         savedMailboxes: [`${payload.username}@loginptn.xyz`],
+        monitoredAliases: payload.monitoredAliases || [],
       });
+    }
+
+    if (user.telegramBotToken) {
+      ensureTelegramWebhook(user.telegramBotToken);
     }
 
     // Check if PRO has expired
