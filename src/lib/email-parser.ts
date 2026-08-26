@@ -88,7 +88,7 @@ export function analyzeSpam(
   if (subject && subject.length > 10) {
     const letters = subject.replace(/[^a-zA-Z]/g, '');
     if (letters.length > 5) {
-      const upperRatio = letters.split('').filter(c => c === c.toUpperCase()).length / letters.length;
+      const upperRatio = letters.split('').filter((c) => c === c.toUpperCase()).length / letters.length;
       if (upperRatio > 0.75) {
         score += 15;
         reasons.push('Subject mengandung dominan huruf KAPITAL (ALL CAPS)');
@@ -99,26 +99,20 @@ export function analyzeSpam(
   // 5. Exclamation marks
   if ((subject.match(/!{2,}/g) || []).length > 0) {
     score += 10;
-    reasons.push('Subject memiliki tanda seru berlebih (!!!)');
+    reasons.push('Tanda seru ganda di Subject (!!!)');
   }
 
-  const finalScore = Math.min(100, score);
-  const isSpam = finalScore >= 30;
-
-  return {
-    isSpam,
-    score: finalScore,
-    reasons: reasons.length > 0 ? reasons : ['Email lolos uji filter keamanan (Clean)'],
-  };
+  const isSpam = score >= 50;
+  return { isSpam, score, reasons };
 }
 
 export function extractSecurity(headers: Record<string, string>): EmailSecurity {
   const getHeader = (key: string): string => {
-    return String(headers[key] || headers[key.toLowerCase()] || '');
+    return String(headers[key] || headers[key.toLowerCase()] || '').toLowerCase();
   };
 
-  const authResults = getHeader('authentication-results').toLowerCase();
-  const receivedSpf = getHeader('received-spf').toLowerCase();
+  const receivedSpf = getHeader('received-spf');
+  const authResults = getHeader('authentication-results');
 
   let spf: EmailSecurity['spf'] = 'none';
   if (receivedSpf.includes('pass') || authResults.includes('spf=pass')) {
@@ -176,9 +170,151 @@ export function decodeQuotedPrintable(input: string): string {
       try {
         return String.fromCharCode(parseInt(hex, 16));
       } catch {
-        return _ ;
+        return _;
       }
     });
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Recursive MIME part parser for nested multipart/mixed, multipart/alternative, etc.
+function parseMimePartsRecursive(
+  bodyText: string,
+  defaultContentType: string,
+  headers: Record<string, string>
+): { html: string; text: string; attachments: EmailAttachment[] } {
+  let html = '';
+  let text = '';
+  const attachments: EmailAttachment[] = [];
+
+  const contentType = headers['content-type'] || defaultContentType || 'text/plain';
+  const boundaryMatch = contentType.match(/boundary=["']?([^"';\r\n]+)["']?/i);
+
+  if (boundaryMatch && boundaryMatch[1]) {
+    const boundary = boundaryMatch[1].trim();
+    // Split on boundary delimiter
+    const rawParts = bodyText.split(new RegExp(`--${escapeRegex(boundary)}(?:--)?`));
+
+    for (const rawPart of rawParts) {
+      const trimmed = rawPart.trim();
+      if (!trimmed || trimmed === '--') continue;
+
+      const split = rawPart.split(/\r?\n\r?\n/);
+      const partHeaderBlock = split[0] || '';
+      const partBodyBlock = split.slice(1).join('\n\n') || '';
+
+      // Parse part headers
+      const partHeaderLines = partHeaderBlock.split(/\r?\n/);
+      const partHeadersObj: Record<string, string> = {};
+      let currentKey = '';
+
+      for (const line of partHeaderLines) {
+        if (/^\s+/.test(line) && currentKey) {
+          partHeadersObj[currentKey] += ' ' + line.trim();
+        } else {
+          const match = line.match(/^([^:]+):\s*(.*)$/);
+          if (match) {
+            currentKey = match[1].toLowerCase().trim();
+            partHeadersObj[currentKey] = match[2].trim();
+          }
+        }
+      }
+
+      const partContentType = partHeadersObj['content-type'] || 'text/plain';
+      const isNestedMultipart = /multipart\//i.test(partContentType);
+
+      if (isNestedMultipart) {
+        // Recursive call for nested multipart
+        const nestedResult = parseMimePartsRecursive(partBodyBlock, partContentType, partHeadersObj);
+        if (nestedResult.html) {
+          html = html ? `${html}\n${nestedResult.html}` : nestedResult.html;
+        }
+        if (nestedResult.text) {
+          text = text ? `${text}\n${nestedResult.text}` : nestedResult.text;
+        }
+        attachments.push(...nestedResult.attachments);
+      } else {
+        // Leaf part
+        const isHtml = /text\/html/i.test(partContentType);
+        const isPlain = /text\/plain/i.test(partContentType);
+        const isAttachment =
+          /content-disposition:.*attachment/i.test(partHeaderBlock) ||
+          /filename=/i.test(partHeaderBlock) ||
+          /name=/i.test(partHeaderBlock);
+
+        const isBase64 = /content-transfer-encoding:.*base64/i.test(partHeaderBlock);
+        const isQP = /content-transfer-encoding:.*quoted-printable/i.test(partHeaderBlock);
+
+        let decodedBody = partBodyBlock;
+        if (isQP) {
+          decodedBody = decodeQuotedPrintable(decodedBody);
+        } else if (isBase64) {
+          try {
+            decodedBody = Buffer.from(decodedBody.replace(/\s+/g, ''), 'base64').toString('utf-8');
+          } catch {
+            // Keep raw if decode fails
+          }
+        }
+
+        if (isAttachment) {
+          const fnMatch =
+            partHeaderBlock.match(/filename=["']?([^"';\r\n]+)["']?/i) ||
+            partHeaderBlock.match(/name=["']?([^"';\r\n]+)["']?/i);
+          const filename = fnMatch ? decodeMimeHeader(fnMatch[1]) : 'attachment';
+          const ctMatch = partHeaderBlock.match(/content-type:\s*([^;\r\n]+)/i);
+          const ct = ctMatch ? ctMatch[1].trim() : 'application/octet-stream';
+
+          attachments.push({
+            id: 'att_' + nanoid(8),
+            filename,
+            contentType: ct,
+            size: Buffer.byteLength(decodedBody),
+            contentBase64: isBase64
+              ? partBodyBlock.replace(/\s+/g, '')
+              : Buffer.from(decodedBody).toString('base64'),
+          });
+        } else if (isHtml) {
+          html = html ? `${html}\n${decodedBody}` : decodedBody;
+        } else if (isPlain) {
+          text = text ? `${text}\n${decodedBody}` : decodedBody;
+        }
+      }
+    }
+  } else {
+    // Single part
+    const isBase64 = /content-transfer-encoding:.*base64/i.test(headers['content-transfer-encoding'] || '');
+    const isQP = /content-transfer-encoding:.*quoted-printable/i.test(headers['content-transfer-encoding'] || '');
+    let body = bodyText;
+
+    if (isQP) {
+      body = decodeQuotedPrintable(body);
+    } else if (isBase64) {
+      try {
+        body = Buffer.from(body.replace(/\s+/g, ''), 'base64').toString('utf-8');
+      } catch {}
+    }
+
+    if (/text\/html/i.test(contentType)) {
+      html = body;
+    } else {
+      text = body;
+      html = `<div style="font-family:sans-serif;white-space:pre-wrap;padding:16px;">${escapeHtml(body)}</div>`;
+    }
+  }
+
+  return { html, text, attachments };
 }
 
 export async function parseRawEmail(
@@ -214,7 +350,7 @@ export async function parseRawEmail(
   const rawFrom = headersObj['from'] || 'unknown@sender.com';
   const decodedFrom = decodeMimeHeader(rawFrom);
   const fromMatch = decodedFrom.match(/^(?:["']?([^"']*)["']?\s*)?<?([^>]+@[^>]+)>?$/i);
-  const fromName = fromMatch ? (fromMatch[1] || fromMatch[2]) : decodedFrom;
+  const fromName = fromMatch ? fromMatch[1] || fromMatch[2] : decodedFrom;
   const fromAddress = fromMatch ? fromMatch[2] : decodedFrom.replace(/[<>]/g, '').trim();
 
   // Extract recipient
@@ -229,79 +365,23 @@ export async function parseRawEmail(
   // Extract Subject
   const subject = decodeMimeHeader(headersObj['subject'] || '(Tanpa Subjek)');
 
-  // Extract Content-Type & Boundary
-  const contentTypeHeader = headersObj['content-type'] || 'text/plain';
-  let html = '';
-  let text = '';
-  const attachments: EmailAttachment[] = [];
-
-  const boundaryMatch = contentTypeHeader.match(/boundary=["']?([^"';]+)["']?/i);
-
-  if (boundaryMatch && boundaryMatch[1]) {
-    const boundary = boundaryMatch[1];
-    const parts = bodyBlock.split(new RegExp(`--${escapeRegex(boundary)}(?:--)?`));
-
-    for (const part of parts) {
-      if (!part.trim()) continue;
-
-      const partSplit = part.split(/\r?\n\r?\n/);
-      const partHeaders = partSplit[0] || '';
-      let partBody = partSplit.slice(1).join('\n\n') || '';
-
-      const isHtmlPart = /content-type:.*text\/html/i.test(partHeaders);
-      const isPlainPart = /content-type:.*text\/plain/i.test(partHeaders);
-      const isAttachment = /content-disposition:.*attachment/i.test(partHeaders) || /filename=/i.test(partHeaders);
-      const isBase64 = /content-transfer-encoding:.*base64/i.test(partHeaders);
-      const isQP = /content-transfer-encoding:.*quoted-printable/i.test(partHeaders);
-
-      if (isQP) {
-        partBody = decodeQuotedPrintable(partBody);
-      }
-
-      if (isAttachment) {
-        const fnMatch = partHeaders.match(/filename=["']?([^"';\r\n]+)["']?/i) || partHeaders.match(/name=["']?([^"';\r\n]+)["']?/i);
-        const filename = fnMatch ? decodeMimeHeader(fnMatch[1]) : 'attachment';
-        const ctMatch = partHeaders.match(/content-type:\s*([^;\r\n]+)/i);
-        const ct = ctMatch ? ctMatch[1].trim() : 'application/octet-stream';
-
-        attachments.push({
-          id: 'att_' + nanoid(8),
-          filename,
-          contentType: ct,
-          size: Buffer.byteLength(partBody),
-          contentBase64: isBase64 ? partBody.replace(/\s+/g, '') : Buffer.from(partBody).toString('base64'),
-        });
-      } else if (isHtmlPart) {
-        html = isBase64 ? Buffer.from(partBody.replace(/\s+/g, ''), 'base64').toString('utf-8') : partBody;
-      } else if (isPlainPart) {
-        text = isBase64 ? Buffer.from(partBody.replace(/\s+/g, ''), 'base64').toString('utf-8') : partBody;
-      }
-    }
-  } else {
-    // Single body part
-    const isBase64 = /content-transfer-encoding:.*base64/i.test(headersObj['content-transfer-encoding'] || '');
-    const isQP = /content-transfer-encoding:.*quoted-printable/i.test(headersObj['content-transfer-encoding'] || '');
-    let body = bodyBlock;
-
-    if (isQP) {
-      body = decodeQuotedPrintable(body);
-    } else if (isBase64) {
-      body = Buffer.from(body.replace(/\s+/g, ''), 'base64').toString('utf-8');
-    }
-
-    if (/text\/html/i.test(contentTypeHeader)) {
-      html = body;
-    } else {
-      text = body;
-      html = `<div style="font-family:sans-serif;white-space:pre-wrap;">${escapeHtml(body)}</div>`;
-    }
-  }
+  // Extract Content & Attachments with Recursive Parser
+  const parsed = parseMimePartsRecursive(bodyBlock, headersObj['content-type'] || 'text/plain', headersObj);
+  let html = parsed.html;
+  let text = parsed.text;
+  const attachments = parsed.attachments;
 
   if (!html && text) {
-    html = `<div style="font-family:sans-serif;white-space:pre-wrap;">${escapeHtml(text)}</div>`;
+    html = `<div style="font-family:sans-serif;white-space:pre-wrap;padding:16px;">${escapeHtml(text)}</div>`;
   }
   if (!text && html) {
     text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // Fallback if both are somehow still empty
+  if (!html && !text) {
+    text = bodyBlock.trim() || '(No content)';
+    html = `<div style="font-family:sans-serif;white-space:pre-wrap;padding:16px;">${escapeHtml(text)}</div>`;
   }
 
   // Security & Spam check
@@ -318,12 +398,12 @@ export async function parseRawEmail(
     },
     to: [{ name: '', address: normalizedRecipient }],
     subject: subject || '(Tanpa Subjek)',
-    text: text || '',
-    html: html || '<p>(No content)</p>',
-    rawSource: rawString.length < 500000 ? rawString : rawString.substring(0, 500000) + '\n...[TRUNCATED]',
+    text,
+    html,
+    rawSource: rawString,
     headers: headersObj,
     attachments,
-    receivedAt: headersObj['date'] ? new Date(headersObj['date']).toISOString() : new Date().toISOString(),
+    receivedAt: new Date().toISOString(),
     isRead: false,
     isStarred: false,
     isSpam: spamAnalysis.isSpam,
@@ -335,17 +415,4 @@ export async function parseRawEmail(
   };
 
   return emailMessage;
-}
-
-function escapeRegex(string: string) {
-  return string.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }

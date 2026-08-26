@@ -42,21 +42,42 @@ export function EmailViewer({
   const [copiedRaw, setCopiedRaw] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
   const [copiedOtp, setCopiedOtp] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Extract OTP / verification code if present
-  const extractOtp = (text: string, subject: string): string | null => {
-    const combined = `${subject} ${text}`;
-    const keywordMatch = combined.match(/(?:code|kode|otp|token|pin|verification|verifikasi)[^\d]{1,15}(\d{4,8})\b/i);
+  // Extract OTP / verification code from text, html, or subject
+  const extractOtp = (text: string, html: string, subject: string): string | null => {
+    const cleanHtml = html ? html.replace(/<[^>]+>/g, ' ') : '';
+    const combined = `${subject} ${text} ${cleanHtml}`;
+
+    const keywordMatch = combined.match(
+      /(?:code|kode|otp|token|pin|verification|verifikasi|sign-in code|login code|security code)[^\d]{1,20}(\d{4,8})\b/i
+    );
     if (keywordMatch && keywordMatch[1]) return keywordMatch[1];
 
     const digit6Match = combined.match(/\b(\d{6})\b/);
     if (digit6Match && digit6Match[1]) return digit6Match[1];
 
+    const digit4Match = combined.match(/\b(\d{4})\b/);
+    if (digit4Match && digit4Match[1]) return digit4Match[1];
+
     return null;
   };
 
-  const detectedOtp = message ? extractOtp(message.text || '', message.subject || '') : null;
+  // Extract verification link
+  const extractLink = (text: string, html: string): string | null => {
+    const combined = `${html} ${text}`;
+    const hrefMatch = combined.match(/href=["'](https?:\/\/[^"']*(?:verify|confirm|auth|magic|signin|activate|token)[^"']*)["']/i);
+    if (hrefMatch && hrefMatch[1]) return hrefMatch[1];
+
+    const rawMatch = combined.match(/(https?:\/\/[^\s<>"']+(?:verify|confirm|auth|magic|signin|activate|token)[^\s<>"']+)/i);
+    if (rawMatch && rawMatch[1]) return rawMatch[1];
+
+    return null;
+  };
+
+  const detectedOtp = message ? extractOtp(message.text || '', message.html || '', message.subject || '') : null;
+  const detectedLink = message ? extractLink(message.text || '', message.html || '') : null;
 
   useEffect(() => {
     if (activeTab === 'preview' && iframeRef.current && message) {
@@ -222,6 +243,54 @@ export function EmailViewer({
 
       {/* Message Metadata Header Card */}
       <div className="border-b border-slate-800/80 bg-slate-900/40 p-3.5 sm:p-5 space-y-3">
+        {/* OTP / Verification Code Banner */}
+        {detectedOtp && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-emerald-500/50 bg-gradient-to-r from-emerald-950/80 via-slate-900 to-cyan-950/80 p-3.5 sm:p-4 shadow-lg shadow-emerald-500/10">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-bold">
+                <KeyRound className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+                  Kode Verifikasi / OTP Terdeteksi
+                </p>
+                <p className="font-mono text-2xl sm:text-3xl font-black text-white tracking-widest selection:bg-emerald-500">
+                  {detectedOtp}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleCopyOtp}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-cyan-500 active:scale-95 transition-all shrink-0"
+            >
+              {copiedOtp ? <Check className="h-4 w-4 text-white" /> : <Copy className="h-4 w-4" />}
+              <span>{copiedOtp ? 'Kode Tersalin!' : 'Salin Kode OTP'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Verification Link Card */}
+        {detectedLink && (
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-cyan-500/40 bg-cyan-950/30 p-2.5 sm:p-3 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base shrink-0">🔗</span>
+              <div className="min-w-0">
+                <p className="font-bold text-cyan-300">Tautan Verifikasi / Sign In:</p>
+                <p className="font-mono text-[11px] text-slate-300 truncate max-w-xs sm:max-w-md">{detectedLink}</p>
+              </div>
+            </div>
+            <a
+              href={detectedLink}
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-3 py-1.5 text-xs shadow-sm"
+            >
+              Buka Tautan ➔
+            </a>
+          </div>
+        )}
+
         {/* Subject Title */}
         <h2 className="text-base sm:text-lg font-bold tracking-tight text-white selection:bg-indigo-500">
           {message.subject || '(Tanpa Subjek)'}
