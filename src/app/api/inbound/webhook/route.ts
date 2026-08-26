@@ -21,14 +21,15 @@ export async function POST(req: NextRequest) {
     const contentType = req.headers.get('content-type') || '';
     let emailMessage: EmailMessage;
 
+    // 1. JSON Payload (Cloudflare Worker / Sendgrid / Custom API / ImprovMX Webhook)
     if (contentType.includes('application/json')) {
       const body = await req.json();
 
-      // Case 1: Payload has full raw RFC822 string (Cloudflare Worker format)
+      // Case 1A: Payload has full raw RFC822 string (Cloudflare Worker format)
       if (body.raw) {
-        emailMessage = await parseRawEmail(body.raw, body.recipient, body.source || 'cloudflare');
+        emailMessage = await parseRawEmail(body.raw, body.recipient || body.to, body.source || 'cloudflare');
       } 
-      // Case 2: Pre-parsed JSON payload (Sendgrid / Mailgun / generic webhook)
+      // Case 1B: Pre-parsed JSON payload
       else {
         const recipient = (body.recipient || body.to || body.mailbox || '').toLowerCase().trim();
         if (!recipient) {
@@ -41,7 +42,6 @@ export async function POST(req: NextRequest) {
         const htmlContent = body.html || (body.text ? `<p style="white-space:pre-wrap;">${body.text}</p>` : '<p>(No content)</p>');
         const textContent = body.text || '';
 
-        // Fake MIME generation for source inspection
         const simulatedRaw = [
           `From: "${senderName}" <${senderAddress}>`,
           `To: <${recipient}>`,
@@ -78,8 +78,49 @@ export async function POST(req: NextRequest) {
           size: Buffer.byteLength(simulatedRaw),
         };
       }
-    } 
-    // Case 3: Raw RFC 822 Email Body (e.g. POST raw text or multipart)
+    }
+    // 2. FormData / Multipart Form (ImprovMX / Mailgun standard webhook format)
+    else if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await req.formData();
+      const rawMime = formData.get('raw') || formData.get('body-mime') || formData.get('email');
+
+      if (rawMime && typeof rawMime === 'string') {
+        const recipient = (formData.get('recipient') || formData.get('to') || req.nextUrl.searchParams.get('to') || undefined) as string | undefined;
+        emailMessage = await parseRawEmail(rawMime, recipient, 'webhook');
+      } else {
+        const recipient = (formData.get('recipient') || formData.get('to') || formData.get('mailbox') || '').toString().toLowerCase().trim();
+        const sender = (formData.get('from') || formData.get('sender') || 'unknown@sender.com').toString();
+        const subject = (formData.get('subject') || '(Tanpa Subjek)').toString();
+        const text = (formData.get('text') || formData.get('body-plain') || '').toString();
+        const html = (formData.get('html') || formData.get('body-html') || (text ? `<p>${text}</p>` : '')).toString();
+
+        const simulatedRaw = `From: ${sender}\r\nTo: ${recipient}\r\nSubject: ${subject}\r\n\r\n${text || html}`;
+
+        emailMessage = {
+          id: 'msg_' + nanoid(10),
+          mailboxAddress: recipient || 'inbox@loginptn.xyz',
+          recipient: recipient || 'inbox@loginptn.xyz',
+          from: { name: sender, address: sender },
+          to: [{ name: '', address: recipient }],
+          subject,
+          text,
+          html,
+          rawSource: simulatedRaw,
+          headers: {},
+          attachments: [],
+          receivedAt: new Date().toISOString(),
+          isRead: false,
+          isStarred: false,
+          isSpam: false,
+          spamScore: 0,
+          spamReasons: ['ImprovMX Inbound'],
+          security: { spf: 'pass', dkim: 'pass', dmarc: 'pass' },
+          inboundSource: 'webhook',
+          size: Buffer.byteLength(simulatedRaw),
+        };
+      }
+    }
+    // 3. Raw RFC 822 Email Body text
     else {
       const rawText = await req.text();
       if (!rawText || rawText.trim().length === 0) {
