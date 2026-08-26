@@ -1,0 +1,125 @@
+'use client';
+
+import React from 'react';
+import { Mail, Inbox, ShieldAlert, Star, Activity, ShieldCheck, Info } from 'lucide-react';
+
+export type FolderType = 'all' | 'inbox' | 'spam' | 'starred' | 'logs';
+
+interface FolderSidebarProps {
+  currentFolder: FolderType;
+  onSelectFolder: (folder: FolderType) => void;
+  counts: {
+    all: number;
+    inbox: number;
+    spam: number;
+    starred: number;
+    logs: number;
+  };
+}
+
+export function FolderSidebar({
+  currentFolder,
+  onSelectFolder,
+  counts,
+}: FolderSidebarProps) {
+  const navItems = [
+    {
+      id: 'all' as FolderType,
+      label: 'Semua Pesan',
+      sublabel: 'Catch-All Inbound',
+      icon: Mail,
+      count: counts.all,
+      color: 'text-indigo-400',
+      badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
+    },
+    {
+      id: 'inbox' as FolderType,
+      label: 'Kotak Masuk',
+      sublabel: 'Email Bersih',
+      icon: Inbox,
+      count: counts.inbox,
+      color: 'text-sky-400',
+      badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
+    },
+    {
+      id: 'spam' as FolderType,
+      label: 'Spam & Terfilter',
+      sublabel: 'Tetap Dimunculkan',
+      icon: ShieldAlert,
+      count: counts.spam,
+      color: 'text-amber-400',
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+    },
+    {
+      id: 'starred' as FolderType,
+      label: 'Favorit',
+      sublabel: 'Pesan Berbintang',
+      icon: Star,
+      count: counts.starred,
+      color: 'text-yellow-400',
+      badgeColor: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+    },
+    {
+      id: 'logs' as FolderType,
+      label: 'Log Aktivitas',
+      sublabel: 'Audit Masuk',
+      icon: Activity,
+      count: counts.logs,
+      color: 'text-emerald-400',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+    },
+  ];
+
+  return (
+    <div className="flex flex-col justify-between h-full space-y-4">
+      {/* Navigation Folder List */}
+      <div className="space-y-1.5">
+        <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          Folder Mailbox
+        </div>
+
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentFolder === item.id;
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => onSelectFolder(item.id)}
+              className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-gradient-to-r from-indigo-600/30 to-indigo-700/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-900/10'
+                  : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Icon className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${item.color}`} />
+                <div className="text-left truncate">
+                  <div className={`truncate ${isActive ? 'text-white' : 'text-slate-300'}`}>{item.label}</div>
+                  <div className="text-[10px] text-slate-400 truncate">{item.sublabel}</div>
+                </div>
+              </div>
+
+              {item.count > 0 && (
+                <span className={`ml-2 shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-mono font-bold ${item.badgeColor}`}>
+                  {item.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Catch-All & Spam Retention Feature Callout */}
+      <div className="rounded-xl border border-slate-800 bg-gradient-to-b from-slate-900/80 to-slate-950/80 p-3.5 shadow-sm">
+        <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold mb-1.5">
+          <ShieldCheck className="h-4 w-4" />
+          <span>Zero-Drop Guarantee</span>
+        </div>
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          Semua pesan ke <span className="text-slate-300 font-mono">@domain</span> baik inbox maupun folder spam otomatis ditangkap dan disimpan tanpa dibuang.
+        </p>
+      </div>
+    </div>
+  );
+}

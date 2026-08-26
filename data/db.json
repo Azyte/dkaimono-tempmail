@@ -1,0 +1,383 @@
+{
+  "domains": [
+    {
+      "id": "dom_default",
+      "name": "mail.yourdomain.com",
+      "isPrimary": true,
+      "isCatchAll": true,
+      "status": "active",
+      "createdAt": "2026-08-26T01:55:56.448Z",
+      "mxRecords": [
+        "10 mail.yourdomain.com"
+      ],
+      "spfRecord": "v=spf1 ~all"
+    },
+    {
+      "id": "dom_x56tkv7",
+      "name": "temp.kaimono.my.id",
+      "isPrimary": false,
+      "isCatchAll": true,
+      "status": "unverified",
+      "createdAt": "2026-08-26T01:56:41.362Z",
+      "mxRecords": [],
+      "lastChecked": "2026-08-26T01:56:41.713Z"
+    },
+    {
+      "id": "dom_cxdehrb",
+      "name": "mymail.customdomain.org",
+      "isPrimary": false,
+      "isCatchAll": true,
+      "status": "unverified",
+      "createdAt": "2026-08-26T02:00:04.455Z",
+      "mxRecords": [],
+      "lastChecked": "2026-08-26T02:00:04.860Z"
+    }
+  ],
+  "mailboxes": [
+    {
+      "id": "mb_1z3jg1w",
+      "address": "ninja_tiger505@temp.kaimono.my.id",
+      "name": "ninja_tiger505",
+      "domain": "temp.kaimono.my.id",
+      "createdAt": "2026-08-26T02:25:40.065Z",
+      "expiresAt": "2026-08-27T02:25:40.065Z",
+      "isStarred": false
+    },
+    {
+      "id": "mb_4bw3xvn",
+      "address": "ninja_tiger505@mail.yourdomain.com",
+      "name": "ninja_tiger505",
+      "domain": "mail.yourdomain.com",
+      "createdAt": "2026-08-26T02:25:09.605Z",
+      "expiresAt": "2026-08-27T02:25:09.605Z",
+      "isStarred": false
+    },
+    {
+      "id": "mb_gujnull",
+      "address": "vivid_eagle462@mail.yourdomain.com",
+      "name": "vivid_eagle462",
+      "domain": "mail.yourdomain.com",
+      "createdAt": "2026-08-26T02:25:07.957Z",
+      "expiresAt": "2026-08-27T02:25:07.957Z",
+      "isStarred": false
+    },
+    {
+      "id": "mb_zv0kkfm",
+      "address": "alex_dev@mymail.customdomain.org",
+      "name": "alex_dev",
+      "domain": "mymail.customdomain.org",
+      "createdAt": "2026-08-26T02:00:06.327Z",
+      "expiresAt": "2026-08-27T02:00:06.327Z",
+      "isStarred": false
+    },
+    {
+      "id": "mb_btq4lko",
+      "address": "order123@temp.kaimono.my.id",
+      "name": "order123",
+      "domain": "temp.kaimono.my.id",
+      "createdAt": "2026-08-26T01:57:57.849Z",
+      "expiresAt": "2026-08-27T01:57:57.849Z",
+      "isStarred": false
+    },
+    {
+      "id": "mb_fjt42fg",
+      "address": "speedy_fox99@mail.yourdomain.com",
+      "name": "speedy_fox99",
+      "domain": "mail.yourdomain.com",
+      "createdAt": "2026-08-26T01:56:07.126Z",
+      "expiresAt": "2026-08-27T01:56:07.126Z",
+      "isStarred": false
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_O2Lw4LWsgx",
+      "mailboxAddress": "ninja_tiger505@mail.yourdomain.com",
+      "recipient": "ninja_tiger505@mail.yourdomain.com",
+      "from": {
+        "name": "Auth Security Team",
+        "address": "security@authservice-cloud.com"
+      },
+      "to": [
+        {
+          "name": "",
+          "address": "ninja_tiger505@mail.yourdomain.com"
+        }
+      ],
+      "subject": "Kode Verifikasi Keamanan Anda: 860067",
+      "text": "Kode Verifikasi Keamanan Anda: 860067\n\nMasukkan kode 860067 untuk menyelesaikan proses verifikasi akun ninja_tiger505@mail.yourdomain.com.\nKode ini berlaku 10 menit.",
+      "html": "\n        <div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);\">\n          <div style=\"background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 32px 24px; text-align: center;\">\n            <h1 style=\"color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;\">🔐 Verifikasi Akun</h1>\n            <p style=\"color: #e0e7ff; margin: 8px 0 0 0; font-size: 14px;\">Gunakan kode OTP sekali pakai di bawah ini untuk melanjutkan.</p>\n          </div>\n          <div style=\"padding: 32px 24px; text-align: center;\">\n            <p style=\"color: #475569; font-size: 15px; margin-bottom: 24px;\">Halo! Kami menerima permintaan verifikasi masuk untuk akun <b>ninja_tiger505@mail.yourdomain.com</b>.</p>\n            <div style=\"background: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; display: inline-block; margin: 0 auto;\">\n              <span style=\"font-family: monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #4f46e5;\">860067</span>\n            </div>\n            <p style=\"color: #64748b; font-size: 13px; margin-top: 24px;\">Kode ini hanya berlaku selama <b>10 menit</b>. Jangan berikan kode ini kepada siapapun.</p>\n          </div>\n          <div style=\"background: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;\">\n            Jika Anda tidak meminta kode ini, abaikan email ini dengan aman.<br/>© 2026 Security Protection Shield\n          </div>\n        </div>\n      ",
+      "rawSource": "From: \"Auth Security Team\" <security@authservice-cloud.com>\r\nTo: <ninja_tiger505@mail.yourdomain.com>\r\nSubject: Kode Verifikasi Keamanan Anda: 860067\r\nDate: Wed, 26 Aug 2026 02:26:04 GMT\r\nMessage-ID: <IgegDbF3t-FP@simulated.mail>\r\nContent-Type: text/html; charset=utf-8\r\nReceived-SPF: pass (domain is simulated)\r\nX-Spam-Flag: NO\r\nX-Spam-Score: 0\r\n\r\n\n        <div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);\">\n          <div style=\"background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 32px 24px; text-align: center;\">\n            <h1 style=\"color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;\">🔐 Verifikasi Akun</h1>\n            <p style=\"color: #e0e7ff; margin: 8px 0 0 0; font-size: 14px;\">Gunakan kode OTP sekali pakai di bawah ini untuk melanjutkan.</p>\n          </div>\n          <div style=\"padding: 32px 24px; text-align: center;\">\n            <p style=\"color: #475569; font-size: 15px; margin-bottom: 24px;\">Halo! Kami menerima permintaan verifikasi masuk untuk akun <b>ninja_tiger505@mail.yourdomain.com</b>.</p>\n            <div style=\"background: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; display: inline-block; margin: 0 auto;\">\n              <span style=\"font-family: monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #4f46e5;\">860067</span>\n            </div>\n            <p style=\"color: #64748b; font-size: 13px; margin-top: 24px;\">Kode ini hanya berlaku selama <b>10 menit</b>. Jangan berikan kode ini kepada siapapun.</p>\n          </div>\n          <div style=\"background: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;\">\n            Jika Anda tidak meminta kode ini, abaikan email ini dengan aman.<br/>© 2026 Security Protection Shield\n          </div>\n        </div>\n      ",
+      "headers": {
+        "from": "\"Auth Security Team\" <security@authservice-cloud.com>",
+        "to": "ninja_tiger505@mail.yourdomain.com",
+        "subject": "Kode Verifikasi Keamanan Anda: 860067",
+        "date": "2026-08-26T02:26:04.214Z",
+        "received-spf": "pass",
+        "x-spam-flag": "NO",
+        "x-spam-score": "0"
+      },
+      "attachments": [],
+      "receivedAt": "2026-08-26T02:26:04.214Z",
+      "isRead": false,
+      "isStarred": false,
+      "isSpam": false,
+      "spamScore": 0,
+      "spamReasons": [],
+      "security": {
+        "spf": "pass",
+        "dkim": "pass",
+        "dmarc": "pass"
+      },
+      "inboundSource": "simulation",
+      "size": 2099
+    },
+    {
+      "id": "msg_0sv19kWekb",
+      "mailboxAddress": "alex_dev@mymail.customdomain.org",
+      "recipient": "alex_dev@mymail.customdomain.org",
+      "from": {
+        "name": "Tech Insider Digest",
+        "address": "editor@technews-weekly.io"
+      },
+      "to": [
+        {
+          "name": "",
+          "address": "alex_dev@mymail.customdomain.org"
+        }
+      ],
+      "subject": "🚀 Tech Weekly Recap: Apa yang baru di Next.js & AI 2026",
+      "text": "Tech Weekly Recap #142\nPerkembangan AI Terkini & Tool Produktivitas Developer.\n\nBaca artikel selengkapnya di web.",
+      "html": "\n        <div style=\"font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;\">\n          <div style=\"padding: 24px; border-bottom: 1px solid #e2e8f0;\">\n            <span style=\"font-size: 12px; font-weight: 700; color: #6366f1; text-transform: uppercase;\">EDISI #142 • AGUSTUS 2026</span>\n            <h2 style=\"margin: 8px 0 0 0; color: #0f172a;\">Perkembangan AI Terkini & Tool Produktivitas Developer</h2>\n          </div>\n          <div style=\"padding: 24px;\">\n            <p style=\"color: #334155; line-height: 1.6;\">Selamat datang di edisi minggu ini! Hari ini kita membahas rilis terbaru, tips arsitektur cloud serverless, dan optimasi performa web modern.</p>\n            <div style=\"margin: 20px 0; padding: 16px; background: #f8fafc; border-radius: 8px;\">\n              <h4 style=\"margin: 0 0 8px 0; color: #1e293b;\">📌 Highlight Minggu Ini:</h4>\n              <ul style=\"margin: 0; padding-left: 20px; color: #475569; line-height: 1.5;\">\n                <li>Next.js 16 & Server Actions Best Practice</li>\n                <li>Cloudflare Email Routing untuk Domain Kustom</li>\n                <li>Desain UI/UX Modern dengan Tailwind CSS</li>\n              </ul>\n            </div>\n            <a href=\"#\" style=\"display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px;\">Baca Selengkapnya →</a>\n          </div>\n        </div>\n      ",
+      "rawSource": "From: \"Tech Insider Digest\" <editor@technews-weekly.io>\r\nTo: <alex_dev@mymail.customdomain.org>\r\nSubject: 🚀 Tech Weekly Recap: Apa yang baru di Next.js & AI 2026\r\nDate: Wed, 26 Aug 2026 02:00:06 GMT\r\nMessage-ID: <T32IHqg4ZIJj@simulated.mail>\r\nContent-Type: text/html; charset=utf-8\r\nReceived-SPF: pass (domain is simulated)\r\nX-Spam-Flag: NO\r\nX-Spam-Score: 0\r\n\r\n\n        <div style=\"font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;\">\n          <div style=\"padding: 24px; border-bottom: 1px solid #e2e8f0;\">\n            <span style=\"font-size: 12px; font-weight: 700; color: #6366f1; text-transform: uppercase;\">EDISI #142 • AGUSTUS 2026</span>\n            <h2 style=\"margin: 8px 0 0 0; color: #0f172a;\">Perkembangan AI Terkini & Tool Produktivitas Developer</h2>\n          </div>\n          <div style=\"padding: 24px;\">\n            <p style=\"color: #334155; line-height: 1.6;\">Selamat datang di edisi minggu ini! Hari ini kita membahas rilis terbaru, tips arsitektur cloud serverless, dan optimasi performa web modern.</p>\n            <div style=\"margin: 20px 0; padding: 16px; background: #f8fafc; border-radius: 8px;\">\n              <h4 style=\"margin: 0 0 8px 0; color: #1e293b;\">📌 Highlight Minggu Ini:</h4>\n              <ul style=\"margin: 0; padding-left: 20px; color: #475569; line-height: 1.5;\">\n                <li>Next.js 16 & Server Actions Best Practice</li>\n                <li>Cloudflare Email Routing untuk Domain Kustom</li>\n                <li>Desain UI/UX Modern dengan Tailwind CSS</li>\n              </ul>\n            </div>\n            <a href=\"#\" style=\"display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px;\">Baca Selengkapnya →</a>\n          </div>\n        </div>\n      ",
+      "headers": {
+        "from": "\"Tech Insider Digest\" <editor@technews-weekly.io>",
+        "to": "alex_dev@mymail.customdomain.org",
+        "subject": "🚀 Tech Weekly Recap: Apa yang baru di Next.js & AI 2026",
+        "date": "2026-08-26T02:00:06.318Z",
+        "received-spf": "pass",
+        "x-spam-flag": "NO",
+        "x-spam-score": "0"
+      },
+      "attachments": [],
+      "receivedAt": "2026-08-26T02:00:06.318Z",
+      "isRead": true,
+      "isStarred": false,
+      "isSpam": false,
+      "spamScore": 0,
+      "spamReasons": [],
+      "security": {
+        "spf": "pass",
+        "dkim": "pass",
+        "dmarc": "pass"
+      },
+      "inboundSource": "simulation",
+      "size": 1915
+    },
+    {
+      "id": "msg_ORbqEvjb7S",
+      "mailboxAddress": "order123@temp.kaimono.my.id",
+      "recipient": "order123@temp.kaimono.my.id",
+      "from": {
+        "name": "tes",
+        "address": "t@external.com"
+      },
+      "to": [
+        {
+          "name": "",
+          "address": "order123@temp.kaimono.my.id"
+        }
+      ],
+      "subject": "Konfirmasi Pesanan #8892",
+      "text": "Terima kasih atas pesanan Anda!",
+      "html": "<div style=\"font-family:sans-serif;white-space:pre-wrap;\">Terima kasih atas pesanan Anda!</div>",
+      "rawSource": "From: test@external.com\r\nTo: order123@temp.kaimono.my.id\r\nSubject: Konfirmasi Pesanan #8892\r\n\r\nTerima kasih atas pesanan Anda!",
+      "headers": {
+        "from": "test@external.com",
+        "to": "order123@temp.kaimono.my.id",
+        "subject": "Konfirmasi Pesanan #8892"
+      },
+      "attachments": [],
+      "receivedAt": "2026-08-26T01:57:57.848Z",
+      "isRead": false,
+      "isStarred": false,
+      "isSpam": false,
+      "spamScore": 0,
+      "spamReasons": [
+        "Email lolos uji filter keamanan (Clean)"
+      ],
+      "security": {
+        "spf": "none",
+        "dkim": "none",
+        "dmarc": "none"
+      },
+      "inboundSource": "webhook",
+      "size": 126
+    },
+    {
+      "id": "msg_g5hpOiPNCO",
+      "mailboxAddress": "speedy_fox99@mail.yourdomain.com",
+      "recipient": "speedy_fox99@mail.yourdomain.com",
+      "from": {
+        "name": "International Claim Office",
+        "address": "winner-notification-dept@spam-promo-hub.biz"
+      },
+      "to": [
+        {
+          "name": "",
+          "address": "speedy_fox99@mail.yourdomain.com"
+        }
+      ],
+      "subject": "💥 URGENT!!! YOU WON $2,500,000 CASH PRIZE LOTTERY INVITATION 💥",
+      "text": "CONGRATULATIONS! YOU WON $2,500,000 USD.\nBatch Ref: INT-LOTTO/99281-XYZ\nReply to claim your prize immediately.",
+      "html": "\n        <div style=\"font-family: Arial, sans-serif; background: #fffbeb; padding: 24px; border: 2px solid #f59e0b; border-radius: 8px;\">\n          <h2 style=\"color: #b45309; text-transform: uppercase;\">🎉 CONGRATULATIONS! OFFICIAL WINNER NOTIFICATION 🎉</h2>\n          <p style=\"font-size: 16px; color: #1f2937;\">Dear Beneficiary <b>speedy_fox99@mail.yourdomain.com</b>,</p>\n          <p style=\"font-size: 14px; color: #374151;\">We are pleased to inform you that your email address was selected as a 1st category winner of <b>$2,500,000 USD</b> in the Annual Global Promo Lottery!</p>\n          <div style=\"background: #fef3c7; padding: 15px; margin: 15px 0; border-left: 4px solid #d97706;\">\n            <p style=\"margin: 0; font-weight: bold; color: #92400e;\">Batch Ref: INT-LOTTO/99281-XYZ</p>\n            <p style=\"margin: 5px 0 0 0; color: #b45309;\">Prize Amount: $2,500,000.00 USD</p>\n          </div>\n          <p style=\"font-size: 14px; color: #374151;\">To claim your prize, immediately reply with your Full Name, Bank Account Details, and Phone Number.</p>\n          <p style=\"color: #dc2626; font-weight: bold;\">(Ini adalah email simulasi spam untuk menguji filter spam & catch-all tempmail)</p>\n        </div>\n      ",
+      "rawSource": "From: \"International Claim Office\" <winner-notification-dept@spam-promo-hub.biz>\r\nTo: <speedy_fox99@mail.yourdomain.com>\r\nSubject: 💥 URGENT!!! YOU WON $2,500,000 CASH PRIZE LOTTERY INVITATION 💥\r\nDate: Wed, 26 Aug 2026 01:56:07 GMT\r\nMessage-ID: <3vYbQa0X4qQb@simulated.mail>\r\nContent-Type: text/html; charset=utf-8\r\nReceived-SPF: fail (domain is simulated)\r\nX-Spam-Flag: YES\r\nX-Spam-Score: 95\r\n\r\n\n        <div style=\"font-family: Arial, sans-serif; background: #fffbeb; padding: 24px; border: 2px solid #f59e0b; border-radius: 8px;\">\n          <h2 style=\"color: #b45309; text-transform: uppercase;\">🎉 CONGRATULATIONS! OFFICIAL WINNER NOTIFICATION 🎉</h2>\n          <p style=\"font-size: 16px; color: #1f2937;\">Dear Beneficiary <b>speedy_fox99@mail.yourdomain.com</b>,</p>\n          <p style=\"font-size: 14px; color: #374151;\">We are pleased to inform you that your email address was selected as a 1st category winner of <b>$2,500,000 USD</b> in the Annual Global Promo Lottery!</p>\n          <div style=\"background: #fef3c7; padding: 15px; margin: 15px 0; border-left: 4px solid #d97706;\">\n            <p style=\"margin: 0; font-weight: bold; color: #92400e;\">Batch Ref: INT-LOTTO/99281-XYZ</p>\n            <p style=\"margin: 5px 0 0 0; color: #b45309;\">Prize Amount: $2,500,000.00 USD</p>\n          </div>\n          <p style=\"font-size: 14px; color: #374151;\">To claim your prize, immediately reply with your Full Name, Bank Account Details, and Phone Number.</p>\n          <p style=\"color: #dc2626; font-weight: bold;\">(Ini adalah email simulasi spam untuk menguji filter spam & catch-all tempmail)</p>\n        </div>\n      ",
+      "headers": {
+        "from": "\"International Claim Office\" <winner-notification-dept@spam-promo-hub.biz>",
+        "to": "speedy_fox99@mail.yourdomain.com",
+        "subject": "💥 URGENT!!! YOU WON $2,500,000 CASH PRIZE LOTTERY INVITATION 💥",
+        "date": "2026-08-26T01:56:07.856Z",
+        "received-spf": "fail",
+        "x-spam-flag": "YES",
+        "x-spam-score": "95"
+      },
+      "attachments": [],
+      "receivedAt": "2026-08-26T01:56:07.856Z",
+      "isRead": false,
+      "isStarred": false,
+      "isSpam": true,
+      "spamScore": 95,
+      "spamReasons": [
+        "SPF record failed (Domain sender tidak terotorisasi)",
+        "Subject mengandung huruf KAPITAL berlebih (ALL CAPS)",
+        "Subject memiliki tanda seru berlebih (!!!)",
+        "Kata kunci spam terdeteksi: \"lottery\", \"urgent\", \"cash prize\", \"winner\"",
+        "Upstream score melampaui batas aman spam"
+      ],
+      "security": {
+        "spf": "fail",
+        "dkim": "fail",
+        "dmarc": "fail"
+      },
+      "inboundSource": "simulation",
+      "size": 1633
+    },
+    {
+      "id": "msg_TNllwyACn7",
+      "mailboxAddress": "speedy_fox99@mail.yourdomain.com",
+      "recipient": "speedy_fox99@mail.yourdomain.com",
+      "from": {
+        "name": "Auth Security Team",
+        "address": "security@authservice-cloud.com"
+      },
+      "to": [
+        {
+          "name": "",
+          "address": "speedy_fox99@mail.yourdomain.com"
+        }
+      ],
+      "subject": "Kode Verifikasi Keamanan Anda: 448919",
+      "text": "Kode Verifikasi Keamanan Anda: 448919\n\nMasukkan kode 448919 untuk menyelesaikan proses verifikasi akun speedy_fox99@mail.yourdomain.com.\nKode ini berlaku 10 menit.",
+      "html": "\n        <div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);\">\n          <div style=\"background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 32px 24px; text-align: center;\">\n            <h1 style=\"color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;\">🔐 Verifikasi Akun</h1>\n            <p style=\"color: #e0e7ff; margin: 8px 0 0 0; font-size: 14px;\">Gunakan kode OTP sekali pakai di bawah ini untuk melanjutkan.</p>\n          </div>\n          <div style=\"padding: 32px 24px; text-align: center;\">\n            <p style=\"color: #475569; font-size: 15px; margin-bottom: 24px;\">Halo! Kami menerima permintaan verifikasi masuk untuk akun <b>speedy_fox99@mail.yourdomain.com</b>.</p>\n            <div style=\"background: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; display: inline-block; margin: 0 auto;\">\n              <span style=\"font-family: monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #4f46e5;\">448919</span>\n            </div>\n            <p style=\"color: #64748b; font-size: 13px; margin-top: 24px;\">Kode ini hanya berlaku selama <b>10 menit</b>. Jangan berikan kode ini kepada siapapun.</p>\n          </div>\n          <div style=\"background: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;\">\n            Jika Anda tidak meminta kode ini, abaikan email ini dengan aman.<br/>© 2026 Security Protection Shield\n          </div>\n        </div>\n      ",
+      "rawSource": "From: \"Auth Security Team\" <security@authservice-cloud.com>\r\nTo: <speedy_fox99@mail.yourdomain.com>\r\nSubject: Kode Verifikasi Keamanan Anda: 448919\r\nDate: Wed, 26 Aug 2026 01:56:07 GMT\r\nMessage-ID: <mjMw3HuOr2Sv@simulated.mail>\r\nContent-Type: text/html; charset=utf-8\r\nReceived-SPF: pass (domain is simulated)\r\nX-Spam-Flag: NO\r\nX-Spam-Score: 0\r\n\r\n\n        <div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);\">\n          <div style=\"background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 32px 24px; text-align: center;\">\n            <h1 style=\"color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;\">🔐 Verifikasi Akun</h1>\n            <p style=\"color: #e0e7ff; margin: 8px 0 0 0; font-size: 14px;\">Gunakan kode OTP sekali pakai di bawah ini untuk melanjutkan.</p>\n          </div>\n          <div style=\"padding: 32px 24px; text-align: center;\">\n            <p style=\"color: #475569; font-size: 15px; margin-bottom: 24px;\">Halo! Kami menerima permintaan verifikasi masuk untuk akun <b>speedy_fox99@mail.yourdomain.com</b>.</p>\n            <div style=\"background: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; display: inline-block; margin: 0 auto;\">\n              <span style=\"font-family: monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #4f46e5;\">448919</span>\n            </div>\n            <p style=\"color: #64748b; font-size: 13px; margin-top: 24px;\">Kode ini hanya berlaku selama <b>10 menit</b>. Jangan berikan kode ini kepada siapapun.</p>\n          </div>\n          <div style=\"background: #f8fafc; padding: 16px 24px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;\">\n            Jika Anda tidak meminta kode ini, abaikan email ini dengan aman.<br/>© 2026 Security Protection Shield\n          </div>\n        </div>\n      ",
+      "headers": {
+        "from": "\"Auth Security Team\" <security@authservice-cloud.com>",
+        "to": "speedy_fox99@mail.yourdomain.com",
+        "subject": "Kode Verifikasi Keamanan Anda: 448919",
+        "date": "2026-08-26T01:56:07.124Z",
+        "received-spf": "pass",
+        "x-spam-flag": "NO",
+        "x-spam-score": "0"
+      },
+      "attachments": [],
+      "receivedAt": "2026-08-26T01:56:07.124Z",
+      "isRead": false,
+      "isStarred": false,
+      "isSpam": false,
+      "spamScore": 0,
+      "spamReasons": [],
+      "security": {
+        "spf": "pass",
+        "dkim": "pass",
+        "dmarc": "pass"
+      },
+      "inboundSource": "simulation",
+      "size": 2095
+    }
+  ],
+  "settings": {
+    "defaultDomain": "mail.yourdomain.com",
+    "webhookSecret": "sec_tempmail_cfjpyyqhgu",
+    "bypassSpamFilter": true,
+    "autoRefreshSeconds": 10,
+    "retentionHours": 24,
+    "soundEnabled": true,
+    "allowCustomAlias": true,
+    "smtpPort": 2525,
+    "apiKeys": [
+      {
+        "id": "key_master",
+        "name": "Default Admin Key",
+        "key": "tm_58tb50r085p2487wwwqjwv",
+        "createdAt": "2026-08-26T01:55:56.442Z"
+      }
+    ]
+  },
+  "logs": [
+    {
+      "id": "log_5n9suqx",
+      "timestamp": "2026-08-26T02:26:04.214Z",
+      "sender": "security@authservice-cloud.com",
+      "recipient": "ninja_tiger505@mail.yourdomain.com",
+      "subject": "Kode Verifikasi Keamanan Anda: 860067",
+      "status": "received",
+      "gateway": "simulation",
+      "spamScore": 0,
+      "details": "Delivered to inbox"
+    },
+    {
+      "id": "log_itur65t",
+      "timestamp": "2026-08-26T02:00:06.318Z",
+      "sender": "editor@technews-weekly.io",
+      "recipient": "alex_dev@mymail.customdomain.org",
+      "subject": "🚀 Tech Weekly Recap: Apa yang baru di Next.js & AI 2026",
+      "status": "received",
+      "gateway": "simulation",
+      "spamScore": 0,
+      "details": "Delivered to inbox"
+    },
+    {
+      "id": "log_xlirl4w",
+      "timestamp": "2026-08-26T01:57:57.848Z",
+      "sender": "t@external.com",
+      "recipient": "order123@temp.kaimono.my.id",
+      "subject": "Konfirmasi Pesanan #8892",
+      "status": "received",
+      "gateway": "webhook",
+      "spamScore": 0,
+      "details": "Delivered to inbox"
+    },
+    {
+      "id": "log_6zay8k4",
+      "timestamp": "2026-08-26T01:56:07.856Z",
+      "sender": "winner-notification-dept@spam-promo-hub.biz",
+      "recipient": "speedy_fox99@mail.yourdomain.com",
+      "subject": "💥 URGENT!!! YOU WON $2,500,000 CASH PRIZE LOTTERY INVITATION 💥",
+      "status": "spam_flagged",
+      "gateway": "simulation",
+      "spamScore": 95,
+      "details": "Spam triggers: SPF record failed (Domain sender tidak terotorisasi), Subject mengandung huruf KAPITAL berlebih (ALL CAPS), Subject memiliki tanda seru berlebih (!!!), Kata kunci spam terdeteksi: \"lottery\", \"urgent\", \"cash prize\", \"winner\", Upstream score melampaui batas aman spam"
+    },
+    {
+      "id": "log_fyqrm69",
+      "timestamp": "2026-08-26T01:56:07.124Z",
+      "sender": "security@authservice-cloud.com",
+      "recipient": "speedy_fox99@mail.yourdomain.com",
+      "subject": "Kode Verifikasi Keamanan Anda: 448919",
+      "status": "received",
+      "gateway": "simulation",
+      "spamScore": 0,
+      "details": "Delivered to inbox"
+    }
+  ]
+}
