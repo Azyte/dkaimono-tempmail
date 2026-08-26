@@ -104,7 +104,7 @@ export default function Home() {
         }
         prevCountRef.current = data.messages.length;
 
-        // Auto select first message on desktop if none selected
+        // Auto select first message on desktop only if none selected
         if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
           if (!selectedMessageId && data.messages.length > 0) {
             setSelectedMessageId(data.messages[0].id);
@@ -331,7 +331,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#060913] text-slate-100 pb-20 sm:pb-8">
+    <div className="flex min-h-screen flex-col bg-[#060913] text-slate-100 pb-20 md:pb-8">
       {/* Top Navbar */}
       <Navbar
         settings={settings}
@@ -345,64 +345,68 @@ export default function Home() {
       />
 
       {/* Main Container */}
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-3.5 sm:gap-5 p-3 sm:p-6 lg:p-8">
-        {/* Hero Mailbox Bar */}
-        <MailboxHeader
-          mailbox={mailbox}
-          domains={domains}
-          activeDomain={activeDomain}
-          onSelectDomain={handleSelectDomain}
-          onSelectMailbox={(address) => initMailbox(address)}
-          onGenerateRandom={handleGenerateRandom}
-          onOpenCustomAlias={() => setCustomAliasModalOpen(true)}
-          onOpenQrCode={() => setQrCodeModalOpen(true)}
-          onOpenTestEmail={() => setTestEmailModalOpen(true)}
-          onRefresh={() => mailbox && fetchMessages(mailbox.address)}
-          onClearMailbox={handleClearMailbox}
-          onOpenSettings={handleOpenSettings}
-          isRefreshing={isRefreshing}
-          refreshCountdown={refreshCountdown}
-          totalMessages={messages.length}
-        />
-
-        {/* Mobile Folder Pills Segmented Bar (Mobile Only) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:hidden custom-scrollbar">
-          {[
-            { id: 'all' as FolderType, label: 'Semua', count: counts.all, icon: Mail },
-            { id: 'inbox' as FolderType, label: 'Inbox', count: counts.inbox, icon: Inbox },
-            { id: 'spam' as FolderType, label: 'Spam', count: counts.spam, icon: ShieldAlert },
-            { id: 'starred' as FolderType, label: 'Favorit', count: counts.starred, icon: Star },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isActive = currentFolder === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleSelectFolder(item.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all active:scale-95 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-600/30'
-                    : 'border border-slate-800 bg-slate-900/80 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{item.label}</span>
-                {item.count > 0 && (
-                  <span
-                    className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold ${
-                      isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
-                    }`}
-                  >
-                    {item.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-3 sm:gap-5 p-2.5 sm:p-5 lg:p-8">
+        {/* Hero Mailbox Bar (Hidden on Mobile when viewing an individual email for maximum reading space) */}
+        <div className={selectedMessageId ? 'hidden md:block' : 'block'}>
+          <MailboxHeader
+            mailbox={mailbox}
+            domains={domains}
+            activeDomain={activeDomain}
+            onSelectDomain={handleSelectDomain}
+            onSelectMailbox={(address) => initMailbox(address)}
+            onGenerateRandom={handleGenerateRandom}
+            onOpenCustomAlias={() => setCustomAliasModalOpen(true)}
+            onOpenQrCode={() => setQrCodeModalOpen(true)}
+            onOpenTestEmail={() => setTestEmailModalOpen(true)}
+            onRefresh={() => mailbox && fetchMessages(mailbox.address)}
+            onClearMailbox={handleClearMailbox}
+            onOpenSettings={handleOpenSettings}
+            isRefreshing={isRefreshing}
+            refreshCountdown={refreshCountdown}
+            totalMessages={messages.length}
+          />
         </div>
 
+        {/* Mobile Folder Filter Bar (Visible only on mobile when browsing email list) */}
+        {!selectedMessageId && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:hidden custom-scrollbar">
+            {[
+              { id: 'all' as FolderType, label: 'Semua', count: counts.all, icon: Mail },
+              { id: 'inbox' as FolderType, label: 'Inbox', count: counts.inbox, icon: Inbox },
+              { id: 'spam' as FolderType, label: 'Spam', count: counts.spam, icon: ShieldAlert },
+              { id: 'starred' as FolderType, label: 'Favorit', count: counts.starred, icon: Star },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive = currentFolder === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleSelectFolder(item.id)}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-600/30'
+                      : 'border border-slate-800 bg-slate-900/90 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{item.label}</span>
+                  {item.count > 0 && (
+                    <span
+                      className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Responsive Grid Layout */}
-        <div className="grid flex-1 grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5 min-h-[550px]">
+        <div className="grid flex-1 grid-cols-1 md:grid-cols-12 gap-3 sm:gap-5 min-h-[450px]">
           {/* Left Sidebar (Desktop/Tablet Only) */}
           <div className="hidden md:block md:col-span-4 lg:col-span-3 h-full">
             <FolderSidebar
@@ -450,12 +454,12 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Floating Bottom Quick Action Bar for Mobile Thumb Usage */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800/90 bg-slate-950/90 p-2 backdrop-blur-xl md:hidden">
+      {/* Floating Bottom Quick Action Bar for Mobile View */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800/90 bg-slate-950/95 p-1.5 backdrop-blur-xl md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-around gap-1">
           <button
             onClick={handleGenerateRandom}
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <Shuffle className="h-4 w-4 text-amber-400" />
             <span>Acak</span>
@@ -463,7 +467,7 @@ export default function Home() {
 
           <button
             onClick={() => setCustomAliasModalOpen(true)}
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <Mail className="h-4 w-4 text-sky-400" />
             <span>Custom</span>
@@ -471,7 +475,7 @@ export default function Home() {
 
           <button
             onClick={() => handleOpenSettings('pro')}
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl p-1.5 text-[10px] font-medium text-amber-300 active:scale-95 transition-all hover:bg-slate-900"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-amber-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <Crown className="h-4 w-4 text-amber-400 fill-amber-400" />
             <span>PRO</span>
@@ -479,7 +483,7 @@ export default function Home() {
 
           <button
             onClick={() => setTestEmailModalOpen(true)}
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <FlaskConical className="h-4 w-4 text-emerald-400" />
             <span>Test Mail</span>
@@ -487,7 +491,7 @@ export default function Home() {
 
           <button
             onClick={() => handleOpenSettings()}
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
+            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[10px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
           >
             <Settings className="h-4 w-4 text-cyan-400" />
             <span>Setting</span>
