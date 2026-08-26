@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSingleAmPremium, AmAccountResult } from '@/lib/alightMotion';
+import { createSingleAmPremium, verifyExistingAmAccount, AmAccountResult } from '@/lib/alightMotion';
 import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// 2. POST /api/am-premium -> Generate AM Premium accounts
+// 2. POST /api/am-premium -> Generate AM Premium accounts or retry activation
 export async function POST(req: NextRequest) {
   try {
     const { user, deviceId } = await extractUserAndDevice(req);
@@ -62,11 +62,54 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
+
+    // Action: Retry single account
+    if (body.action === 'retry' && body.id) {
+      const retryRes = await verifyExistingAmAccount(body.id, user.id);
+      if (retryRes.success) {
+        return NextResponse.json({
+          success: true,
+          message: 'Akun berhasil diaktivasi menjadi Premium 1 Tahun!',
+          account: retryRes.account,
+        });
+      } else {
+        return NextResponse.json(
+          {
+            success: false,
+            error: retryRes.error || 'Aktivasi masih dalam antrean cooldown server. Silakan coba sebentar lagi.',
+          },
+          { status: 429 }
+        );
+      }
+    }
+
+    // Action: Retry all pending accounts
+    if (body.action === 'retry_all') {
+      const accounts = db.getAmAccounts(user.id, deviceId);
+      const pendingAccounts = accounts.filter((a) => a.status === 'pending');
+      const results = [];
+
+      for (const acc of pendingAccounts) {
+        const res = await verifyExistingAmAccount(acc.id, user.id);
+        if (res.success) {
+          results.push(res.account);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        activatedCount: results.length,
+        totalPending: pendingAccounts.length,
+        accounts: results,
+      });
+    }
+
+    // Standard Batch Generation
     let count = parseInt(body.count || '1', 10);
     const customAlias = body.customAlias ? String(body.customAlias).trim() : undefined;
 
     if (isNaN(count) || count < 1) count = 1;
-    if (count > 10) count = 10; // Max 10 per batch to avoid rate-limits
+    if (count > 10) count = 10; // Max 10 per batch
 
     const domain = db.getSettings().defaultDomain || 'loginptn.xyz';
     const results: AmAccountResult[] = [];
@@ -86,12 +129,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const successCount = results.filter((r) => r.success).length;
+    const successCount = results.filter((r) => r.success && !r.isPending).length;
+    const pendingCount = results.filter((r) => r.isPending).length;
 
     return NextResponse.json({
       success: true,
       totalRequested: count,
       successCount,
+      pendingCount,
       accounts: results,
     });
   } catch (err: any) {

@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Plus,
   Crown,
+  Play,
 } from 'lucide-react';
 import { AmPremiumAccount, User } from '@/types';
 import { fireConfetti } from '@/lib/confetti';
@@ -35,6 +36,8 @@ export function AmAccountsTab({
 }: AmAccountsTabProps) {
   const [accounts, setAccounts] = useState<AmPremiumAccount[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [activatingAll, setActivatingAll] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
@@ -92,6 +95,52 @@ export function AmAccountsTab({
     fetchAccounts();
   }, [currentUser]);
 
+  // Handle single account activation retry
+  const handleActivateAccount = async (id: string) => {
+    setActivatingId(id);
+    try {
+      const res = await fetch('/api/am-premium', {
+        method: 'POST',
+        headers: getSessionHeaders(),
+        body: JSON.stringify({ action: 'retry', id }),
+      });
+      const data = await res.json();
+      if (data.success && data.account) {
+        fireConfetti();
+        setAccounts((prev) => prev.map((a) => (a.id === id ? data.account : a)));
+      } else {
+        alert(data.error || 'Server aktivasi sedang cooldown. Silakan coba kembali dalam beberapa detik.');
+      }
+    } catch (e) {
+      console.error('Activation error:', e);
+    } finally {
+      setActivatingId(null);
+    }
+  };
+
+  // Handle batch activation of all pending accounts
+  const handleActivateAllPending = async () => {
+    setActivatingAll(true);
+    try {
+      const res = await fetch('/api/am-premium', {
+        method: 'POST',
+        headers: getSessionHeaders(),
+        body: JSON.stringify({ action: 'retry_all' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.activatedCount > 0) {
+          fireConfetti();
+        }
+        await fetchAccounts();
+      }
+    } catch (e) {
+      console.error('Batch activation error:', e);
+    } finally {
+      setActivatingAll(false);
+    }
+  };
+
   const handleCopy = (text: string, type: 'email' | 'link' | 'all') => {
     navigator.clipboard.writeText(text);
     if (type === 'email') {
@@ -111,7 +160,7 @@ export function AmAccountsTab({
     const text = accounts
       .map(
         (a, i) =>
-          `[${i + 1}] Email: ${a.email}\n    Link Inbox: ${a.inboxUrl}\n    Durasi: ${a.duration}\n    Dibuat: ${new Date(a.createdAt).toLocaleString('id-ID')}`
+          `[${i + 1}] Email: ${a.email}\n    Link Inbox: ${a.inboxUrl}\n    Durasi: ${a.duration}\n    Status: ${a.status === 'active' ? 'Aktif' : 'Menunggu Aktivasi'}\n    Dibuat: ${new Date(a.createdAt).toLocaleString('id-ID')}`
       )
       .join('\n\n');
     handleCopy(text, 'all');
@@ -122,7 +171,7 @@ export function AmAccountsTab({
     const text = accounts
       .map(
         (a, i) =>
-          `=== AKUN ALIGHT MOTION PREMIUM #${i + 1} ===\nEmail: ${a.email}\nLink Inbox: ${a.inboxUrl}\nDurasi: ${a.duration}\nStatus: Aktif\nTanggal: ${new Date(a.createdAt).toISOString()}\n`
+          `=== AKUN ALIGHT MOTION PREMIUM #${i + 1} ===\nEmail: ${a.email}\nLink Inbox: ${a.inboxUrl}\nDurasi: ${a.duration}\nStatus: ${a.status === 'active' ? 'Aktif' : 'Menunggu Aktivasi'}\nTanggal: ${new Date(a.createdAt).toISOString()}\n`
       )
       .join('\n');
 
@@ -171,6 +220,8 @@ export function AmAccountsTab({
     }
   };
 
+  const pendingCount = accounts.filter((a) => a.status === 'pending').length;
+
   const filteredAccounts = accounts.filter((a) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -213,13 +264,18 @@ export function AmAccountsTab({
               <Zap className="h-6 w-6 fill-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm sm:text-base font-bold text-white">
                   Riwayat Akun AM Premium
                 </h3>
                 <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-extrabold text-emerald-300">
-                  {accounts.length} Akun Tersedia
+                  {accounts.length} Akun
                 </span>
+                {pendingCount > 0 && (
+                  <span className="rounded-full bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 text-[10px] font-extrabold text-amber-300 animate-pulse">
+                    {pendingCount} Menunggu Aktivasi
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-300 mt-0.5">
                 Daftar akun Alight Motion 1 Tahun Premium yang dibuat otomatis via TempMail.
@@ -229,6 +285,17 @@ export function AmAccountsTab({
 
           {/* Top Quick Actions */}
           <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            {pendingCount > 0 && (
+              <button
+                onClick={handleActivateAllPending}
+                disabled={activatingAll}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 px-3 py-2 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-orange-500 active:scale-95 transition-all disabled:opacity-50"
+              >
+                <Play className={`h-3.5 w-3.5 fill-white ${activatingAll ? 'animate-spin' : ''}`} />
+                <span>{activatingAll ? 'Mengaktivasi...' : `Aktivasi ${pendingCount} Akun`}</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenAmPremiumModal}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:from-emerald-500 hover:to-cyan-500 active:scale-95 transition-all"
@@ -321,25 +388,42 @@ export function AmAccountsTab({
             const isEmailCopied = copiedEmail === acc.email;
             const isLinkCopied = copiedLink === acc.inboxUrl;
             const alias = acc.alias || acc.email.split('@')[0];
+            const isPending = acc.status === 'pending';
+            const isActivating = activatingId === acc.id;
 
             return (
               <div
                 key={acc.id || index}
-                className="group relative overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/70 p-3.5 sm:p-4 shadow-lg hover:border-emerald-500/50 hover:bg-slate-900/90 transition-all backdrop-blur-xl"
+                className={`group relative overflow-hidden rounded-2xl border p-3.5 sm:p-4 shadow-lg transition-all backdrop-blur-xl ${
+                  isPending
+                    ? 'border-amber-500/40 bg-amber-950/20 hover:border-amber-500/70 hover:bg-slate-900/90'
+                    : 'border-slate-800/90 bg-slate-900/70 hover:border-emerald-500/50 hover:bg-slate-900/90'
+                }`}
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   {/* Left: Email and Details */}
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-400">
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                          isPending ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-400'
+                        }`}
+                      >
                         {index + 1}
                       </span>
                       <p className="font-mono text-sm sm:text-base font-bold text-white truncate max-w-full">
                         {acc.email}
                       </p>
-                      <span className="rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-300">
-                        {acc.duration || '1 Tahun Premium'}
-                      </span>
+
+                      {isPending ? (
+                        <span className="rounded-md border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                          ⏳ Siap Diaktivasi
+                        </span>
+                      ) : (
+                        <span className="rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-300">
+                          {acc.duration || '1 Tahun Premium'}
+                        </span>
+                      )}
                     </div>
 
                     {/* Inbox Link Display */}
@@ -359,7 +443,20 @@ export function AmAccountsTab({
                   </div>
 
                   {/* Right: Action Buttons */}
-                  <div className="flex items-center gap-1.5 shrink-0 pt-2 md:pt-0 border-t border-slate-800/60 md:border-0">
+                  <div className="flex items-center gap-1.5 shrink-0 pt-2 md:pt-0 border-t border-slate-800/60 md:border-0 flex-wrap sm:flex-nowrap">
+                    {/* Activation Button for Pending Accounts */}
+                    {isPending && (
+                      <button
+                        onClick={() => handleActivateAccount(acc.id)}
+                        disabled={isActivating}
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-3 py-1.5 text-xs font-bold text-white shadow-md hover:from-amber-400 hover:to-orange-500 active:scale-95 transition-all disabled:opacity-50"
+                        title="Aktivasi status Premium akun ini sekarang"
+                      >
+                        <Zap className={`h-3.5 w-3.5 fill-white ${isActivating ? 'animate-spin' : ''}`} />
+                        <span>{isActivating ? 'Mengaktivasi...' : '⚡ Aktivasi Sekarang'}</span>
+                      </button>
+                    )}
+
                     {/* Copy Email Button */}
                     <button
                       onClick={() => handleCopy(acc.email, 'email')}

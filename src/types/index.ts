@@ -98,7 +98,10 @@ export interface AmPremiumAccount {
   alias: string;
   inboxUrl: string;
   duration: string;
-  status: 'active' | 'failed';
+  status: 'active' | 'pending' | 'failed';
+  magicLink?: string;
+  orderId?: string;
+  error?: string;
   createdAt: string;
   userId?: string;
   deviceFingerprint?: string;
