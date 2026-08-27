@@ -29,7 +29,10 @@ import {
   Music,
   Gamepad2,
   Lock,
-  Server,
+  BookOpen,
+  Video,
+  Image,
+  PhoneCall,
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
 import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
@@ -58,6 +61,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const [copiedArl, setCopiedArl] = useState<string | null>(null);
   const [copiedOutline, setCopiedOutline] = useState<string | null>(null);
   const [copiedSsh, setCopiedSsh] = useState<string | null>(null);
+  const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
 
@@ -114,7 +118,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
 
   const handleCopyText = (
     text: string,
-    type: 'key' | 'email' | 'pass' | 'combo' | 'config' | 'dns' | 'ai' | 'arl' | 'outline' | 'ssh' | 'all'
+    type: 'key' | 'email' | 'pass' | 'combo' | 'config' | 'dns' | 'ai' | 'arl' | 'outline' | 'ssh' | 'phone' | 'all'
   ) => {
     navigator.clipboard.writeText(text);
     if (type === 'key') {
@@ -147,6 +151,9 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     } else if (type === 'ssh') {
       setCopiedSsh(text);
       setTimeout(() => setCopiedSsh(null), 2000);
+    } else if (type === 'phone') {
+      setCopiedPhone(text);
+      setTimeout(() => setCopiedPhone(null), 2000);
     } else {
       setCopiedAll(true);
       setTimeout(() => setCopiedAll(false), 2000);
@@ -170,6 +177,18 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
       .map((r, i) => {
         if (r.serviceType === 'warp_plus') {
           return `[${i + 1}] Cloudflare WARP+ License: ${r.licenseKey}\n    WireGuard Config:\n${r.wireguardConfig}`;
+        }
+        if (r.serviceType === 'scribd_doc') {
+          return `[${i + 1}] Scribd PDF Unlock (${r.documentTitle}):\n    Download: ${r.pdfDownloadUrl}`;
+        }
+        if (r.serviceType === 'media_downloader') {
+          return `[${i + 1}] Media Downloader:\n    Video HD: ${r.hdVideoUrl}\n    Audio MP3: ${r.audioMp3Url}`;
+        }
+        if (r.serviceType === 'flux_ai_image') {
+          return `[${i + 1}] Flux.1 AI Image:\n    URL: ${r.imageUrl}`;
+        }
+        if (r.serviceType === 'temp_sms') {
+          return `[${i + 1}] Virtual SMS Number: ${r.formattedNumber}\n    Inbox: ${r.smsInboxUrl}`;
         }
         if (r.serviceType === 'outline_vpn') {
           return `[${i + 1}] Outline VPN Access Key (${r.serviceName}):\n    ${r.accessKey}`;
@@ -223,12 +242,12 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white">Auto Pro &amp; Trial Hub</h3>
+                <h3 className="text-base font-bold text-white">Auto Pro &amp; Utility Hub</h3>
                 <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
                   PRO VIP
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Pilih aplikasi target untuk generate instan.</p>
+              <p className="text-xs text-slate-400">Pilih aplikasi / tools praktis target untuk eksekusi instan.</p>
             </div>
           </div>
 
@@ -247,11 +266,11 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
                 <Zap className="h-3.5 w-3.5 fill-emerald-400" />
-                <span>⚡ 100% Terima Jadi (Auto Server / Key / VPN / Token):</span>
+                <span>⚡ 100% Terima Jadi (Auto Tools / Media / PDF / AI / VPN):</span>
               </label>
               <span className="text-[10px] text-slate-400">Tanpa Daftar Manual</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {autoServices.map((st) => {
                 const s = SUPPORTED_SERVICES[st];
                 const isSelected = serviceType === st;
@@ -372,21 +391,37 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
               </div>
             </div>
 
-            {/* Custom Alias (Single account only) */}
-            {count === 1 && !['warp_plus', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(serviceType) && (
+            {/* Custom Input (Single item only) */}
+            {count === 1 && (
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Nama Alias Kustom (Opsional):
+                  {serviceType === 'scribd_doc'
+                    ? 'URL Dokumen Scribd / SlideShare (Opsional):'
+                    : serviceType === 'media_downloader'
+                    ? 'URL Video TikTok / IG Reels (Opsional):'
+                    : serviceType === 'flux_ai_image'
+                    ? 'Prompt Gambar AI (Opsional):'
+                    : 'Nama Alias Kustom (Opsional):'}
                 </label>
-                <div className="flex items-center rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 focus-within:border-emerald-500">
+                <div className="flex items-center rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 focus-within:border-emerald-500">
                   <input
                     type="text"
                     value={customAlias}
                     onChange={(e) => setCustomAlias(e.target.value)}
-                    placeholder="nama_kustom (acak jika kosong)"
+                    placeholder={
+                      serviceType === 'scribd_doc'
+                        ? 'https://www.scribd.com/doc/...'
+                        : serviceType === 'media_downloader'
+                        ? 'https://vt.tiktok.com/... atau https://instagram.com/reel/...'
+                        : serviceType === 'flux_ai_image'
+                        ? 'cyberpunk neon city, 8k resolution, cinematic...'
+                        : 'nama_kustom (acak jika kosong)'
+                    }
                     className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none"
                   />
-                  <span className="text-xs font-mono text-slate-500">@loginptn.xyz</span>
+                  {!['scribd_doc', 'media_downloader', 'flux_ai_image', 'temp_sms', 'warp_plus', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(serviceType) && (
+                    <span className="text-xs font-mono text-slate-500">@loginptn.xyz</span>
+                  )}
                 </div>
               </div>
             )}
@@ -463,8 +498,172 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                   const isArlCopied = copiedArl === acc.arlToken;
                   const isOutlineCopied = copiedOutline === acc.accessKey;
                   const isSshCopied = copiedSsh === acc.password;
+                  const isPhoneCopied = copiedPhone === acc.formattedNumber;
 
-                  // 1. CLOUDFLARE WARP+
+                  // 1. SCRIBD PDF UNLOCKER
+                  if (acc.serviceType === 'scribd_doc') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-amber-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <BookOpen className="h-4 w-4 text-amber-400" />
+                              <span className="font-bold text-white truncate max-w-sm sm:max-w-md">
+                                {acc.serviceName}
+                              </span>
+                              <span className="rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">
+                                {acc.duration}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                          <a
+                            href={acc.pdfDownloadUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-amber-400 hover:to-orange-500 active:scale-95"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            <span>📥 Unduh PDF Dokumen Original</span>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 2. MEDIA DOWNLOADER (TIKTOK & IG)
+                  if (acc.serviceType === 'media_downloader') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-pink-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Video className="h-4 w-4 text-pink-400" />
+                              <span className="font-bold text-white">{acc.serviceName}</span>
+                              <span className="rounded bg-pink-500/15 border border-pink-500/30 px-1.5 py-0.2 text-[9px] font-bold text-pink-300">
+                                {acc.duration}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                          <a
+                            href={acc.hdVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 py-2 px-2 text-xs font-bold text-white shadow-sm hover:from-pink-500 hover:to-rose-500 active:scale-95"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            <span>Unduh Video No-WM</span>
+                          </a>
+                          <a
+                            href={acc.audioMp3Url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center justify-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 py-2 px-2 text-xs font-bold text-slate-200 border border-slate-700 active:scale-95"
+                          >
+                            <Music className="h-3.5 w-3.5" />
+                            <span>Unduh Audio MP3</span>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 3. FLUX.1 AI IMAGE GENERATOR
+                  if (acc.serviceType === 'flux_ai_image') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-purple-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Image className="h-4 w-4 text-purple-400" />
+                              <span className="font-bold text-white truncate max-w-sm sm:max-w-md">
+                                {acc.serviceName}
+                              </span>
+                              <span className="rounded bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.2 text-[9px] font-bold text-purple-300">
+                                {acc.duration}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                          <a
+                            href={acc.imageUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-purple-500 hover:to-indigo-500 active:scale-95"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            <span>🖼️ Buka / Download Gambar HD Flux.1</span>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 4. TEMP SMS / VIRTUAL NUMBER
+                  if (acc.serviceType === 'temp_sms') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-emerald-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <PhoneCall className="h-4 w-4 text-emerald-400" />
+                              <span className="font-bold text-white">{acc.serviceName}</span>
+                              <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">
+                                Live OTP
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 pt-1">
+                              <span className="font-mono text-base font-black text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-xl">
+                                {acc.formattedNumber}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(acc.formattedNumber!, 'phone')}
+                                className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-2 py-1 text-[11px] font-bold text-slate-200"
+                              >
+                                {isPhoneCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                                <span>{isPhoneCopied ? 'Tersalin' : 'Salin Nomor'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                          <a
+                            href={acc.smsInboxUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95"
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            <span>📬 Buka Kotak Masuk SMS OTP</span>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 5. CLOUDFLARE WARP+
                   if (acc.serviceType === 'warp_plus') {
                     return (
                       <div
@@ -522,7 +721,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 2. OUTLINE VPN (Google / Jigsaw)
+                  // 6. OUTLINE VPN
                   if (acc.serviceType === 'outline_vpn') {
                     return (
                       <div
@@ -559,7 +758,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 3. PROTONVPN (OpenVPN & WireGuard)
+                  // 7. PROTONVPN
                   if (acc.serviceType === 'proton_vpn') {
                     return (
                       <div
@@ -613,7 +812,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 4. GAMING SSH WEBSOCKET
+                  // 8. GAMING SSH WEBSOCKET
                   if (acc.serviceType === 'gaming_ssh') {
                     return (
                       <div
@@ -653,7 +852,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 5. NEXTDNS PRO ADBLOCK
+                  // 9. NEXTDNS PRO ADBLOCK
                   if (acc.serviceType === 'nextdns_pro') {
                     return (
                       <div
@@ -699,7 +898,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 6. AI PRO API KEY
+                  // 10. AI PRO API KEY
                   if (acc.serviceType === 'ai_tokens') {
                     return (
                       <div
@@ -745,7 +944,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 7. DEEZER HI-FI FLAC ARL
+                  // 11. DEEZER HI-FI FLAC ARL
                   if (acc.serviceType === 'deezer_hifi') {
                     return (
                       <div
@@ -782,7 +981,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 8. HYSTERIA 2 & V2RAY PROXY NODES
+                  // 12. HYSTERIA 2 & V2RAY PROXY NODES
                   if (acc.serviceType === 'proxy_nodes') {
                     return (
                       <div
@@ -819,7 +1018,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 9. STANDARD ACCOUNTS (Alight Motion, Canva, ElevenLabs, Cursor, Leonardo)
+                  // 13. STANDARD ACCOUNTS (Alight Motion, Canva, ElevenLabs, Cursor, Leonardo)
                   const comboText = `${acc.email}:${acc.password || ''}`;
                   const isComboCopied = copiedCombo === comboText;
                   const signupTarget = inviteUrl || currentService.signupUrl;

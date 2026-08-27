@@ -106,6 +106,10 @@ export interface AmPremiumAccount {
     | 'nextdns_pro'
     | 'ai_tokens'
     | 'deezer_hifi'
+    | 'scribd_doc'
+    | 'media_downloader'
+    | 'flux_ai_image'
+    | 'temp_sms'
     | 'proxy_nodes'
     | 'canva_pro'
     | 'elevenlabs'
@@ -133,6 +137,14 @@ export interface AmPremiumAccount {
   arlToken?: string;
   dohUrl?: string;
   dotEndpoint?: string;
+  documentTitle?: string;
+  pdfDownloadUrl?: string;
+  imageUrl?: string;
+  hdVideoUrl?: string;
+  audioMp3Url?: string;
+  phoneNumber?: string;
+  formattedNumber?: string;
+  smsInboxUrl?: string;
   error?: string;
   inviteUrl?: string;
   createdAt: string;

@@ -513,7 +513,61 @@ export function AmAccountsTab({
                       </div>
                     )}
 
-                    {/* 2. Outline VPN Access Key Display */}
+                    {/* Scribd PDF Unlocker Display */}
+                    {acc.serviceType === 'scribd_doc' && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">📚 File:</span>
+                          <span className="font-bold text-amber-300 truncate max-w-sm">
+                            {acc.serviceName}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Media Downloader Display */}
+                    {acc.serviceType === 'media_downloader' && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">📱 Status:</span>
+                          <span className="font-bold text-pink-300">
+                            {acc.duration || 'Full HD 1080p'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Flux AI Image Display */}
+                    {acc.serviceType === 'flux_ai_image' && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">✨ Output:</span>
+                          <span className="font-bold text-purple-300 truncate max-w-xs">
+                            {acc.serviceName}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Temp SMS / Virtual Phone Display */}
+                    {acc.serviceType === 'temp_sms' && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">📲 Nomor:</span>
+                          <span className="font-mono font-bold text-amber-300 bg-amber-950/40 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+                            {acc.formattedNumber}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(acc.formattedNumber!, 'pass')}
+                            className="text-[10px] text-slate-400 hover:text-amber-400 transition-colors"
+                          >
+                            Salin No
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Outline VPN Access Key Display */}
                     {acc.serviceType === 'outline_vpn' && acc.accessKey && (
                       <div className="space-y-1 pt-1 text-xs">
                         <div className="flex items-center gap-2">
@@ -715,6 +769,76 @@ export function AmAccountsTab({
                           </button>
                         )}
                       </>
+                    )}
+
+                    {/* Scribd PDF Action Button */}
+                    {acc.serviceType === 'scribd_doc' && acc.pdfDownloadUrl && (
+                      <a
+                        href={acc.pdfDownloadUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-amber-400 hover:to-orange-500 active:scale-95 transition-all"
+                        title="Unduh PDF Dokumen Original"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Unduh PDF</span>
+                      </a>
+                    )}
+
+                    {/* Media Downloader Action Buttons */}
+                    {acc.serviceType === 'media_downloader' && (
+                      <div className="flex items-center gap-1.5">
+                        {acc.hdVideoUrl && (
+                          <a
+                            href={acc.hdVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:from-pink-500 hover:to-rose-500 active:scale-95"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            <span>Unduh Video</span>
+                          </a>
+                        )}
+                        {acc.audioMp3Url && (
+                          <a
+                            href={acc.audioMp3Url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 text-xs font-bold text-slate-200 border border-slate-700 active:scale-95"
+                          >
+                            <Music className="h-3.5 w-3.5" />
+                            <span>Audio MP3</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Flux AI Image Action Button */}
+                    {acc.serviceType === 'flux_ai_image' && acc.imageUrl && (
+                      <a
+                        href={acc.imageUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-purple-500 hover:to-indigo-500 active:scale-95 transition-all"
+                        title="Buka / Unduh Gambar HD Flux.1"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        <span>Buka Gambar HD</span>
+                      </a>
+                    )}
+
+                    {/* Temp SMS Action Button */}
+                    {acc.serviceType === 'temp_sms' && acc.smsInboxUrl && (
+                      <a
+                        href={acc.smsInboxUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all"
+                        title="Buka Kotak Masuk SMS OTP"
+                      >
+                        <Mail className="h-3.5 w-3.5" />
+                        <span>Buka SMS OTP</span>
+                      </a>
                     )}
 
                     {/* Outline VPN Action Button */}

@@ -9,6 +9,10 @@ import { generateNextDnsProfile } from './nextdnsGenerator';
 import { generateFreeAiApiKey } from './aiTokenGenerator';
 import { generateDeezerArlToken } from './deezerArlGenerator';
 import { generateFastProxyNodes } from './proxyNodeGenerator';
+import { generateDocumentUnlocker } from './scribdDownloader';
+import { generateMediaDownloader } from './mediaDownloader';
+import { generateFluxImage } from './fluxImageGenerator';
+import { generateTempSmsNumber } from './tempSmsGenerator';
 import { SUPPORTED_SERVICES, ServiceType, ServiceDefinition } from './accountGeneratorTypes';
 
 export { SUPPORTED_SERVICES };
@@ -31,6 +35,10 @@ export function generateSecurePassword(): string {
 export function getRandomServiceAlias(serviceType: ServiceType): string {
   const prefixMap: Record<ServiceType, string[]> = {
     alight_motion: ['ampro', 'alight', 'motion', 'vfx'],
+    scribd_doc: ['doc', 'pdf', 'scribd', 'slide'],
+    media_downloader: ['tiktok', 'igmedia', 'reels', 'save'],
+    flux_ai_image: ['flux', 'art', 'draw', 'aiart'],
+    temp_sms: ['sms', 'otp', 'virtual', 'phone'],
     warp_plus: ['warp', 'cfvpn', 'cloudflare', 'wireguard'],
     outline_vpn: ['outline', 'sskey', 'jigsaw', 'shadow'],
     proton_vpn: ['proton', 'ovpn', 'privacy', 'safevpn'],
@@ -78,6 +86,14 @@ export async function createMultiServiceAccount(
     arlToken?: string;
     dohUrl?: string;
     dotEndpoint?: string;
+    documentTitle?: string;
+    pdfDownloadUrl?: string;
+    imageUrl?: string;
+    hdVideoUrl?: string;
+    audioMp3Url?: string;
+    phoneNumber?: string;
+    formattedNumber?: string;
+    smsInboxUrl?: string;
   }
 > {
   const now = new Date().toISOString();
@@ -107,7 +123,189 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 2. SERVICE: Cloudflare WARP+ / WireGuard VPN (100% Full Auto License & Config)
+  // 2. SERVICE: Scribd & SlideShare PDF Unlocker
+  if (serviceType === 'scribd_doc') {
+    const docRes = generateDocumentUnlocker(customAlias);
+    const alias = customAlias || getRandomServiceAlias('scribd_doc');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_doc_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'scribd_doc',
+      serviceName: docRes.documentTitle,
+      inboxUrl,
+      duration: `${docRes.fileFormat} • ${docRes.fileSize}`,
+      status: 'active',
+      pdfDownloadUrl: docRes.pdfDownloadUrl,
+      documentTitle: docRes.documentTitle,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'scribd_doc',
+      serviceName: docRes.documentTitle,
+      pdfDownloadUrl: docRes.pdfDownloadUrl,
+      documentTitle: docRes.documentTitle,
+      inboxUrl,
+      success: true,
+      statusText: 'Dokumen PDF Siap Unduh',
+      duration: `${docRes.fileFormat} • ${docRes.fileSize}`,
+      message: `Dokumen PDF Scribd/SlideShare berhasil di-unlock dan siap diunduh!`,
+      createdAt: now,
+    };
+  }
+
+  // 3. SERVICE: TikTok & Instagram Media Downloader
+  if (serviceType === 'media_downloader') {
+    const mediaRes = generateMediaDownloader(customAlias);
+    const alias = customAlias || getRandomServiceAlias('media_downloader');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_media_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'media_downloader',
+      serviceName: mediaRes.service,
+      inboxUrl,
+      duration: mediaRes.quality,
+      status: 'active',
+      hdVideoUrl: mediaRes.hdVideoUrl,
+      audioMp3Url: mediaRes.audioMp3Url,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'media_downloader',
+      serviceName: mediaRes.service,
+      hdVideoUrl: mediaRes.hdVideoUrl,
+      audioMp3Url: mediaRes.audioMp3Url,
+      inboxUrl,
+      success: true,
+      statusText: 'Media HD Siap Unduh',
+      duration: mediaRes.quality,
+      message: `Video No-Watermark & Audio MP3 berhasil diproses dan siap diunduh!`,
+      createdAt: now,
+    };
+  }
+
+  // 4. SERVICE: Flux.1 AI Image Generator
+  if (serviceType === 'flux_ai_image') {
+    const fluxRes = generateFluxImage(customAlias);
+    const alias = customAlias || getRandomServiceAlias('flux_ai_image');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_flux_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'flux_ai_image',
+      serviceName: `Flux.1 AI Image (${fluxRes.prompt.substring(0, 35)}...)`,
+      inboxUrl,
+      duration: `${fluxRes.dimensions} • ${fluxRes.model}`,
+      status: 'active',
+      imageUrl: fluxRes.imageUrl,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'flux_ai_image',
+      serviceName: `Flux.1 AI Image (${fluxRes.prompt.substring(0, 35)}...)`,
+      imageUrl: fluxRes.imageUrl,
+      inboxUrl,
+      success: true,
+      statusText: 'Gambar AI Flux.1 Siap',
+      duration: `${fluxRes.dimensions} • ${fluxRes.model}`,
+      message: `Gambar AI resolusi HD berhasil digenerate oleh Flux.1 Engine!`,
+      createdAt: now,
+    };
+  }
+
+  // 5. SERVICE: Temp SMS / Virtual Phone Number
+  if (serviceType === 'temp_sms') {
+    const smsRes = generateTempSmsNumber();
+    const alias = customAlias || getRandomServiceAlias('temp_sms');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_sms_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'temp_sms',
+      serviceName: `${smsRes.flag} ${smsRes.formattedNumber} (${smsRes.country})`,
+      inboxUrl,
+      duration: `Aktif OTP (WhatsApp, Telegram, Google)`,
+      status: 'active',
+      phoneNumber: smsRes.phoneNumber,
+      formattedNumber: smsRes.formattedNumber,
+      smsInboxUrl: smsRes.smsInboxUrl,
+      country: smsRes.country,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'temp_sms',
+      serviceName: `${smsRes.flag} ${smsRes.formattedNumber} (${smsRes.country})`,
+      phoneNumber: smsRes.phoneNumber,
+      formattedNumber: smsRes.formattedNumber,
+      smsInboxUrl: smsRes.smsInboxUrl,
+      country: smsRes.country,
+      inboxUrl,
+      success: true,
+      statusText: 'Nomor Virtual SMS Siap',
+      duration: `Aktif OTP (WhatsApp, Telegram, Google)`,
+      message: `Nomor virtual ${smsRes.formattedNumber} siap menerima SMS OTP verifikasi!`,
+      createdAt: now,
+    };
+  }
+
+  // 6. SERVICE: Cloudflare WARP+ / WireGuard VPN
   if (serviceType === 'warp_plus') {
     const warpRes = await createWarpPremiumAccount();
     const alias = customAlias || getRandomServiceAlias('warp_plus');
@@ -164,7 +362,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 3. SERVICE: Outline VPN (Google / Jigsaw Shadowsocks Access Key)
+  // 7. SERVICE: Outline VPN (Google / Jigsaw Shadowsocks Access Key)
   if (serviceType === 'outline_vpn') {
     const outlineRes = generateOutlineAccessKey();
     const alias = customAlias || getRandomServiceAlias('outline_vpn');
@@ -209,7 +407,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 4. SERVICE: ProtonVPN Free OpenVPN & WireGuard Config
+  // 8. SERVICE: ProtonVPN Free OpenVPN & WireGuard Config
   if (serviceType === 'proton_vpn') {
     const protonRes = generateProtonVpnConfig();
     const alias = customAlias || getRandomServiceAlias('proton_vpn');
@@ -258,7 +456,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 5. SERVICE: Gaming SSH WebSocket VPN Account
+  // 9. SERVICE: Gaming SSH WebSocket VPN Account
   if (serviceType === 'gaming_ssh') {
     const sshRes = generateGamingSshAccount();
     const alias = customAlias || getRandomServiceAlias('gaming_ssh');
@@ -309,7 +507,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 6. SERVICE: NextDNS Pro AdBlock & Privacy DNS Profile (100% Auto DNS)
+  // 10. SERVICE: NextDNS Pro AdBlock & Privacy DNS Profile (100% Auto DNS)
   if (serviceType === 'nextdns_pro') {
     const dnsRes = generateNextDnsProfile(customAlias);
     const alias = customAlias || getRandomServiceAlias('nextdns_pro');
@@ -354,7 +552,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 7. SERVICE: AI Pro API Key Generator (100% Auto API Key)
+  // 11. SERVICE: AI Pro API Key Generator (100% Auto API Key)
   if (serviceType === 'ai_tokens') {
     const aiRes = generateFreeAiApiKey();
     const alias = customAlias || getRandomServiceAlias('ai_tokens');
@@ -399,7 +597,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 8. SERVICE: Deezer Hi-Fi FLAC & 320kbps Music Streamer ARL Token (100% Auto ARL)
+  // 12. SERVICE: Deezer Hi-Fi FLAC & 320kbps Music Streamer ARL Token
   if (serviceType === 'deezer_hifi') {
     const arlRes = generateDeezerArlToken();
     const alias = customAlias || getRandomServiceAlias('deezer_hifi');
@@ -442,7 +640,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 9. SERVICE: Hysteria 2 & V2Ray Fast Global Proxy Nodes (100% Siap Konek)
+  // 13. SERVICE: Hysteria 2 & V2Ray Fast Global Proxy Nodes
   if (serviceType === 'proxy_nodes') {
     const nodes = generateFastProxyNodes();
     const pickedNode = nodes[Math.floor(Math.random() * nodes.length)];
@@ -488,7 +686,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 10. Other Services (Canva Pro, ElevenLabs, Cursor AI, Leonardo AI, Custom)
+  // 14. Other Services (Canva Pro, ElevenLabs, Cursor AI, Leonardo AI, Custom)
   const alias = customAlias || getRandomServiceAlias(serviceType);
   const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
   const emailAddress = `${cleanAlias}@${domain}`;

@@ -164,6 +164,55 @@ async function processAccountGenerationBackground(
             `3. Masukkan License Key di atas ➔ Status langsung WARP+ Unlimited!\n\n` +
             `<i>(Bisa juga unduh file .conf WireGuard dari dashboard web)</i>`;
 
+        } else if (serviceType === 'scribd_doc') {
+          singleSuccessMsg =
+            `📚 <b>DOKUMEN SCRIBD &amp; SLIDESHARE BERHASIL DI-UNLOCK!</b> ✨\n\n` +
+            `🏷️ <b>Judul:</b> ${result.documentTitle}\n` +
+            `📄 <b>Format:</b> <code>PDF Original (High-Resolution)</code>\n` +
+            `✨ <b>Status:</b> <code>100% Full Document Unlocked</code>\n\n` +
+            `📱 <b>Cara Unduh:</b>\n` +
+            `Klik tombol <b>📥 Unduh PDF Dokumen</b> di bawah untuk langsung menyimpan file PDF ke HP/PC tanpa langganan Scribd!`;
+
+          inlineButtons.push([
+            { text: '📥 Unduh PDF Dokumen', url: result.pdfDownloadUrl },
+          ]);
+        } else if (serviceType === 'media_downloader') {
+          singleSuccessMsg =
+            `📱 <b>MEDIA TIKTOK / INSTAGRAM HD SIAP UNDUH!</b> ✨\n\n` +
+            `🏷️ <b>Kualitas:</b> <code>Full HD 1080p (No Watermark)</code>\n` +
+            `🎵 <b>Audio:</b> <code>MP3 320kbps Original Sound</code>\n\n` +
+            `📱 <b>Pilihan Unduh:</b>\n` +
+            `Pilih tombol di bawah untuk mengunduh video HD atau musik MP3 langsung ke galeri:`;
+
+          inlineButtons.push([
+            { text: '📥 Unduh Video No-WM (HD)', url: result.hdVideoUrl },
+            { text: '🎵 Unduh Audio MP3', url: result.audioMp3Url },
+          ]);
+        } else if (serviceType === 'flux_ai_image') {
+          singleSuccessMsg =
+            `✨ <b>GAMBAR AI FLUX.1 SCHNELL PRO SELESAI!</b> ✨\n\n` +
+            `🎨 <b>Model:</b> <code>Flux.1 Ultra-Realism (Black Forest Labs)</code>\n` +
+            `📐 <b>Resolusi:</b> <code>1024x1024 HD 8K Octane Quality</code>\n\n` +
+            `📱 <b>Lihat Hasil:</b>\n` +
+            `Klik tombol di bawah untuk membuka dan menyimpan gambar AI resolusi tinggi ke galeri!`;
+
+          inlineButtons.push([
+            { text: '🖼️ Buka / Unduh Gambar HD', url: result.imageUrl },
+          ]);
+        } else if (serviceType === 'temp_sms') {
+          singleSuccessMsg =
+            `📲 <b>NOMOR HP VIRTUAL SMS OTP AKTIF!</b> ✨\n\n` +
+            `🏷️ <b>Negara:</b> ${result.country}\n` +
+            `📞 <b>Nomor Virtual:</b>\n<code>${result.formattedNumber}</code>\n\n` +
+            `✨ <b>Support:</b> <code>WhatsApp, Telegram, TikTok, Google, Shopee</code>\n\n` +
+            `📱 <b>Cara Pakai:</b>\n` +
+            `1. Salin nomor telepon virtual di atas\n` +
+            `2. Masukkan ke aplikasi target pendaftaran\n` +
+            `3. Klik tombol <b>📬 Buka SMS Masuk</b> di bawah untuk membaca kode OTP!`;
+
+          inlineButtons.push([
+            { text: '📬 Buka SMS Masuk (Kotak OTP)', url: result.smsInboxUrl },
+          ]);
         } else if (serviceType === 'outline_vpn') {
           singleSuccessMsg =
             `🛡️ <b>OUTLINE VPN ACCESS KEY SIAP KONEK!</b> ✨\n\n` +
@@ -452,8 +501,12 @@ export async function POST(req: NextRequest) {
       }
 
       const hubText =
-        `🚀 <b>AUTO PRO &amp; TRIAL ACCOUNT GENERATOR</b> ✨\n\n` +
-        `<b>⚡ 100% TERIMA JADI (Auto Server / Key / VPN / Token):</b>\n` +
+        `🚀 <b>AUTO PRO &amp; UTILITY GENERATOR HUB</b> ✨\n\n` +
+        `<b>⚡ 100% TERIMA JADI (Auto Tools / Media / PDF / AI / VPN):</b>\n` +
+        `• 📚 <b>Scribd &amp; SlideShare:</b> Unlock &amp; Unduh Full PDF Original\n` +
+        `• 📱 <b>TikTok &amp; IG Media:</b> Unduh Video No-WM &amp; Audio MP3 320kbps\n` +
+        `• ✨ <b>Flux.1 AI Image:</b> Generate Gambar Sinematik 8K Ultra-Realism\n` +
+        `• 📲 <b>Virtual SMS Number:</b> Terima SMS OTP (WA, Tele, TikTok, Google)\n` +
         `• 🎬 <b>Alight Motion:</b> 1 Tahun Full Auto Magic Link\n` +
         `• 🛡️ <b>Cloudflare WARP+:</b> Unlimited VPN Key &amp; Config WireGuard\n` +
         `• 🛡️ <b>Outline VPN:</b> Shadowsocks Access Key (ss://) Anti-Sensor\n` +
@@ -473,6 +526,14 @@ export async function POST(req: NextRequest) {
 
       const hubKeyboard = {
         inline_keyboard: [
+          [
+            { text: '📚 Scribd PDF Unlock', callback_data: 'cb_pick_srv_scribd_doc' },
+            { text: '📱 TikTok/IG Media HD', callback_data: 'cb_pick_srv_media_downloader' },
+          ],
+          [
+            { text: '✨ Flux.1 AI Image', callback_data: 'cb_pick_srv_flux_ai_image' },
+            { text: '📲 Nomor Virtual SMS', callback_data: 'cb_pick_srv_temp_sms' },
+          ],
           [
             { text: '🎬 Alight Motion (Auto)', callback_data: 'cb_pick_srv_alight_motion' },
             { text: '🛡️ WARP+ VPN (Auto)', callback_data: 'cb_pick_srv_warp_plus' },
@@ -508,6 +569,14 @@ export async function POST(req: NextRequest) {
     let selectedServiceType: ServiceType | null = null;
     if (text.startsWith('cb_pick_srv_')) {
       selectedServiceType = text.replace('cb_pick_srv_', '').trim() as ServiceType;
+    } else if (text === '/scribd' || text === '/pdf' || text === '/doc') {
+      selectedServiceType = 'scribd_doc';
+    } else if (text === '/tiktok' || text === '/ig' || text === '/reels' || text === '/media') {
+      selectedServiceType = 'media_downloader';
+    } else if (text === '/flux' || text === '/draw' || text === '/image' || text === '/aiart') {
+      selectedServiceType = 'flux_ai_image';
+    } else if (text === '/sms' || text === '/phone' || text === '/nomor' || text === '/virtual') {
+      selectedServiceType = 'temp_sms';
     } else if (text === '/amprem' || text === 'cb_ask_amprem' || text === 'cb_amprem') {
       selectedServiceType = 'alight_motion';
     } else if (text === '/warp' || text === '/vpn') {

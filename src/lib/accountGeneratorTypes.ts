@@ -1,6 +1,10 @@
 export type ServiceType =
   | 'alight_motion'
   | 'warp_plus'
+  | 'scribd_doc'
+  | 'media_downloader'
+  | 'flux_ai_image'
+  | 'temp_sms'
   | 'outline_vpn'
   | 'proton_vpn'
   | 'gaming_ssh'
@@ -17,6 +21,10 @@ export type ServiceType =
 export type AuthMethod =
   | 'full_auto_server'
   | 'api_license'
+  | 'doc_unlocker'
+  | 'media_download'
+  | 'image_generate'
+  | 'virtual_sms'
   | 'vpn_access_key'
   | 'vpn_config'
   | 'ssh_account'
@@ -66,6 +74,74 @@ export const SUPPORTED_SERVICES: Record<ServiceType, ServiceDefinition> = {
       'Buka aplikasi Alight Motion di HP ➔ Masuk ke menu Akun/Profil ➔ Pilih "Masuk dengan Email".',
       'Masukkan alamat email tersebut ➔ Buka kotak masuk TempMail di web / bot Telegram ini.',
       'Klik link verifikasi login yang masuk ➔ Aplikasi Alight Motion kamu langsung terbuka dengan status 1 Tahun Premium Aktif!',
+    ],
+  },
+  scribd_doc: {
+    type: 'scribd_doc',
+    name: 'Scribd & SlideShare PDF Unlocker',
+    icon: '📚',
+    description: 'Download Dokumen / Skripsi / Ebook Scribd & SlideShare Full PDF Original Gratis',
+    badge: '⚡ 100% Instant PDF',
+    defaultDuration: 'Full Original PDF',
+    authMethod: 'doc_unlocker',
+    is100PercentAuto: true,
+    hasPassword: false,
+    instructions: '100% Siap Download. Unduh dokumen Scribd / SlideShare tanpa akun berbayar.',
+    stepByStep: [
+      'Klik tombol "📥 Unduh Dokumen PDF" yang muncul di hasil generate.',
+      'File PDF lengkap dengan teks jernih dan gambar resolusi tinggi langsung tersimpan di perangkat Anda.',
+      'Bebas unduh ribuan skripsi, jurnal ilmiah, ebook, dan presentasi bisnis!',
+    ],
+  },
+  media_downloader: {
+    type: 'media_downloader',
+    name: 'TikTok & IG HD No-Watermark',
+    icon: '📱',
+    description: 'Download Video TikTok No-Watermark HD, Audio MP3, & Instagram Reels / Carousel',
+    badge: '⚡ 100% Instant Media',
+    defaultDuration: 'Full HD 1080p Original',
+    authMethod: 'media_download',
+    is100PercentAuto: true,
+    hasPassword: false,
+    instructions: '100% Siap Download. Unduh video tanpa watermark dan musik original jernih.',
+    stepByStep: [
+      'Salin link video TikTok atau Reels Instagram.',
+      'Klik tombol "📥 Unduh Video HD" atau "🎵 Unduh Audio MP3" di bawah.',
+      'Media langsung tersimpan di galeri HP atau folder download PC Anda tanpa watermark!',
+    ],
+  },
+  flux_ai_image: {
+    type: 'flux_ai_image',
+    name: 'Flux.1 AI Image Generator',
+    icon: '✨',
+    description: 'Generate Gambar AI Realistis (Flux.1 Schnell & Midjourney Quality) Tanpa Batas',
+    badge: '⚡ 100% Auto AI Image',
+    defaultDuration: '1024x1024 HD Resolution',
+    authMethod: 'image_generate',
+    is100PercentAuto: true,
+    hasPassword: false,
+    instructions: '100% Siap Pakai. Gambar AI dihasilkan seketika menggunakan model Flux.1.',
+    stepByStep: [
+      'Klik tombol "🖼️ Buka / Download Gambar AI" di bawah.',
+      'Gambar kualitas sinematik 8K langsung ditampilkan dan bisa disimpan ke galeri.',
+      'Gunakan bebas royalti untuk foto profil, wallpaper, logo, dan konten media sosial!',
+    ],
+  },
+  temp_sms: {
+    type: 'temp_sms',
+    name: 'Nomor HP Virtual / SMS OTP',
+    icon: '📲',
+    description: 'Terima SMS OTP Verifikasi (WhatsApp, Telegram, TikTok, Google, Shopee) Gratis',
+    badge: '⚡ 100% Live SMS OTP',
+    defaultDuration: 'Nomor Virtual Aktif',
+    authMethod: 'virtual_sms',
+    is100PercentAuto: true,
+    hasPassword: false,
+    instructions: '100% Siap Pakai. Salin nomor virtual dan buka link kotak masuk SMS.',
+    stepByStep: [
+      'Salin nomor HP virtual yang muncul (misal: US 🇺🇸, UK 🇬🇧, ID 🇮🇩, MY 🇲🇾).',
+      'Masukkan nomor tersebut di aplikasi yang meminta verifikasi SMS / OTP.',
+      'Klik tombol "📬 Buka Kotak Masuk SMS" untuk membaca kode verifikasi yang masuk!',
     ],
   },
   warp_plus: {
