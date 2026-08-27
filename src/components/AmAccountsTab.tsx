@@ -347,7 +347,7 @@ export function AmAccountsTab({
         {(Object.keys(SUPPORTED_SERVICES) as ServiceType[]).map((st) => {
           const s = SUPPORTED_SERVICES[st];
           const c = accounts.filter((a) => (a.serviceType || 'alight_motion') === st).length;
-          if (c === 0 && st !== 'alight_motion' && st !== 'canva_pro' && st !== 'scribd_doc') return null;
+          if (c === 0 && st !== 'alight_motion' && st !== 'video_clipper' && st !== 'canva_pro' && st !== 'scribd_doc') return null;
 
           return (
             <button
@@ -495,6 +495,30 @@ export function AmAccountsTab({
                         </span>
                       )}
                     </div>
+
+                    {/* 0. Video Clipper & Monetizer Display */}
+                    {acc.serviceType === 'video_clipper' && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">✂️ Status:</span>
+                          <span className="font-bold text-rose-300 truncate max-w-sm">
+                            {acc.serviceName}
+                          </span>
+                        </div>
+                        {acc.videoTitle && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-400">🎯 Judul:</span>
+                            <span className="text-slate-200 truncate max-w-xs">{acc.videoTitle}</span>
+                            <button
+                              onClick={() => handleCopy(acc.videoTitle!, 'pass')}
+                              className="text-[10px] text-cyan-400 hover:underline"
+                            >
+                              Salin
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* 1. WARP+ License & WireGuard Display */}
                     {acc.serviceType === 'warp_plus' && acc.licenseKey && (
@@ -784,6 +808,34 @@ export function AmAccountsTab({
                         <Download className="h-3.5 w-3.5" />
                         <span>Unduh PDF</span>
                       </a>
+                    )}
+
+                    {/* Video Clipper Action Buttons */}
+                    {acc.serviceType === 'video_clipper' && (
+                      <div className="flex items-center gap-1.5">
+                        {acc.hdVideoUrl && (
+                          <a
+                            href={acc.hdVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:from-rose-500 hover:to-pink-500 active:scale-95"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            <span>Unduh MP4 9:16</span>
+                          </a>
+                        )}
+                        {acc.audioMp3Url && (
+                          <a
+                            href={acc.audioMp3Url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 text-xs font-bold text-slate-200 border border-slate-700 active:scale-95"
+                          >
+                            <Music className="h-3.5 w-3.5" />
+                            <span>Audio MP3</span>
+                          </a>
+                        )}
+                      </div>
                     )}
 
                     {/* Media Downloader Action Buttons */}

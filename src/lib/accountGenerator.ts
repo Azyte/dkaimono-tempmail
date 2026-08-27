@@ -11,6 +11,7 @@ import { generateDeezerArlToken } from './deezerArlGenerator';
 import { generateFastProxyNodes } from './proxyNodeGenerator';
 import { generateDocumentUnlocker } from './scribdDownloader';
 import { generateMediaDownloader } from './mediaDownloader';
+import { generateVideoClip } from './videoClipper';
 import { generateFluxImage } from './fluxImageGenerator';
 import { generateTempSmsNumber } from './tempSmsGenerator';
 import { SUPPORTED_SERVICES, ServiceType, ServiceDefinition } from './accountGeneratorTypes';
@@ -35,6 +36,7 @@ export function generateSecurePassword(): string {
 export function getRandomServiceAlias(serviceType: ServiceType): string {
   const prefixMap: Record<ServiceType, string[]> = {
     alight_motion: ['ampro', 'alight', 'motion', 'vfx'],
+    video_clipper: ['viral', 'clip', 'shorts', 'reels', 'cut'],
     scribd_doc: ['doc', 'pdf', 'scribd', 'slide'],
     media_downloader: ['tiktok', 'igmedia', 'reels', 'save'],
     flux_ai_image: ['flux', 'art', 'draw', 'aiart'],
@@ -92,6 +94,18 @@ export async function createMultiServiceAccount(
     imageUrl?: string;
     hdVideoUrl?: string;
     audioMp3Url?: string;
+    thumbnailUrl?: string;
+    videoTitle?: string;
+    viralHooks?: string[];
+    viralTitles?: string[];
+    viralDescription?: string;
+    viralHashtags?: string;
+    pinnedCommentCta?: string;
+    copyrightDisclaimer?: string;
+    monetizationTips?: string[];
+    antiCopyrightScore?: string;
+    aspectRatio?: string;
+    sourcePlatform?: string;
     phoneNumber?: string;
     formattedNumber?: string;
     smsInboxUrl?: string;
@@ -121,6 +135,75 @@ export async function createMultiServiceAccount(
       serviceType: 'alight_motion',
       serviceName: SUPPORTED_SERVICES.alight_motion.name,
       message: 'Akun Alight Motion 1 Tahun Premium AKTIF! Login di aplikasi HP via Magic Link (Cek kotak masuk TempMail).',
+    };
+  }
+
+  // 1.5 SERVICE: Viral Video Clipper & Monetizer
+  if (serviceType === 'video_clipper') {
+    const clipRes = generateVideoClip(customAlias || inviteUrl);
+    const alias = getRandomServiceAlias('video_clipper');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_clip_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'video_clipper',
+      serviceName: clipRes.service,
+      inboxUrl,
+      duration: '9:16 HD 60fps (Aman Monetisasi)',
+      status: 'active',
+      hdVideoUrl: clipRes.hdVideoDownloadUrl,
+      audioMp3Url: clipRes.audioMp3DownloadUrl,
+      thumbnailUrl: clipRes.thumbnailUrl,
+      videoTitle: clipRes.videoTitle,
+      viralHooks: clipRes.viralHooks,
+      viralTitles: clipRes.viralTitles,
+      viralDescription: clipRes.viralDescription,
+      viralHashtags: clipRes.viralHashtags,
+      pinnedCommentCta: clipRes.pinnedCommentCta,
+      copyrightDisclaimer: clipRes.copyrightDisclaimer,
+      monetizationTips: clipRes.monetizationTips,
+      antiCopyrightScore: clipRes.antiCopyrightScore,
+      aspectRatio: clipRes.aspectRatio,
+      sourcePlatform: clipRes.sourcePlatform,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'video_clipper',
+      serviceName: clipRes.service,
+      hdVideoUrl: clipRes.hdVideoDownloadUrl,
+      audioMp3Url: clipRes.audioMp3DownloadUrl,
+      thumbnailUrl: clipRes.thumbnailUrl,
+      videoTitle: clipRes.videoTitle,
+      viralHooks: clipRes.viralHooks,
+      viralTitles: clipRes.viralTitles,
+      viralDescription: clipRes.viralDescription,
+      viralHashtags: clipRes.viralHashtags,
+      pinnedCommentCta: clipRes.pinnedCommentCta,
+      copyrightDisclaimer: clipRes.copyrightDisclaimer,
+      monetizationTips: clipRes.monetizationTips,
+      antiCopyrightScore: clipRes.antiCopyrightScore,
+      aspectRatio: clipRes.aspectRatio,
+      sourcePlatform: clipRes.sourcePlatform,
+      inboxUrl,
+      success: true,
+      statusText: 'Clip Viral Siap Upload',
+      duration: '9:16 HD 60fps (Aman Monetisasi)',
+      message: 'Video Clip Siap Upload berhasil dibuat lengkap dengan Script Viral & Anti-Copyright Filter!',
+      createdAt: now,
     };
   }
 

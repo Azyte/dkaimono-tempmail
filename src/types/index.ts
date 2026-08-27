@@ -142,6 +142,18 @@ export interface AmPremiumAccount {
   imageUrl?: string;
   hdVideoUrl?: string;
   audioMp3Url?: string;
+  thumbnailUrl?: string;
+  videoTitle?: string;
+  viralHooks?: string[];
+  viralTitles?: string[];
+  viralDescription?: string;
+  viralHashtags?: string;
+  pinnedCommentCta?: string;
+  copyrightDisclaimer?: string;
+  monetizationTips?: string[];
+  antiCopyrightScore?: string;
+  aspectRatio?: string;
+  sourcePlatform?: string;
   phoneNumber?: string;
   formattedNumber?: string;
   smsInboxUrl?: string;

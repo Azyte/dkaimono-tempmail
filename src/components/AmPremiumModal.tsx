@@ -31,6 +31,7 @@ import {
   Lock,
   BookOpen,
   Video,
+  Scissors,
   Image as ImageIcon,
   PhoneCall,
   Wrench,
@@ -67,7 +68,7 @@ const CATEGORIES: CategoryTab[] = [
     id: 'utilities',
     label: 'Tools & Media',
     icon: <Wrench className="h-3.5 w-3.5" />,
-    services: ['scribd_doc', 'media_downloader', 'flux_ai_image', 'temp_sms', 'nextdns_pro'],
+    services: ['video_clipper', 'media_downloader', 'scribd_doc', 'flux_ai_image', 'temp_sms', 'nextdns_pro'],
   },
   {
     id: 'vpn',
@@ -77,9 +78,9 @@ const CATEGORIES: CategoryTab[] = [
   },
   {
     id: 'ai_media',
-    label: 'AI & Musik',
+    label: 'AI & Konten',
     icon: <Bot className="h-3.5 w-3.5" />,
-    services: ['ai_tokens', 'deezer_hifi', 'elevenlabs', 'cursor_ai'],
+    services: ['video_clipper', 'ai_tokens', 'deezer_hifi', 'elevenlabs', 'cursor_ai'],
   },
   {
     id: 'accounts',
@@ -505,7 +506,9 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             {count === 1 && (
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-300">
-                  {serviceType === 'scribd_doc'
+                  {serviceType === 'video_clipper'
+                    ? 'URL Video YouTube / TikTok / IG Reels (Wajib):'
+                    : serviceType === 'scribd_doc'
                     ? 'URL Dokumen Scribd / SlideShare (Opsional):'
                     : serviceType === 'media_downloader'
                     ? 'URL Video TikTok / IG Reels (Opsional):'
@@ -519,7 +522,9 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     value={customAlias}
                     onChange={(e) => setCustomAlias(e.target.value)}
                     placeholder={
-                      serviceType === 'scribd_doc'
+                      serviceType === 'video_clipper'
+                        ? 'https://youtube.com/watch?v=... atau https://tiktok.com/@...'
+                        : serviceType === 'scribd_doc'
                         ? 'https://www.scribd.com/doc/...'
                         : serviceType === 'media_downloader'
                         ? 'https://vt.tiktok.com/... atau https://instagram.com/reel/...'
@@ -529,7 +534,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     }
                     className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none"
                   />
-                  {!['scribd_doc', 'media_downloader', 'flux_ai_image', 'temp_sms', 'warp_plus', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(serviceType) && (
+                  {!['video_clipper', 'scribd_doc', 'media_downloader', 'flux_ai_image', 'temp_sms', 'warp_plus', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(serviceType) && (
                     <span className="text-xs font-mono text-slate-500">@loginptn.xyz</span>
                   )}
                 </div>
@@ -609,6 +614,126 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                   const isOutlineCopied = copiedOutline === acc.accessKey;
                   const isSshCopied = copiedSsh === acc.password;
                   const isPhoneCopied = copiedPhone === acc.formattedNumber;
+
+                  // 0. VIRAL VIDEO CLIPPER & MONETIZER
+                  if (acc.serviceType === 'video_clipper') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-rose-500/40 bg-slate-950/95 p-4 text-xs space-y-3.5 shadow-xl"
+                      >
+                        <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                          <div className="flex items-center gap-2">
+                            <Scissors className="h-4 w-4 text-rose-400" />
+                            <span className="font-bold text-white truncate max-w-xs sm:max-w-md">{acc.serviceName}</span>
+                          </div>
+                          <span className="rounded-full bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 text-[10px] font-bold text-rose-300 shrink-0">
+                            {acc.duration}
+                          </span>
+                        </div>
+
+                        {/* Anti-Copyright & Quality Stats */}
+                        <div className="grid grid-cols-2 gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-semibold">Resolusi & Rasio:</span>
+                            <span className="text-xs font-bold text-cyan-300">1080x1920 (9:16 Vertical)</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-semibold">Anti-Copyright Score:</span>
+                            <span className="text-xs font-bold text-emerald-400">99.4% Aman Monetisasi</span>
+                          </div>
+                        </div>
+
+                        {/* Viral Clickbait Title & 3-Second Hook */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold text-slate-300 flex items-center justify-between">
+                            <span>🎯 Opsi Judul Clickbait & Hook (Salin untuk Upload):</span>
+                          </label>
+                          <div className="space-y-1.5">
+                            {(acc.viralTitles || [acc.videoTitle]).map((title: string, tIdx: number) => (
+                              <div
+                                key={tIdx}
+                                className="flex items-center justify-between gap-2 rounded-xl bg-slate-900 px-3 py-2 border border-slate-800 hover:border-slate-700"
+                              >
+                                <span className="text-[11px] text-slate-200 font-medium line-clamp-1">{title}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(title, `title_${tIdx}`)}
+                                  className="text-slate-400 hover:text-cyan-300 shrink-0"
+                                >
+                                  {copiedKey === `title_${tIdx}` ? (
+                                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                                  ) : (
+                                    <Copy className="h-3.5 w-3.5" />
+                                  )}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Viral Hashtags */}
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-300">🏷️ Tag FYP & High-CPM Hashtags:</label>
+                          <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-900 px-3 py-2 border border-slate-800">
+                            <span className="text-[11px] text-cyan-300 font-mono line-clamp-1">{acc.viralHashtags}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(acc.viralHashtags || '', 'hashtags')}
+                              className="text-slate-400 hover:text-cyan-300 shrink-0"
+                            >
+                              {copiedKey === 'hashtags' ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Pinned Comment Affiliate CTA */}
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-slate-300">💰 Komentar Tersemat (Affiliate / Monetisasi CTA):</label>
+                          <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-900 px-3 py-2 border border-slate-800">
+                            <span className="text-[11px] text-amber-200 line-clamp-1">{acc.pinnedCommentCta}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(acc.pinnedCommentCta || '', 'cta')}
+                              className="text-slate-400 hover:text-cyan-300 shrink-0"
+                            >
+                              {copiedKey === 'cta' ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Download MP4 + Audio MP3 */}
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                          <a
+                            href={acc.hdVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 py-2.5 px-2 text-xs font-bold text-white shadow-md hover:from-rose-500 hover:to-pink-500 active:scale-95 transition-all"
+                          >
+                            <Download className="h-4 w-4" />
+                            <span>📥 Unduh MP4 (9:16 HD)</span>
+                          </a>
+                          <a
+                            href={acc.audioMp3Url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 py-2.5 px-2 text-xs font-bold text-slate-200 border border-slate-700 active:scale-95 transition-all"
+                          >
+                            <Music className="h-4 w-4" />
+                            <span>🎵 Unduh Audio MP3</span>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
 
                   // 1. SCRIBD PDF UNLOCKER
                   if (acc.serviceType === 'scribd_doc') {

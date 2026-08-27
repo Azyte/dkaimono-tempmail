@@ -1,5 +1,6 @@
 export type ServiceType =
   | 'alight_motion'
+  | 'video_clipper'
   | 'warp_plus'
   | 'scribd_doc'
   | 'media_downloader'
@@ -20,6 +21,7 @@ export type ServiceType =
 
 export type AuthMethod =
   | 'full_auto_server'
+  | 'video_clip'
   | 'api_license'
   | 'doc_unlocker'
   | 'media_download'
@@ -74,6 +76,25 @@ export const SUPPORTED_SERVICES: Record<ServiceType, ServiceDefinition> = {
       'Buka aplikasi Alight Motion di HP ➔ Masuk ke menu Akun/Profil ➔ Pilih "Masuk dengan Email".',
       'Masukkan alamat email tersebut ➔ Buka kotak masuk TempMail di web / bot Telegram ini.',
       'Klik link verifikasi login yang masuk ➔ Aplikasi Alight Motion kamu langsung terbuka dengan status 1 Tahun Premium Aktif!',
+    ],
+  },
+  video_clipper: {
+    type: 'video_clipper',
+    name: 'Viral Video Clipper & Monetizer',
+    icon: '✂️',
+    description: 'Auto Clip Video YouTube/TikTok/IG Jadi Shorts & Reels 9:16 + Script & Hook Monetisasi Siap Upload',
+    badge: '⚡ 100% Siap Upload',
+    defaultDuration: '9:16 HD 60fps (Aman Copyright)',
+    authMethod: 'video_clip',
+    is100PercentAuto: true,
+    hasPassword: false,
+    instructions: '100% Siap Upload ke YouTube Shorts, TikTok, & Reels. Lengkap dengan Hook, Judul Clickbait, Tag SEO, dan Anti-Copyright Filter.',
+    stepByStep: [
+      'Tempel link video YouTube, TikTok, atau Instagram di kolom input.',
+      'Pilih format target (YouTube Shorts / TikTok FYP / IG Reels / Podcast Faceless / Affiliate).',
+      'Klik tombol "📥 Unduh Video Siap Upload (MP4 9:16)" atau "🎵 Unduh Audio MP3".',
+      'Salin paket teks viral (Judul + Deskripsi + Hashtag FYP + Pinned Comment Affiliate + Copyright Disclaimer).',
+      'Upload ke channel/akun kamu dan mulai monetisasi Ads & Affiliate!',
     ],
   },
   scribd_doc: {
