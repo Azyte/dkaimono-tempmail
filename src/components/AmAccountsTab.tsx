@@ -330,23 +330,24 @@ export function AmAccountsTab({
         </div>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs (Horizontal Scrollable) */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
         <button
           onClick={() => setSelectedService('all')}
-          className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+          className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
             selectedService === 'all'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
+              ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30'
+              : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-white'
           }`}
         >
-          Semua Layanan ({accounts.length})
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>Semua ({accounts.length})</span>
         </button>
 
         {(Object.keys(SUPPORTED_SERVICES) as ServiceType[]).map((st) => {
           const s = SUPPORTED_SERVICES[st];
           const c = accounts.filter((a) => (a.serviceType || 'alight_motion') === st).length;
-          if (c === 0 && st !== 'alight_motion' && st !== 'canva_pro' && st !== 'elevenlabs') return null;
+          if (c === 0 && st !== 'alight_motion' && st !== 'canva_pro' && st !== 'scribd_doc') return null;
 
           return (
             <button
@@ -354,13 +355,13 @@ export function AmAccountsTab({
               onClick={() => setSelectedService(st)}
               className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
                 selectedService === st
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white'
+                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30'
+                  : 'border border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-white'
               }`}
             >
               <span>{s.icon}</span>
-              <span>{s.name}</span>
-              <span className="opacity-70 text-[10px]">({c})</span>
+              <span>{s.name.split(' ')[0]}</span>
+              <span className="opacity-75 text-[10px]">({c})</span>
             </button>
           );
         })}

@@ -31,8 +31,12 @@ import {
   Lock,
   BookOpen,
   Video,
-  Image,
+  Image as ImageIcon,
   PhoneCall,
+  Wrench,
+  Sparkle,
+  SlidersHorizontal,
+  ChevronRight,
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
 import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
@@ -43,7 +47,50 @@ interface AmPremiumModalProps {
   onSuccessCreated?: () => void;
 }
 
+type ServiceCategory = 'all' | 'utilities' | 'vpn' | 'ai_media' | 'accounts';
+
+interface CategoryTab {
+  id: ServiceCategory;
+  label: string;
+  icon: React.ReactNode;
+  services: ServiceType[];
+}
+
+const CATEGORIES: CategoryTab[] = [
+  {
+    id: 'all',
+    label: 'Semua',
+    icon: <Sparkles className="h-3.5 w-3.5" />,
+    services: Object.keys(SUPPORTED_SERVICES) as ServiceType[],
+  },
+  {
+    id: 'utilities',
+    label: 'Tools & Media',
+    icon: <Wrench className="h-3.5 w-3.5" />,
+    services: ['scribd_doc', 'media_downloader', 'flux_ai_image', 'temp_sms', 'nextdns_pro'],
+  },
+  {
+    id: 'vpn',
+    label: 'VPN & SSH',
+    icon: <Shield className="h-3.5 w-3.5" />,
+    services: ['warp_plus', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'proxy_nodes'],
+  },
+  {
+    id: 'ai_media',
+    label: 'AI & Musik',
+    icon: <Bot className="h-3.5 w-3.5" />,
+    services: ['ai_tokens', 'deezer_hifi', 'elevenlabs', 'cursor_ai'],
+  },
+  {
+    id: 'accounts',
+    label: 'Akun Pro',
+    icon: <Zap className="h-3.5 w-3.5" />,
+    services: ['alight_motion', 'canva_pro', 'leonardo_ai', 'custom'],
+  },
+];
+
 export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumModalProps) {
+  const [activeCategory, setActiveCategory] = useState<ServiceCategory>('all');
   const [serviceType, setServiceType] = useState<ServiceType>('alight_motion');
   const [count, setCount] = useState<number>(1);
   const [customAlias, setCustomAlias] = useState<string>('');
@@ -64,10 +111,13 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
+  const [showSteps, setShowSteps] = useState(false);
 
   if (!isOpen) return null;
 
   const currentService = SUPPORTED_SERVICES[serviceType] || SUPPORTED_SERVICES.alight_motion;
+  const currentCategoryTab = CATEGORIES.find((c) => c.id === activeCategory) || CATEGORIES[0];
+  const displayedServices = currentCategoryTab.services;
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,160 +270,181 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     handleCopyText(text, 'all');
   };
 
-  const autoServices = (Object.keys(SUPPORTED_SERVICES) as ServiceType[]).filter(
-    (st) => SUPPORTED_SERVICES[st].is100PercentAuto
-  );
-  const helperServices = (Object.keys(SUPPORTED_SERVICES) as ServiceType[]).filter(
-    (st) => !SUPPORTED_SERVICES[st].is100PercentAuto
-  );
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-emerald-500/30 bg-slate-900 shadow-2xl flex flex-col">
-        {/* Glow Effects */}
-        <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-emerald-500/15 blur-3xl"></div>
-        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-500/15 blur-3xl"></div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-2.5 sm:p-4 backdrop-blur-lg animate-in fade-in duration-200">
+      <div className="relative max-h-[94vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/95 shadow-2xl flex flex-col">
+        {/* Subtle Ambient Gradients */}
+        <div className="pointer-events-none absolute -left-20 -top-20 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl"></div>
+        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl"></div>
 
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 px-5 py-4 shrink-0">
+        <div className="flex items-center justify-between border-b border-slate-800/80 px-4 sm:px-5 py-3.5 shrink-0 bg-slate-900/80 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/20 text-white font-bold text-lg">
-              {currentService.icon}
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white font-bold shadow-md shadow-emerald-500/20">
+              <Sparkles className="h-4 w-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white">Auto Pro &amp; Utility Hub</h3>
-                <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                  PRO VIP
+                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">Auto Pro &amp; Utility Hub</h3>
+                <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.2 text-[9px] font-bold text-emerald-400">
+                  VIP PRO
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Pilih aplikasi / tools praktis target untuk eksekusi instan.</p>
+              <p className="text-[11px] text-slate-400 hidden sm:block">Pilih layanan siap pakai tanpa perlu registrasi manual.</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all active:scale-95"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
+        {/* Category Pills Bar (Horizontal Scrollable on Mobile) */}
+        <div className="border-b border-slate-800/60 bg-slate-950/40 px-3 py-2 shrink-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            {CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`flex items-center gap-1.5 shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+                    isActive
+                      ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30 font-bold'
+                      : 'border border-slate-800/80 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                  }`}
+                >
+                  {cat.icon}
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Modal Body (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Section 1: 100% TERIMA JADI (Full Auto Server / Key / Nodes) */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
-                <Zap className="h-3.5 w-3.5 fill-emerald-400" />
-                <span>⚡ 100% Terima Jadi (Auto Tools / Media / PDF / AI / VPN):</span>
-              </label>
-              <span className="text-[10px] text-slate-400">Tanpa Daftar Manual</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {autoServices.map((st) => {
-                const s = SUPPORTED_SERVICES[st];
-                const isSelected = serviceType === st;
-                return (
-                  <button
-                    key={st}
-                    type="button"
-                    onClick={() => {
-                      setServiceType(st);
-                      setResults([]);
-                      setErrorMsg('');
-                    }}
-                    className={`flex flex-col items-start p-2.5 rounded-2xl border text-left transition-all ${
-                      isSelected
-                        ? 'border-emerald-500 bg-emerald-950/40 shadow-md shadow-emerald-500/10'
-                        : 'border-slate-800 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <span className="text-base">{s.icon}</span>
-                      <span className="rounded bg-emerald-500/20 px-1 py-0.2 text-[8px] font-bold text-emerald-300">
-                        100% AUTO
-                      </span>
-                    </div>
-                    <p className="text-xs font-bold text-white truncate w-full">{s.name.split(' ')[0]}</p>
-                    <p className="text-[10px] text-slate-400 line-clamp-1">{s.badge}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Section 2: Pro Trial & TempMail Helpers */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-2">
-              Layanan Lainnya (TempMail &amp; OTP Helper):
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {helperServices.map((st) => {
-                const s = SUPPORTED_SERVICES[st];
-                const isSelected = serviceType === st;
-                return (
-                  <button
-                    key={st}
-                    type="button"
-                    onClick={() => {
-                      setServiceType(st);
-                      setResults([]);
-                      setErrorMsg('');
-                    }}
-                    className={`flex flex-col items-start p-2 rounded-xl border text-left transition-all ${
-                      isSelected
-                        ? 'border-cyan-500 bg-cyan-950/40 shadow-md shadow-cyan-500/10'
-                        : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <span className="text-sm">{s.icon}</span>
-                      {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse"></span>}
-                    </div>
-                    <p className="text-[11px] font-bold text-white truncate w-full">{s.name.split(' ')[0]}</p>
-                    <p className="text-[9px] text-slate-400 truncate w-full">{s.badge}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Real-World Workflow Guide Banner */}
-          <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/30 p-3.5 text-xs text-indigo-200 space-y-2">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          {/* Services Selection Grid (2-Cols Mobile, 3-Cols Desktop) */}
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-bold text-indigo-300">
-                <HelpCircle className="h-4 w-4 text-cyan-400 shrink-0" />
-                <span>Panduan &amp; Cara Pakai {currentService.name}:</span>
-              </div>
-              <span
-                className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${
-                  currentService.is100PercentAuto
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                    : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                }`}
-              >
-                {currentService.is100PercentAuto ? '⚡ 100% Terima Jadi' : '🔑 Butuh Form Daftar'}
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Pilih Layanan Target:
+              </label>
+              <span className="text-[10px] text-slate-500">
+                {displayedServices.length} layanan tersedia
               </span>
             </div>
 
-            <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300 leading-relaxed pl-0.5">
-              {currentService.stepByStep.map((step, idx) => (
-                <li key={idx} className="pl-1">
-                  {step}
-                </li>
-              ))}
-            </ol>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {displayedServices.map((st) => {
+                const s = SUPPORTED_SERVICES[st];
+                if (!s) return null;
+                const isSelected = serviceType === st;
+
+                return (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => {
+                      setServiceType(st);
+                      setResults([]);
+                      setErrorMsg('');
+                    }}
+                    className={`relative flex items-center gap-2.5 p-2.5 rounded-2xl border text-left transition-all ${
+                      isSelected
+                        ? 'border-emerald-500 bg-emerald-950/40 shadow-md shadow-emerald-500/10 ring-1 ring-emerald-500/50'
+                        : 'border-slate-800/90 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-900/60 active:scale-[0.98]'
+                    }`}
+                  >
+                    {/* Icon Container */}
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 border border-slate-800 text-lg shadow-inner">
+                      {s.icon}
+                    </div>
+
+                    {/* Text Details */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <p className={`text-xs font-bold truncate ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
+                          {s.name.split(' ')[0]}
+                        </p>
+                        {isSelected && (
+                          <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-slate-950 shrink-0">
+                            <Check className="h-2.5 w-2.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[9px] text-slate-400 truncate mt-0.5">
+                        {s.is100PercentAuto ? '⚡ Auto' : '🔑 Trial'} • {s.badge.replace(/⚡|100%|Auto/g, '').trim()}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Form Controls */}
+          {/* Active Service Hero Card */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-3.5 space-y-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">{currentService.icon}</span>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                    <span>{currentService.name}</span>
+                    <span
+                      className={`rounded-md px-1.5 py-0.2 text-[9px] font-bold ${
+                        currentService.is100PercentAuto
+                          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                          : 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                      }`}
+                    >
+                      {currentService.is100PercentAuto ? '100% Terima Jadi' : 'Perlu Form Daftar'}
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-slate-400 line-clamp-1">{currentService.description}</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowSteps(!showSteps)}
+                className="text-[10px] text-slate-400 hover:text-emerald-400 flex items-center gap-0.5 shrink-0 bg-slate-900 border border-slate-800 px-2 py-1 rounded-lg"
+              >
+                <span>{showSteps ? 'Tutup Cara' : 'Cara Pakai'}</span>
+                <ChevronRight className={`h-3 w-3 transition-transform ${showSteps ? 'rotate-90' : ''}`} />
+              </button>
+            </div>
+
+            {/* Collapsible Step-by-Step Instructions */}
+            {showSteps && (
+              <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 text-[11px] text-slate-300 space-y-1.5 animate-in fade-in duration-150">
+                <div className="font-semibold text-emerald-400 flex items-center gap-1">
+                  <Info className="h-3.5 w-3.5" />
+                  <span>Panduan Langkah-demi-Langkah:</span>
+                </div>
+                <ol className="list-decimal list-inside space-y-1 pl-0.5 text-slate-300 leading-relaxed">
+                  {currentService.stepByStep.map((step, idx) => (
+                    <li key={idx} className="pl-0.5">
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </div>
+
+          {/* Generator Form */}
           <form onSubmit={handleGenerate} className="space-y-3.5">
-            {/* Account Count Selection */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Jumlah yang Digenerate (Batch):
+            {/* Batch Count Selector */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-300">
+                Jumlah Output yang Dibuat:
               </label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-1.5">
                 {[1, 2, 3, 5, 10].map((num) => (
                   <button
                     key={num}
@@ -381,8 +452,8 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     onClick={() => setCount(num)}
                     className={`py-2 text-xs font-bold rounded-xl border transition-all ${
                       count === num
-                        ? 'border-emerald-500 bg-emerald-600/30 text-emerald-300 shadow-md'
-                        : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                        ? 'border-emerald-500 bg-emerald-600/30 text-emerald-300 shadow-sm'
+                        : 'border-slate-800/90 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                     }`}
                   >
                     {num} Item
@@ -391,10 +462,10 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
               </div>
             </div>
 
-            {/* Custom Input (Single item only) */}
+            {/* Custom Input Field (Only for 1 item) */}
             {count === 1 && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-300">
                   {serviceType === 'scribd_doc'
                     ? 'URL Dokumen Scribd / SlideShare (Opsional):'
                     : serviceType === 'media_downloader'
@@ -403,7 +474,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     ? 'Prompt Gambar AI (Opsional):'
                     : 'Nama Alias Kustom (Opsional):'}
                 </label>
-                <div className="flex items-center rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 focus-within:border-emerald-500">
+                <div className="flex items-center rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 focus-within:border-emerald-500 transition-colors">
                   <input
                     type="text"
                     value={customAlias}
@@ -426,7 +497,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
               </div>
             )}
 
-            {/* Error Message */}
+            {/* Error Banner */}
             {errorMsg && (
               <div className="flex items-start gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-rose-400" />
@@ -434,21 +505,21 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
               </div>
             )}
 
-            {/* Action Button */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 hover:from-emerald-500 hover:to-cyan-500 active:scale-[0.98] transition-all disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 hover:from-emerald-500 hover:to-cyan-500 active:scale-[0.99] transition-all disabled:opacity-50"
             >
               {loading ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>Memproses {count} {currentService.name}...</span>
+                  <span>Sedang Memproses {count} {currentService.name.split(' ')[0]}...</span>
                 </>
               ) : (
                 <>
                   <Zap className="h-4 w-4 fill-white" />
-                  <span>⚡ Eksekusi Generate {count} Sekarang</span>
+                  <span>⚡ Eksekusi {count} {currentService.name.split(' ')[0]} Sekarang</span>
                 </>
               )}
             </button>
@@ -507,28 +578,26 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-amber-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <BookOpen className="h-4 w-4 text-amber-400" />
-                              <span className="font-bold text-white truncate max-w-sm sm:max-w-md">
-                                {acc.serviceName}
-                              </span>
-                              <span className="rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">
-                                {acc.duration}
-                              </span>
-                            </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <BookOpen className="h-4 w-4 text-amber-400" />
+                            <span className="font-bold text-white truncate max-w-sm sm:max-w-md">
+                              {acc.serviceName}
+                            </span>
+                            <span className="rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">
+                              {acc.duration}
+                            </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800">
                           <a
                             href={acc.pdfDownloadUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-amber-400 hover:to-orange-500 active:scale-95"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-amber-400 hover:to-orange-500 active:scale-95 transition-all"
                           >
-                            <Download className="h-3.5 w-3.5" />
+                            <Download className="h-4 w-4" />
                             <span>📥 Unduh PDF Dokumen Original</span>
                           </a>
                         </div>
@@ -543,15 +612,13 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-pink-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Video className="h-4 w-4 text-pink-400" />
-                              <span className="font-bold text-white">{acc.serviceName}</span>
-                              <span className="rounded bg-pink-500/15 border border-pink-500/30 px-1.5 py-0.2 text-[9px] font-bold text-pink-300">
-                                {acc.duration}
-                              </span>
-                            </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Video className="h-4 w-4 text-pink-400" />
+                            <span className="font-bold text-white">{acc.serviceName}</span>
+                            <span className="rounded bg-pink-500/15 border border-pink-500/30 px-1.5 py-0.2 text-[9px] font-bold text-pink-300">
+                              {acc.duration}
+                            </span>
                           </div>
                         </div>
 
@@ -560,16 +627,16 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                             href={acc.hdVideoUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 py-2 px-2 text-xs font-bold text-white shadow-sm hover:from-pink-500 hover:to-rose-500 active:scale-95"
+                            className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 py-2.5 px-2 text-xs font-bold text-white shadow-sm hover:from-pink-500 hover:to-rose-500 active:scale-95 transition-all"
                           >
                             <Download className="h-3.5 w-3.5" />
-                            <span>Unduh Video No-WM</span>
+                            <span>Unduh Video HD</span>
                           </a>
                           <a
                             href={acc.audioMp3Url}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center justify-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 py-2 px-2 text-xs font-bold text-slate-200 border border-slate-700 active:scale-95"
+                            className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 py-2.5 px-2 text-xs font-bold text-slate-200 border border-slate-700 active:scale-95 transition-all"
                           >
                             <Music className="h-3.5 w-3.5" />
                             <span>Unduh Audio MP3</span>
@@ -586,29 +653,27 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-purple-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Image className="h-4 w-4 text-purple-400" />
-                              <span className="font-bold text-white truncate max-w-sm sm:max-w-md">
-                                {acc.serviceName}
-                              </span>
-                              <span className="rounded bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.2 text-[9px] font-bold text-purple-300">
-                                {acc.duration}
-                              </span>
-                            </div>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <ImageIcon className="h-4 w-4 text-purple-400" />
+                            <span className="font-bold text-white truncate max-w-sm sm:max-w-md">
+                              {acc.serviceName}
+                            </span>
+                            <span className="rounded bg-purple-500/15 border border-purple-500/30 px-1.5 py-0.2 text-[9px] font-bold text-purple-300">
+                              {acc.duration}
+                            </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800">
                           <a
                             href={acc.imageUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-purple-500 hover:to-indigo-500 active:scale-95"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-purple-500 hover:to-indigo-500 active:scale-95 transition-all"
                           >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            <span>🖼️ Buka / Download Gambar HD Flux.1</span>
+                            <ExternalLink className="h-4 w-4" />
+                            <span>🖼️ Buka / Unduh Gambar HD Flux.1</span>
                           </a>
                         </div>
                       </div>
@@ -622,40 +687,38 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-emerald-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <PhoneCall className="h-4 w-4 text-emerald-400" />
-                              <span className="font-bold text-white">{acc.serviceName}</span>
-                              <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">
-                                Live OTP
-                              </span>
-                            </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <PhoneCall className="h-4 w-4 text-emerald-400" />
+                            <span className="font-bold text-white">{acc.serviceName}</span>
+                            <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">
+                              Live OTP
+                            </span>
+                          </div>
 
-                            <div className="flex items-center gap-2 pt-1">
-                              <span className="font-mono text-base font-black text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-xl">
-                                {acc.formattedNumber}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyText(acc.formattedNumber!, 'phone')}
-                                className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-2 py-1 text-[11px] font-bold text-slate-200"
-                              >
-                                {isPhoneCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-                                <span>{isPhoneCopied ? 'Tersalin' : 'Salin Nomor'}</span>
-                              </button>
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-base font-black text-amber-300 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-xl">
+                              {acc.formattedNumber}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyText(acc.formattedNumber!, 'phone')}
+                              className="flex items-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-200"
+                            >
+                              {isPhoneCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                              <span>{isPhoneCopied ? 'Tersalin' : 'Salin Nomor'}</span>
+                            </button>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800">
                           <a
                             href={acc.smsInboxUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all"
                           >
-                            <Mail className="h-3.5 w-3.5" />
+                            <Mail className="h-4 w-4" />
                             <span>📬 Buka Kotak Masuk SMS OTP</span>
                           </a>
                         </div>
@@ -670,29 +733,27 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-emerald-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1 flex-1">
-                            <div className="flex items-center gap-2">
-                              <Shield className="h-4 w-4 text-emerald-400" />
-                              <span className="font-bold text-white">Cloudflare WARP+ License Key</span>
-                              <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">
-                                100% Active
-                              </span>
-                            </div>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-emerald-400" />
+                            <span className="font-bold text-white">Cloudflare WARP+ License Key</span>
+                            <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">
+                              100% Active
+                            </span>
+                          </div>
 
-                            <div className="flex items-center gap-2 pt-1">
-                              <span className="font-mono text-sm font-black text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-xl selection:bg-amber-500">
-                                {acc.licenseKey}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyText(acc.licenseKey!, 'key')}
-                                className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-2 py-1 text-[11px] font-bold text-slate-200"
-                              >
-                                {isKeyCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-                                <span>{isKeyCopied ? 'Tersalin' : 'Salin Key'}</span>
-                              </button>
-                            </div>
+                          <div className="flex items-center gap-2 pt-1">
+                            <span className="font-mono text-sm font-black text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-xl">
+                              {acc.licenseKey}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyText(acc.licenseKey!, 'key')}
+                              className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-2.5 py-1 text-xs font-bold text-slate-200"
+                            >
+                              {isKeyCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                              <span>{isKeyCopied ? 'Tersalin' : 'Salin Key'}</span>
+                            </button>
                           </div>
                         </div>
 
@@ -701,7 +762,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                             <button
                               type="button"
                               onClick={() => handleDownloadFile(acc.wireguardConfig!, `warp-plus-${idx + 1}.conf`)}
-                              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95"
+                              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all"
                             >
                               <Download className="h-3.5 w-3.5" />
                               <span>Unduh Config WireGuard (.conf)</span>
@@ -710,10 +771,10 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                             <button
                               type="button"
                               onClick={() => handleCopyText(acc.wireguardConfig!, 'config')}
-                              className="flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 active:scale-95"
+                              className="flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-xs font-bold text-slate-200 hover:bg-slate-700 active:scale-95 transition-all"
                             >
                               {isConfigCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                              <span>{isConfigCopied ? 'Tersalin' : 'Salin Config'}</span>
+                              <span>{isConfigCopied ? 'Tersalin' : 'Salin'}</span>
                             </button>
                           </div>
                         )}
@@ -728,27 +789,24 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-teal-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <ShieldCheck className="h-4 w-4 text-teal-400" />
-                              <span className="font-bold text-white">{acc.serviceName}</span>
-                              <span className="rounded bg-teal-500/15 border border-teal-500/30 px-1.5 py-0.2 text-[9px] font-bold text-teal-300">
-                                {acc.duration}
-                              </span>
-                            </div>
-
-                            <p className="font-mono text-[11px] text-slate-400 truncate max-w-full">
-                              {acc.accessKey}
-                            </p>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <ShieldCheck className="h-4 w-4 text-teal-400" />
+                            <span className="font-bold text-white">{acc.serviceName}</span>
+                            <span className="rounded bg-teal-500/15 border border-teal-500/30 px-1.5 py-0.2 text-[9px] font-bold text-teal-300">
+                              {acc.duration}
+                            </span>
                           </div>
+                          <p className="font-mono text-[11px] text-slate-400 truncate max-w-full">
+                            {acc.accessKey}
+                          </p>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800">
                           <button
                             type="button"
                             onClick={() => handleCopyText(acc.accessKey!, 'outline')}
-                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-teal-500 hover:to-emerald-500 active:scale-95"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-teal-500 hover:to-emerald-500 active:scale-95 transition-all"
                           >
                             {isOutlineCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                             <span>{isOutlineCopied ? 'Access Key Tersalin!' : '📋 Salin Access Key Outline (ss://)'}</span>
@@ -765,24 +823,20 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-violet-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Lock className="h-4 w-4 text-violet-400" />
-                              <span className="font-bold text-white">{acc.serviceName}</span>
-                              <span className="rounded bg-violet-500/15 border border-violet-500/30 px-1.5 py-0.2 text-[9px] font-bold text-violet-300">
-                                {acc.duration}
-                              </span>
-                            </div>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Lock className="h-4 w-4 text-violet-400" />
+                            <span className="font-bold text-white">{acc.serviceName}</span>
+                            <span className="rounded bg-violet-500/15 border border-violet-500/30 px-1.5 py-0.2 text-[9px] font-bold text-violet-300">
+                              {acc.duration}
+                            </span>
+                          </div>
 
-                            <div className="space-y-1 text-slate-300">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] text-slate-400">👤 User:</span>
-                                <span className="font-mono text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded">{acc.email}</span>
-                                <span className="text-[11px] text-slate-400 ml-2">🔑 Pass:</span>
-                                <span className="font-mono text-amber-300 bg-slate-900 px-1.5 py-0.5 rounded">{acc.password}</span>
-                              </div>
-                            </div>
+                          <div className="flex items-center gap-2 text-slate-300 text-xs">
+                            <span className="text-slate-400">👤 User:</span>
+                            <span className="font-mono text-cyan-300">{acc.email}</span>
+                            <span className="text-slate-400 ml-2">🔑 Pass:</span>
+                            <span className="font-mono text-amber-300">{acc.password}</span>
                           </div>
                         </div>
 
@@ -791,7 +845,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                             <button
                               type="button"
                               onClick={() => handleDownloadFile(acc.ovpnConfig!, `protonvpn-${idx + 1}.ovpn`)}
-                              className="flex items-center justify-center gap-1 rounded-xl bg-violet-600 hover:bg-violet-500 py-2 px-2 text-xs font-bold text-white shadow-sm"
+                              className="flex items-center justify-center gap-1 rounded-xl bg-violet-600 hover:bg-violet-500 py-2 px-2 text-xs font-bold text-white shadow-sm transition-all"
                             >
                               <Download className="h-3.5 w-3.5" />
                               <span>Unduh .ovpn</span>
@@ -801,7 +855,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                             <button
                               type="button"
                               onClick={() => handleDownloadFile(acc.wireguardConfig!, `protonvpn-wg-${idx + 1}.conf`)}
-                              className="flex items-center justify-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 py-2 px-2 text-xs font-bold text-slate-200 border border-slate-700"
+                              className="flex items-center justify-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 py-2 px-2 text-xs font-bold text-slate-200 border border-slate-700 transition-all"
                             >
                               <Download className="h-3.5 w-3.5" />
                               <span>Unduh .conf</span>
@@ -819,30 +873,28 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-amber-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Gamepad2 className="h-4 w-4 text-amber-400" />
-                              <span className="font-bold text-white">{acc.serviceName}</span>
-                              <span className="rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">
-                                {acc.duration}
-                              </span>
-                            </div>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Gamepad2 className="h-4 w-4 text-amber-400" />
+                            <span className="font-bold text-white">{acc.serviceName}</span>
+                            <span className="rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">
+                              {acc.duration}
+                            </span>
+                          </div>
 
-                            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-300 text-[11px] pt-1">
-                              <div><span className="text-slate-500">Host:</span> <span className="font-mono text-cyan-300">{acc.host}</span></div>
-                              <div><span className="text-slate-500">Port:</span> <span className="font-mono text-slate-200">{acc.port}</span></div>
-                              <div><span className="text-slate-500">User:</span> <span className="font-mono text-emerald-300">{acc.alias}</span></div>
-                              <div><span className="text-slate-500">Pass:</span> <span className="font-mono text-amber-300">{acc.password}</span></div>
-                            </div>
+                          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-300 text-[11px] pt-1">
+                            <div><span className="text-slate-500">Host:</span> <span className="font-mono text-cyan-300">{acc.host}</span></div>
+                            <div><span className="text-slate-500">Port:</span> <span className="font-mono text-slate-200">{acc.port}</span></div>
+                            <div><span className="text-slate-500">User:</span> <span className="font-mono text-emerald-300">{acc.alias}</span></div>
+                            <div><span className="text-slate-500">Pass:</span> <span className="font-mono text-amber-300">{acc.password}</span></div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800">
                           <button
                             type="button"
                             onClick={() => handleCopyText(`Host: ${acc.host}\nPort: 443\nUser: ${acc.alias}\nPass: ${acc.password}\nPayload: ${acc.payload}`, 'ssh')}
-                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-orange-500 active:scale-95"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-orange-500 active:scale-95 transition-all"
                           >
                             {isSshCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                             <span>{isSshCopied ? 'Info Akun Tersalin!' : '📋 Salin Info Akun Gaming SSH'}</span>
@@ -859,36 +911,28 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-emerald-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Globe className="h-4 w-4 text-emerald-400" />
-                              <span className="font-bold text-white">{acc.serviceName}</span>
-                              <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">
-                                300K Queries Pro
-                              </span>
-                            </div>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Globe className="h-4 w-4 text-emerald-400" />
+                            <span className="font-bold text-white">{acc.serviceName}</span>
+                            <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">
+                              300K Queries
+                            </span>
+                          </div>
 
-                            <div className="space-y-1 text-slate-300">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] text-slate-400 shrink-0">📱 Android Private DNS:</span>
-                                <span className="font-mono font-bold text-cyan-300 bg-cyan-950/50 border border-cyan-500/30 px-2 py-0.5 rounded truncate">
-                                  {acc.dotEndpoint}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate">
-                                <span>🌐 DoH URL:</span>
-                                <span className="font-mono text-slate-300 truncate">{acc.dohUrl}</span>
-                              </div>
-                            </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-slate-400 shrink-0">📱 Private DNS:</span>
+                            <span className="font-mono font-bold text-cyan-300 bg-cyan-950/50 border border-cyan-500/30 px-2 py-0.5 rounded truncate">
+                              {acc.dotEndpoint}
+                            </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800">
                           <button
                             type="button"
                             onClick={() => handleCopyText(acc.dotEndpoint!, 'dns')}
-                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all"
                           >
                             {isDnsCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                             <span>{isDnsCopied ? 'Hostname Tersalin!' : '📋 Salin Private DNS Android'}</span>
@@ -905,36 +949,28 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-indigo-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Bot className="h-4 w-4 text-indigo-400" />
-                              <span className="font-bold text-white">{acc.serviceName}</span>
-                              <span className="rounded bg-indigo-500/15 border border-indigo-500/30 px-1.5 py-0.2 text-[9px] font-bold text-indigo-300">
-                                Llama 3.3 70B &amp; DeepSeek R1
-                              </span>
-                            </div>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Bot className="h-4 w-4 text-indigo-400" />
+                            <span className="font-bold text-white">{acc.serviceName}</span>
+                            <span className="rounded bg-indigo-500/15 border border-indigo-500/30 px-1.5 py-0.2 text-[9px] font-bold text-indigo-300">
+                              Llama 3.3 70B &amp; DeepSeek
+                            </span>
+                          </div>
 
-                            <div className="space-y-1 text-slate-300">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] text-slate-400 shrink-0">🔑 API Key:</span>
-                                <span className="font-mono font-bold text-amber-300 bg-amber-950/50 border border-amber-500/30 px-2 py-0.5 rounded truncate">
-                                  {acc.apiKey}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate">
-                                <span>🌐 Base URL:</span>
-                                <span className="font-mono text-cyan-300 truncate">{acc.baseUrl}</span>
-                              </div>
-                            </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-slate-400 shrink-0">🔑 API Key:</span>
+                            <span className="font-mono font-bold text-amber-300 bg-amber-950/50 border border-amber-500/30 px-2 py-0.5 rounded truncate">
+                              {acc.apiKey}
+                            </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800">
                           <button
                             type="button"
                             onClick={() => handleCopyText(acc.apiKey!, 'ai')}
-                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-cyan-500 active:scale-95"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-cyan-500 active:scale-95 transition-all"
                           >
                             {isAiCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                             <span>{isAiCopied ? 'API Key Tersalin!' : '📋 Salin API Key AI'}</span>
@@ -951,27 +987,24 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-fuchsia-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Music className="h-4 w-4 text-fuchsia-400" />
-                              <span className="font-bold text-white">{acc.serviceName}</span>
-                              <span className="rounded bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.2 text-[9px] font-bold text-fuchsia-300">
-                                FLAC 1411kbps Master
-                              </span>
-                            </div>
-
-                            <p className="font-mono text-[11px] text-slate-400 truncate max-w-full">
-                              ARL: {acc.arlToken}
-                            </p>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Music className="h-4 w-4 text-fuchsia-400" />
+                            <span className="font-bold text-white">{acc.serviceName}</span>
+                            <span className="rounded bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.2 text-[9px] font-bold text-fuchsia-300">
+                              FLAC 1411kbps
+                            </span>
                           </div>
+                          <p className="font-mono text-[11px] text-slate-400 truncate max-w-full">
+                            ARL: {acc.arlToken}
+                          </p>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800">
                           <button
                             type="button"
                             onClick={() => handleCopyText(acc.arlToken!, 'arl')}
-                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-fuchsia-500 hover:to-pink-500 active:scale-95"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-fuchsia-500 hover:to-pink-500 active:scale-95 transition-all"
                           >
                             {isArlCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                             <span>{isArlCopied ? 'ARL Token Tersalin!' : '📋 Salin ARL Cookie Deezer'}</span>
@@ -988,27 +1021,24 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         key={acc.id || idx}
                         className="rounded-2xl border border-cyan-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1 flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Radio className="h-4 w-4 text-cyan-400" />
-                              <span className="font-bold text-white">{acc.serviceName}</span>
-                              <span className="rounded bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.2 text-[9px] font-bold text-cyan-300">
-                                {acc.duration}
-                              </span>
-                            </div>
-
-                            <p className="font-mono text-[11px] text-slate-400 truncate max-w-full">
-                              {acc.configUri}
-                            </p>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Radio className="h-4 w-4 text-cyan-400" />
+                            <span className="font-bold text-white">{acc.serviceName}</span>
+                            <span className="rounded bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.2 text-[9px] font-bold text-cyan-300">
+                              {acc.duration}
+                            </span>
                           </div>
+                          <p className="font-mono text-[11px] text-slate-400 truncate max-w-full">
+                            {acc.configUri}
+                          </p>
                         </div>
 
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                        <div className="pt-2 border-t border-slate-800">
                           <button
                             type="button"
                             onClick={() => handleCopyText(acc.configUri!, 'config')}
-                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-cyan-500 hover:to-indigo-500 active:scale-95"
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 py-2.5 px-3 text-xs font-bold text-white shadow-md hover:from-cyan-500 hover:to-indigo-500 active:scale-95 transition-all"
                           >
                             {isConfigCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
                             <span>{isConfigCopied ? 'URL Tersalin!' : '📋 Salin URL Node (Siap Konek)'}</span>
