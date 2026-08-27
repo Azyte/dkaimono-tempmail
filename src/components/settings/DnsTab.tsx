@@ -11,12 +11,14 @@ interface DnsTabProps {
   onRefreshSettings: () => void;
 }
 
-export function DnsTab({ domains, onRefreshDomains, onRefreshSettings }: DnsTabProps) {
+export function DnsTab({ domains = [], onRefreshDomains, onRefreshSettings }: DnsTabProps) {
   const [newDomainInput, setNewDomainInput] = useState('');
   const [isAddingDomain, setIsAddingDomain] = useState(false);
   const [dnsCheckLoading, setDnsCheckLoading] = useState(false);
   const [dnsResult, setDnsResult] = useState<DnsCheckResult | null>(null);
-  const [selectedCheckDomain, setSelectedCheckDomain] = useState(domains[0]?.name || '');
+  const [selectedCheckDomain, setSelectedCheckDomain] = useState(
+    Array.isArray(domains) && domains.length > 0 ? domains[0].name : ''
+  );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleCopy = (text: string, id: string) => {

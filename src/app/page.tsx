@@ -610,8 +610,16 @@ export default function Home() {
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
         initialTab={settingsInitialTab}
+        settings={settings}
+        domains={domains}
         currentUser={currentUser}
-        onUserUpdated={fetchCurrentUser}
+        onRefreshSettings={fetchSettingsAndDomains}
+        onRefreshDomains={fetchSettingsAndDomains}
+        onRefreshUser={fetchCurrentUser}
+        onOpenAuthModal={() => {
+          setSettingsModalOpen(false);
+          setAuthModalOpen(true);
+        }}
       />
 
       <TestEmailModal

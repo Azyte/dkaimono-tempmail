@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import {
   DatabaseSchema,
   DomainConfig,
@@ -12,6 +13,12 @@ import {
 } from '@/types';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
+const AUTH_SECRET = process.env.AUTH_SECRET || 'tempmail_super_secret_jwt_key_2026_dkaimono_production';
+
+function hashAdminPassword(password: string): string {
+  const salt = 'dkaimono_salt_2026_';
+  return crypto.createHmac('sha256', AUTH_SECRET).update(salt + password).digest('hex');
+}
 
 function escapeTelegramHtml(str: string): string {
   if (!str) return '';
@@ -296,6 +303,35 @@ const DEFAULT_VOUCHERS: Voucher[] = [
   },
 ];
 
+const DEFAULT_USERS: User[] = [
+  {
+    id: 'user_admin',
+    username: 'admin',
+    email: 'admin@loginptn.xyz',
+    passwordHash: hashAdminPassword('admin123'),
+    isPro: true,
+    proPlan: 'lifetime',
+    proExpiresAt: null,
+    telegramEnabled: false,
+    savedMailboxes: ['admin@loginptn.xyz'],
+    monitoredAliases: ['admin'],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'user_dkaimono',
+    username: 'dkaimono',
+    email: 'dkaimono@loginptn.xyz',
+    passwordHash: hashAdminPassword('dkaimono123'),
+    isPro: true,
+    proPlan: 'lifetime',
+    proExpiresAt: null,
+    telegramEnabled: false,
+    savedMailboxes: ['dkaimono@loginptn.xyz'],
+    monitoredAliases: ['dkaimono'],
+    createdAt: new Date().toISOString(),
+  },
+];
+
 let memoryDbCache: DatabaseSchema | null = null;
 let lastMtimeMs = 0;
 
@@ -328,13 +364,22 @@ function loadDb(): DatabaseSchema {
         }
       }
 
+      // Merge missing default admin users
+      const existingUsernames = new Set((parsed.users || []).map((u) => u.username.toLowerCase()));
+      const mergedUsers = [...(parsed.users || [])];
+      for (const defUser of DEFAULT_USERS) {
+        if (!existingUsernames.has(defUser.username.toLowerCase())) {
+          mergedUsers.push(defUser);
+        }
+      }
+
       memoryDbCache = {
         domains: mergedDomains,
         mailboxes: parsed.mailboxes || [],
         messages: parsed.messages || [],
         settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
         logs: parsed.logs || [],
-        users: parsed.users || [],
+        users: mergedUsers,
         vouchers: parsed.vouchers && parsed.vouchers.length > 0 ? parsed.vouchers : DEFAULT_VOUCHERS,
         amAccounts: Array.isArray(parsed.amAccounts) ? parsed.amAccounts : [],
       };
@@ -351,7 +396,7 @@ function loadDb(): DatabaseSchema {
     messages: [],
     settings: DEFAULT_SETTINGS,
     logs: [],
-    users: [],
+    users: DEFAULT_USERS,
     vouchers: DEFAULT_VOUCHERS,
     amAccounts: [],
   };
