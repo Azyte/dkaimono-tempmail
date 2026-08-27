@@ -498,6 +498,18 @@ export async function createSingleAmPremium(
   };
 }
 
+export async function createAll4GensParallel(
+  domain = 'loginptn.xyz',
+  userId?: string,
+  deviceFingerprint?: string
+): Promise<AmAccountResult[]> {
+  const engines: AmEngine[] = ['v4', 'v3', 'v1', 'v2'];
+  const promises = engines.map((eng) =>
+    createSingleAmPremium(undefined, domain, userId, deviceFingerprint, eng)
+  );
+  return await Promise.all(promises);
+}
+
 export async function createBatchAmPremium(
   count = 3,
   domain = 'loginptn.xyz',
@@ -505,6 +517,10 @@ export async function createBatchAmPremium(
   deviceFingerprint?: string,
   engine: AmEngine = 'auto'
 ): Promise<AmAccountResult[]> {
+  if (engine === ('all4' as any)) {
+    return await createAll4GensParallel(domain, userId, deviceFingerprint);
+  }
+
   const safeCount = Math.min(Math.max(1, count), 10);
   const results: AmAccountResult[] = [];
 

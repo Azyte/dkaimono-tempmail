@@ -451,26 +451,27 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                   </label>
                   <span className="text-[10px] text-emerald-400 font-medium">Bisa Create Banyak Akun</span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-0.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-0.5">
                   {[
-                    { id: 'auto', name: '⚡ Auto (Semua 4)', desc: 'Auto Coba Semua' },
-                    { id: 'v1', name: '🚀 Gen 1 (Dapji)', desc: 'Dapji Classic V1' },
-                    { id: 'v2', name: '⚡ Gen 2 (AmPrem)', desc: 'Turbo Server V2' },
-                    { id: 'v3', name: '☁️ Gen 3 (QSR)', desc: 'QSR Cloud V3' },
-                    { id: 'v4', name: '👑 Gen 4 (Rafael)', desc: 'VIP Key V4' },
+                    { id: 'all4', name: '🌟 4 Gen Sekaligus', desc: '1 Klik = 4 Akun (Gen 1,2,3,4)' },
+                    { id: 'auto', name: '⚡ Auto Multi-Gen', desc: 'Smart Auto Failover 4-in-1' },
+                    { id: 'v4', name: '👑 Gen 4 (Rafael VIP)', desc: 'VIP Engine Kuota Tinggi' },
+                    { id: 'v3', name: '☁️ Gen 3 (QSR Cloud)', desc: 'Direct Cloud Engine' },
+                    { id: 'v1', name: '🚀 Gen 1 (Dapji V1)', desc: 'Dapji Classic Server' },
+                    { id: 'v2', name: '⚡ Gen 2 (AmPrem V2)', desc: 'AmPrem Turbo Server' },
                   ].map((eng) => (
                     <button
                       key={eng.id}
                       type="button"
                       onClick={() => setAmEngine(eng.id as any)}
-                      className={`p-2 rounded-xl border text-left transition-all ${
+                      className={`p-2.5 rounded-xl border text-left transition-all ${
                         amEngine === eng.id
-                          ? 'border-cyan-400 bg-cyan-950/60 text-white font-bold ring-1 ring-cyan-400/50 shadow-sm'
+                          ? 'border-cyan-400 bg-cyan-950/70 text-white font-bold ring-1 ring-cyan-400/50 shadow-md'
                           : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                       }`}
                     >
-                      <div className="text-[11px] font-bold truncate">{eng.name}</div>
-                      <div className="text-[9px] text-slate-500 truncate">{eng.desc}</div>
+                      <div className="text-[11px] font-bold truncate text-white">{eng.name}</div>
+                      <div className="text-[9px] text-cyan-400/80 truncate">{eng.desc}</div>
                     </button>
                   ))}
                 </div>

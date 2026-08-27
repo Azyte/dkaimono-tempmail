@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyExistingAmAccount } from '@/lib/alightMotion';
+import { verifyExistingAmAccount, createBatchAmPremium } from '@/lib/alightMotion';
 import { createMultiServiceAccount, ServiceType } from '@/lib/accountGenerator';
 import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -111,11 +111,32 @@ export async function POST(req: NextRequest) {
     const customAlias = body.customAlias ? String(body.customAlias).trim() : undefined;
     const inviteUrl = body.inviteUrl ? String(body.inviteUrl).trim() : undefined;
     const amEngine = body.amEngine || 'auto';
+    const domain = body.domain || db.getSettings().defaultDomain || 'loginptn.xyz';
+
+    if (serviceType === 'alight_motion' && amEngine === 'all4') {
+      const all4Results = await createBatchAmPremium(4, domain, user.id, deviceId, 'all4' as any);
+      for (const r of all4Results) {
+        if (r.success) {
+          const saved = user.savedMailboxes || [];
+          if (!saved.includes(r.email)) saved.unshift(r.email);
+          const monitored = user.monitoredAliases || [];
+          const local = r.email.split('@')[0];
+          if (!monitored.includes(local)) monitored.unshift(local);
+          db.updateUser(user.id, { savedMailboxes: saved.slice(0, 30), monitoredAliases: monitored.slice(0, 30) });
+        }
+      }
+      return NextResponse.json({
+        success: true,
+        totalRequested: all4Results.length,
+        successCount: all4Results.filter((r) => r.success && !r.isPending).length,
+        pendingCount: all4Results.filter((r) => r.isPending).length,
+        accounts: all4Results,
+      });
+    }
 
     if (isNaN(count) || count < 1) count = 1;
     if (count > 10) count = 10; // Max 10 per batch
 
-    const domain = body.domain || db.getSettings().defaultDomain || 'loginptn.xyz';
     const results = [];
 
     for (let i = 0; i < count; i++) {
