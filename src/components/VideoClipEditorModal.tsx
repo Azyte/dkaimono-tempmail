@@ -45,6 +45,31 @@ interface VideoClipEditorModalProps {
 type SplitScreenMode = 'blur' | 'subway' | 'gta' | 'asmr' | 'minecraft';
 type TextStylePreset = 'hormozi' | 'tiktok' | 'neon' | 'cyber';
 
+// Universal Cross-Browser Canvas Rounded Rectangle Helper
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, width, height, radius);
+  } else {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+  }
+}
+
 export function VideoClipEditorModal({
   isOpen,
   onClose,
@@ -66,21 +91,22 @@ export function VideoClipEditorModal({
   const [isMuted, setIsMuted] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.05);
 
-  // Video source (fallback to high quality royalty-free vertical video stream if not provided)
+  // Safe fallback video source
   const videoSrc =
     initialVideoUrl ||
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
 
   // Editing parameters
   const [topHookText, setTopHookText] = useState(
-    initialHooks[0] || initialTitle || 'JANGAN PERNAH LAKUKAN INI! 😱'
+    (Array.isArray(initialHooks) && initialHooks[0]) ||
+      initialTitle ||
+      'JANGAN PERNAH LAKUKAN INI! 😱'
   );
   const [bottomCtaText, setBottomCtaText] = useState(
     initialCta || 'PART 1 • CEK LINK BIO / KERANJANG KUNING 👆'
   );
   const [textStyle, setTextStyle] = useState<TextStylePreset>('hormozi');
   const [splitMode, setSplitMode] = useState<SplitScreenMode>('subway');
-  const [aspectRatio, setAspectRatio] = useState<'9:16' | '1:1' | '16:9'>('9:16');
 
   // Anti-Copyright filters
   const [enableMirror, setEnableMirror] = useState(true);
@@ -91,7 +117,6 @@ export function VideoClipEditorModal({
   // Export state
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Mobile Active Tab: 'hook' | 'split' | 'protect' | 'preview'
   const [mobileTab, setMobileTab] = useState<'hook' | 'split' | 'protect' | 'preview'>('hook');
@@ -109,22 +134,25 @@ export function VideoClipEditorModal({
   // Handle Play/Pause
   const togglePlay = useCallback(() => {
     if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.playbackRate = playbackSpeed;
-      videoRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {
-          // If autoplay with sound is blocked, mute and retry
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            setIsMuted(true);
-            videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-          }
-        });
-    } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
+    try {
+      if (videoRef.current.paused) {
+        videoRef.current.playbackRate = playbackSpeed;
+        videoRef.current
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => {
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              setIsMuted(true);
+              videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+            }
+          });
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    } catch (e) {
+      console.warn('Playback toggle exception:', e);
     }
   }, [playbackSpeed]);
 
@@ -135,15 +163,10 @@ export function VideoClipEditorModal({
     }
   }, []);
 
-  // Copy helper
-  const handleCopy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
-
   // Main Canvas Render Loop (540 x 960 standard 9:16 mobile canvas)
   useEffect(() => {
+    if (!isOpen) return;
+
     let frame = 0;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -151,356 +174,345 @@ export function VideoClipEditorModal({
     if (!ctx) return;
 
     const render = () => {
-      frame++;
-      const width = canvas.width; // 540
-      const height = canvas.height; // 960
-      const video = videoRef.current;
+      try {
+        frame++;
+        const width = canvas.width || 540;
+        const height = canvas.height || 960;
+        const video = videoRef.current;
 
-      // 1. Clear background
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = '#05070d';
-      ctx.fillRect(0, 0, width, height);
+        // 1. Clear background
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#05070d';
+        ctx.fillRect(0, 0, width, height);
 
-      // Split Screen dimensions (Top 55% Main Video, Bottom 45% High-Retention Content)
-      const isSplit = splitMode !== 'blur';
-      const mainHeight = isSplit ? height * 0.56 : height;
-      const bottomHeight = height - mainHeight;
+        // Split Screen dimensions (Top 55% Main Video, Bottom 45% High-Retention Content)
+        const isSplit = splitMode !== 'blur';
+        const mainHeight = isSplit ? height * 0.56 : height;
+        const bottomHeight = height - mainHeight;
 
-      // 2. Draw Top Main Video
-      ctx.save();
-      if (enableColorGrade) {
-        ctx.filter = 'contrast(114%) saturate(125%) brightness(105%)';
-      }
-
-      if (video && video.readyState >= 2) {
-        if (enableMirror) {
-          ctx.translate(width, 0);
-          ctx.scale(-1, 1);
+        // 2. Draw Top Main Video
+        ctx.save();
+        if (enableColorGrade) {
+          ctx.filter = 'contrast(114%) saturate(125%) brightness(105%)';
         }
 
-        // Draw centered cover of main video
-        const vW = video.videoWidth || 640;
-        const vH = video.videoHeight || 360;
-        const scale = Math.max(width / vW, mainHeight / vH);
-        const sW = vW * scale;
-        const sH = vH * scale;
-        const sX = (width - sW) / 2;
-        const sY = (mainHeight - sH) / 2;
+        if (video && video.readyState >= 2) {
+          try {
+            if (enableMirror) {
+              ctx.translate(width, 0);
+              ctx.scale(-1, 1);
+            }
 
-        ctx.drawImage(video, sX, sY, sW, sH);
-      } else {
-        // Fallback animated video placeholder
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, width, mainHeight);
-        ctx.fillStyle = '#334155';
-        ctx.font = 'bold 22px system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Memuat Video Sumber...', width / 2, mainHeight / 2);
-      }
-      ctx.restore();
+            const vW = video.videoWidth || 640;
+            const vH = video.videoHeight || 360;
+            const scale = Math.max(width / vW, mainHeight / vH);
+            const sW = vW * scale;
+            const sH = vH * scale;
+            const sX = (width - sW) / 2;
+            const sY = (mainHeight - sH) / 2;
 
-      // 3. Draw Bottom Split-Screen Satisfying Content
-      if (isSplit) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(0, mainHeight, width, bottomHeight);
-        ctx.clip();
-
-        const bY = mainHeight;
-        const t = frame * 0.04;
-
-        if (splitMode === 'subway') {
-          // SUBWAY SURFERS 60FPS SIMULATOR (Procedural 3D Track + Coins)
-          ctx.fillStyle = '#1e293b';
-          ctx.fillRect(0, bY, width, bottomHeight);
-
-          // Animated track lines perspective
+            ctx.drawImage(video, sX, sY, sW, sH);
+          } catch (e) {
+            // Draw placeholder if cross-origin tainted
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, 0, width, mainHeight);
+          }
+        } else {
+          // Fallback animated video placeholder
           ctx.fillStyle = '#0f172a';
-          ctx.beginPath();
-          ctx.moveTo(width * 0.2, bY);
-          ctx.lineTo(0, height);
-          ctx.lineTo(width, height);
-          ctx.lineTo(width * 0.8, bY);
-          ctx.fill();
+          ctx.fillRect(0, 0, width, mainHeight);
+          ctx.fillStyle = '#475569';
+          ctx.font = 'bold 20px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('🎬 Memuat Pratinjau Video...', width / 2, mainHeight / 2);
+        }
+        ctx.restore();
 
-          // Speed lines
-          ctx.strokeStyle = '#38bdf8';
-          ctx.lineWidth = 3;
-          for (let i = 0; i < 6; i++) {
-            const lineY = bY + ((frame * 12 + i * 80) % bottomHeight);
+        // 3. Draw Bottom Split-Screen Satisfying Content
+        if (isSplit) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, mainHeight, width, bottomHeight);
+          ctx.clip();
+
+          const bY = mainHeight;
+          const t = frame * 0.04;
+
+          if (splitMode === 'subway') {
+            // SUBWAY SURFERS 60FPS SIMULATOR (Procedural 3D Track + Coins)
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(0, bY, width, bottomHeight);
+
+            // Track lines
+            ctx.fillStyle = '#0f172a';
             ctx.beginPath();
-            ctx.moveTo(width * 0.35, lineY);
-            ctx.lineTo(width * 0.65, lineY);
+            ctx.moveTo(width * 0.2, bY);
+            ctx.lineTo(0, height);
+            ctx.lineTo(width, height);
+            ctx.lineTo(width * 0.8, bY);
+            ctx.fill();
+
+            // Speed lines
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 6; i++) {
+              const lineY = bY + ((frame * 12 + i * 80) % bottomHeight);
+              ctx.beginPath();
+              ctx.moveTo(width * 0.35, lineY);
+              ctx.lineTo(width * 0.65, lineY);
+              ctx.stroke();
+            }
+
+            // Gold coins
+            for (let i = 0; i < 3; i++) {
+              const coinY = bY + ((frame * 8 + i * 140) % bottomHeight);
+              ctx.fillStyle = '#facc15';
+              ctx.beginPath();
+              ctx.arc(width / 2, coinY, 18, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = '#ca8a04';
+              ctx.lineWidth = 3;
+              ctx.stroke();
+            }
+
+            // Tag overlay
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.beginPath();
+            drawRoundedRect(ctx, width / 2 - 110, height - 42, 220, 28, 8);
+            ctx.fill();
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = 'bold 13px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🎮 Subway Surfers 60FPS Loop', width / 2, height - 24);
+          } else if (splitMode === 'gta') {
+            // GTA V MEGA RAMP 4K SIMULATOR
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(0, bY, width, bottomHeight);
+
+            // Neon Ramp Grid
+            ctx.strokeStyle = '#f43f5e';
+            ctx.lineWidth = 2;
+            for (let x = 0; x < width; x += 45) {
+              ctx.beginPath();
+              ctx.moveTo(x, bY);
+              ctx.lineTo(x + Math.sin(t) * 20, height);
+              ctx.stroke();
+            }
+
+            // Sports Car
+            const carX = width / 2 + Math.sin(t * 1.5) * 80;
+            const carY = bY + bottomHeight * 0.55 + Math.cos(t * 2) * 15;
+            ctx.fillStyle = '#f43f5e';
+            ctx.fillRect(carX - 45, carY - 20, 90, 40);
+
+            // Headlights
+            ctx.fillStyle = '#fef08a';
+            ctx.beginPath();
+            ctx.arc(carX - 30, carY - 15, 6, 0, Math.PI * 2);
+            ctx.arc(carX + 30, carY - 15, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.beginPath();
+            drawRoundedRect(ctx, width / 2 - 110, height - 42, 220, 28, 8);
+            ctx.fill();
+            ctx.fillStyle = '#fb7185';
+            ctx.font = 'bold 13px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🏎️ GTA V Mega Ramp 4K', width / 2, height - 24);
+          } else if (splitMode === 'asmr') {
+            // ASMR SOAP CUTTING SATISFYING
+            ctx.fillStyle = '#1e1b4b';
+            ctx.fillRect(0, bY, width, bottomHeight);
+
+            const cols = 7;
+            const rows = 5;
+            const cellW = (width - 60) / cols;
+            const cellH = (bottomHeight - 60) / rows;
+
+            for (let r = 0; r < rows; r++) {
+              for (let c = 0; c < cols; c++) {
+                const hue = (c * 40 + r * 30 + frame * 2) % 360;
+                ctx.fillStyle = `hsl(${hue}, 80%, 65%)`;
+                ctx.fillRect(30 + c * cellW, bY + 25 + r * cellH, cellW - 4, cellH - 4);
+              }
+            }
+
+            // Animated knife blade
+            const knifeY = bY + ((frame * 6) % bottomHeight);
+            ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(20, knifeY);
+            ctx.lineTo(width - 20, knifeY);
             ctx.stroke();
+
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.beginPath();
+            drawRoundedRect(ctx, width / 2 - 110, height - 42, 220, 28, 8);
+            ctx.fill();
+            ctx.fillStyle = '#c084fc';
+            ctx.font = 'bold 13px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🧼 ASMR Soap Cutting HD', width / 2, height - 24);
+          } else if (splitMode === 'minecraft') {
+            // MINECRAFT PARKOUR SIMULATOR
+            ctx.fillStyle = '#064e3b';
+            ctx.fillRect(0, bY, width, bottomHeight);
+
+            // Moving voxel blocks
+            for (let i = 0; i < 4; i++) {
+              const blockY = bY + ((frame * 7 + i * 110) % bottomHeight);
+              const blockX = width * 0.2 + (i % 2 === 0 ? 60 : 180);
+              ctx.fillStyle = '#15803d';
+              ctx.fillRect(blockX, blockY, 80, 45);
+              ctx.fillStyle = '#78350f';
+              ctx.fillRect(blockX, blockY + 15, 80, 30);
+            }
+
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.beginPath();
+            drawRoundedRect(ctx, width / 2 - 115, height - 42, 230, 28, 8);
+            ctx.fill();
+            ctx.fillStyle = '#4ade80';
+            ctx.font = 'bold 13px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('⛏️ Minecraft Parkour 60FPS', width / 2, height - 24);
           }
 
-          // Gold coins
-          for (let i = 0; i < 3; i++) {
-            const coinY = bY + ((frame * 8 + i * 140) % bottomHeight);
-            ctx.fillStyle = '#facc15';
+          // Split separator neon line
+          ctx.strokeStyle = '#e11d48';
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.moveTo(0, mainHeight);
+          ctx.lineTo(width, mainHeight);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
+        // 4. Draw Viral Top Hook Banner
+        if (topHookText && topHookText.trim().length > 0) {
+          ctx.save();
+          const hookY = 55;
+          const hookPadding = 18;
+          ctx.font = '900 24px "Impact", "Arial Black", system-ui, sans-serif';
+          const textMetrics = ctx.measureText(topHookText.toUpperCase());
+          const boxWidth = Math.min(width - 32, textMetrics.width + hookPadding * 2);
+          const boxHeight = 56;
+          const boxX = (width - boxWidth) / 2;
+
+          if (textStyle === 'hormozi') {
+            ctx.fillStyle = '#0a0a0c';
             ctx.beginPath();
-            ctx.arc(width / 2, coinY, 18, 0, Math.PI * 2);
+            drawRoundedRect(ctx, boxX, hookY, boxWidth, boxHeight, 14);
             ctx.fill();
-            ctx.strokeStyle = '#ca8a04';
+
+            ctx.strokeStyle = '#facc15';
             ctx.lineWidth = 3;
             ctx.stroke();
-          }
 
-          // Tag overlay
-          ctx.fillStyle = 'rgba(0,0,0,0.6)';
-          ctx.roundRect(width / 2 - 110, height - 42, 220, 28, 8);
-          ctx.fill();
-          ctx.fillStyle = '#38bdf8';
-          ctx.font = 'bold 13px system-ui, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('🎮 Subway Surfers 60FPS Loop', width / 2, height - 24);
-        } else if (splitMode === 'gta') {
-          // GTA V MEGA RAMP 4K SIMULATOR
-          ctx.fillStyle = '#090d16';
-          ctx.fillRect(0, bY, width, bottomHeight);
-
-          // Neon Ramp Grid
-          ctx.strokeStyle = '#f43f5e';
-          ctx.lineWidth = 2;
-          for (let x = 0; x < width; x += 45) {
+            ctx.fillStyle = '#fde047';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(topHookText.toUpperCase(), width / 2, hookY + boxHeight / 2 + 1);
+          } else if (textStyle === 'tiktok') {
+            ctx.fillStyle = '#e11d48';
             ctx.beginPath();
-            ctx.moveTo(x, bY);
-            ctx.lineTo(x + Math.sin(t) * 20, height);
+            drawRoundedRect(ctx, boxX, hookY, boxWidth, boxHeight, 14);
+            ctx.fill();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
             ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(topHookText.toUpperCase(), width / 2, hookY + boxHeight / 2 + 1);
+          } else if (textStyle === 'neon') {
+            ctx.fillStyle = '#082f49';
+            ctx.beginPath();
+            drawRoundedRect(ctx, boxX, hookY, boxWidth, boxHeight, 14);
+            ctx.fill();
+
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.fillStyle = '#7dd3fc';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(topHookText.toUpperCase(), width / 2, hookY + boxHeight / 2 + 1);
+          } else if (textStyle === 'cyber') {
+            ctx.fillStyle = '#022c22';
+            ctx.beginPath();
+            drawRoundedRect(ctx, boxX, hookY, boxWidth, boxHeight, 14);
+            ctx.fill();
+
+            ctx.strokeStyle = '#34d399';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.fillStyle = '#6ee7b7';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(topHookText.toUpperCase(), width / 2, hookY + boxHeight / 2 + 1);
           }
-
-          // Sports Car Silhouette / Glow
-          const carX = width / 2 + Math.sin(t * 1.5) * 80;
-          const carY = bY + bottomHeight * 0.55 + Math.cos(t * 2) * 15;
-          ctx.fillStyle = '#f43f5e';
-          ctx.shadowColor = '#f43f5e';
-          ctx.shadowBlur = 25;
-          ctx.fillRect(carX - 45, carY - 20, 90, 40);
-          ctx.shadowBlur = 0;
-
-          // Headlights
-          ctx.fillStyle = '#fef08a';
-          ctx.beginPath();
-          ctx.arc(carX - 30, carY - 15, 6, 0, Math.PI * 2);
-          ctx.arc(carX + 30, carY - 15, 6, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = 'rgba(0,0,0,0.6)';
-          ctx.roundRect(width / 2 - 110, height - 42, 220, 28, 8);
-          ctx.fill();
-          ctx.fillStyle = '#fb7185';
-          ctx.font = 'bold 13px system-ui, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('🏎️ GTA V Mega Ramp 4K', width / 2, height - 24);
-        } else if (splitMode === 'asmr') {
-          // ASMR SOAP CUTTING SATISFYING
-          ctx.fillStyle = '#1e1b4b';
-          ctx.fillRect(0, bY, width, bottomHeight);
-
-          const cols = 7;
-          const rows = 5;
-          const cellW = (width - 60) / cols;
-          const cellH = (bottomHeight - 60) / rows;
-
-          for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-              const hue = (c * 40 + r * 30 + frame * 2) % 360;
-              ctx.fillStyle = `hsl(${hue}, 80%, 65%)`;
-              ctx.fillRect(30 + c * cellW, bY + 25 + r * cellH, cellW - 4, cellH - 4);
-            }
-          }
-
-          // Animated knife blade
-          const knifeY = bY + ((frame * 6) % bottomHeight);
-          ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-          ctx.lineWidth = 5;
-          ctx.beginPath();
-          ctx.moveTo(20, knifeY);
-          ctx.lineTo(width - 20, knifeY);
-          ctx.stroke();
-
-          ctx.fillStyle = 'rgba(0,0,0,0.6)';
-          ctx.roundRect(width / 2 - 110, height - 42, 220, 28, 8);
-          ctx.fill();
-          ctx.fillStyle = '#c084fc';
-          ctx.font = 'bold 13px system-ui, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('🧼 ASMR Soap Cutting HD', width / 2, height - 24);
-        } else if (splitMode === 'minecraft') {
-          // MINECRAFT PARKOUR SIMULATOR
-          ctx.fillStyle = '#064e3b';
-          ctx.fillRect(0, bY, width, bottomHeight);
-
-          // Moving voxel blocks
-          for (let i = 0; i < 4; i++) {
-            const blockY = bY + ((frame * 7 + i * 110) % bottomHeight);
-            const blockX = width * 0.2 + (i % 2 === 0 ? 60 : 180);
-            ctx.fillStyle = '#15803d';
-            ctx.fillRect(blockX, blockY, 80, 45);
-            ctx.fillStyle = '#78350f';
-            ctx.fillRect(blockX, blockY + 15, 80, 30);
-          }
-
-          ctx.fillStyle = 'rgba(0,0,0,0.6)';
-          ctx.roundRect(width / 2 - 115, height - 42, 230, 28, 8);
-          ctx.fill();
-          ctx.fillStyle = '#4ade80';
-          ctx.font = 'bold 13px system-ui, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('⛏️ Minecraft Parkour 60FPS', width / 2, height - 24);
+          ctx.restore();
         }
 
-        // Split separator neon line
-        ctx.strokeStyle = '#e11d48';
-        ctx.lineWidth = 3.5;
-        ctx.shadowColor = '#f43f5e';
-        ctx.shadowBlur = 12;
-        ctx.beginPath();
-        ctx.moveTo(0, mainHeight);
-        ctx.lineTo(width, mainHeight);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
+        // 5. Draw Animated Pulsing Captions
+        if (showCaptions) {
+          ctx.save();
+          const capY = isSplit ? mainHeight * 0.76 : height * 0.48;
+          const pulse = 1 + Math.sin(frame * 0.15) * 0.06;
 
-        ctx.restore();
-      }
+          ctx.translate(width / 2, capY);
+          ctx.scale(pulse, pulse);
 
-      // 4. Draw Viral Top Hook Banner (Alex Hormozi / TikTok / Neon / Cyber)
-      if (topHookText && topHookText.trim().length > 0) {
-        ctx.save();
-        const hookY = 55;
-        const hookPadding = 18;
-        ctx.font = '900 24px "Impact", "Arial Black", system-ui, sans-serif';
-        const textMetrics = ctx.measureText(topHookText.toUpperCase());
-        const boxWidth = Math.min(width - 32, textMetrics.width + hookPadding * 2);
-        const boxHeight = 56;
-        const boxX = (width - boxWidth) / 2;
-
-        if (textStyle === 'hormozi') {
-          // Alex Hormozi Signature Style: Bold Black Box + Glowing Yellow Text
-          ctx.fillStyle = '#0a0a0c';
-          ctx.shadowColor = '#facc15';
-          ctx.shadowBlur = 20;
-          ctx.beginPath();
-          ctx.roundRect(boxX, hookY, boxWidth, boxHeight, 14);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          ctx.strokeStyle = '#facc15';
-          ctx.lineWidth = 3;
-          ctx.stroke();
-
-          ctx.fillStyle = '#fde047';
+          ctx.font = '900 28px "Impact", "Arial Black", system-ui, sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(topHookText.toUpperCase(), width / 2, hookY + boxHeight / 2 + 1);
-        } else if (textStyle === 'tiktok') {
-          // TikTok Red Punchy Style
-          ctx.fillStyle = '#e11d48';
-          ctx.shadowColor = '#e11d48';
-          ctx.shadowBlur = 18;
-          ctx.beginPath();
-          ctx.roundRect(boxX, hookY, boxWidth, boxHeight, 14);
-          ctx.fill();
-          ctx.shadowBlur = 0;
 
-          ctx.strokeStyle = '#ffffff';
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 7;
+          ctx.strokeText('GILA BANGET GAES! 😱', 0, 0);
+
+          ctx.fillStyle = '#facc15';
+          ctx.fillText('GILA BANGET GAES! 😱', 0, 0);
+          ctx.restore();
+        }
+
+        // 6. Draw Bottom Affiliate CTA Strip
+        if (bottomCtaText && bottomCtaText.trim().length > 0) {
+          ctx.save();
+          const ctaH = 46;
+          const ctaY = height - ctaH - 12;
+          const ctaW = width - 36;
+          const ctaX = 18;
+
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+          ctx.beginPath();
+          drawRoundedRect(ctx, ctaX, ctaY, ctaW, ctaH, 12);
+          ctx.fill();
+
+          ctx.strokeStyle = '#f59e0b';
           ctx.lineWidth = 2.5;
           ctx.stroke();
 
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = '#fef08a';
+          ctx.font = 'bold 13px system-ui, sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(topHookText.toUpperCase(), width / 2, hookY + boxHeight / 2 + 1);
-        } else if (textStyle === 'neon') {
-          // Neon Cyan Cyberpunk
-          ctx.fillStyle = '#082f49';
-          ctx.shadowColor = '#38bdf8';
-          ctx.shadowBlur = 22;
-          ctx.beginPath();
-          ctx.roundRect(boxX, hookY, boxWidth, boxHeight, 14);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          ctx.strokeStyle = '#38bdf8';
-          ctx.lineWidth = 3;
-          ctx.stroke();
-
-          ctx.fillStyle = '#7dd3fc';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(topHookText.toUpperCase(), width / 2, hookY + boxHeight / 2 + 1);
-        } else if (textStyle === 'cyber') {
-          // Emerald Green Pop
-          ctx.fillStyle = '#022c22';
-          ctx.shadowColor = '#34d399';
-          ctx.shadowBlur = 20;
-          ctx.beginPath();
-          ctx.roundRect(boxX, hookY, boxWidth, boxHeight, 14);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          ctx.strokeStyle = '#34d399';
-          ctx.lineWidth = 3;
-          ctx.stroke();
-
-          ctx.fillStyle = '#6ee7b7';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(topHookText.toUpperCase(), width / 2, hookY + boxHeight / 2 + 1);
+          ctx.fillText(bottomCtaText, width / 2, ctaY + ctaH / 2);
+          ctx.restore();
         }
-        ctx.restore();
+      } catch (err) {
+        console.warn('Canvas render error caught:', err);
       }
 
-      // 5. Draw Animated Pulsing Captions (Submagic Hormozi Style)
-      if (showCaptions) {
-        ctx.save();
-        const capY = isSplit ? mainHeight * 0.76 : height * 0.48;
-        const pulse = 1 + Math.sin(frame * 0.15) * 0.06;
-
-        ctx.translate(width / 2, capY);
-        ctx.scale(pulse, pulse);
-
-        ctx.font = '900 28px "Impact", "Arial Black", system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // Outer stroke
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 7;
-        ctx.strokeText('GILA BANGET GAES! 😱', 0, 0);
-
-        // Fill
-        ctx.fillStyle = '#facc15';
-        ctx.fillText('GILA BANGET GAES! 😱', 0, 0);
-        ctx.restore();
-      }
-
-      // 6. Draw Bottom Affiliate CTA Strip (Gold Highlight Bar)
-      if (bottomCtaText && bottomCtaText.trim().length > 0) {
-        ctx.save();
-        const ctaH = 46;
-        const ctaY = height - ctaH - 12;
-        const ctaW = width - 36;
-        const ctaX = 18;
-
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
-        ctx.beginPath();
-        ctx.roundRect(ctaX, ctaY, ctaW, ctaH, 12);
-        ctx.fill();
-
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
-
-        ctx.fillStyle = '#fef08a';
-        ctx.font = 'bold 13px system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(bottomCtaText, width / 2, ctaY + ctaH / 2);
-        ctx.restore();
-      }
-
-      // 7. Loop frame
+      // Loop frame
       animFrameIdRef.current = requestAnimationFrame(render);
     };
 
@@ -508,7 +520,7 @@ export function VideoClipEditorModal({
     return () => {
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
     };
-  }, [topHookText, bottomCtaText, textStyle, splitMode, enableMirror, enableColorGrade, showCaptions]);
+  }, [isOpen, topHookText, bottomCtaText, textStyle, splitMode, enableMirror, enableColorGrade, showCaptions]);
 
   // Video Export Engine (Records 540x960 Canvas Stream -> MP4 / WebM Blob Download)
   const handleExportVideo = async () => {
@@ -519,48 +531,73 @@ export function VideoClipEditorModal({
       setIsExporting(true);
       setExportProgress(10);
 
-      // Start recording canvas stream
-      const stream = canvas.captureStream(30); // 30 FPS high quality
-      const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')
-        ? 'video/mp4;codecs=avc1'
-        : 'video/webm;codecs=vp9';
+      // Check MediaRecorder support safely
+      if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') {
+        alert('Fitur download stream otomatis tidak didukung di browser ini. Silakan unduh video mentahan.');
+        setIsExporting(false);
+        return;
+      }
+
+      const captureStream =
+        (canvas as any).captureStream ||
+        (canvas as any).mozCaptureStream ||
+        (canvas as any).webkitCaptureStream;
+
+      if (!captureStream) {
+        alert('Canvas captureStream tidak didukung di browser ini.');
+        setIsExporting(false);
+        return;
+      }
+
+      const stream = captureStream.call(canvas, 30);
+      let mimeType = 'video/webm';
+      if (typeof MediaRecorder.isTypeSupported === 'function') {
+        if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
+          mimeType = 'video/mp4;codecs=avc1';
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+          mimeType = 'video/webm;codecs=vp9';
+        }
+      }
 
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 6000000, // 6 Mbps HD
+        videoBitsPerSecond: 6000000,
       });
 
       const chunks: Blob[] = [];
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
+        if (e.data && e.data.size > 0) chunks.push(e.data);
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `FYP_Shorts_${Date.now()}.mp4`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        try {
+          const blob = new Blob(chunks, { type: mimeType });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `FYP_Shorts_${Date.now()}.mp4`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
 
-        setIsExporting(false);
-        setExportProgress(100);
-        fireConfetti();
+          setIsExporting(false);
+          setExportProgress(100);
+          fireConfetti();
+        } catch (e) {
+          console.warn('MediaRecorder stop error:', e);
+          setIsExporting(false);
+        }
       };
 
       mediaRecorder.start();
 
-      // Play source video if paused
       if (videoRef.current && videoRef.current.paused) {
         videoRef.current.currentTime = 0;
         videoRef.current.play().catch(() => {});
         setIsPlaying(true);
       }
 
-      // Record for 6 seconds as a sample/export clip
       let progress = 10;
       const interval = setInterval(() => {
         progress += 15;
@@ -576,7 +613,7 @@ export function VideoClipEditorModal({
     } catch (err) {
       console.error('Export error:', err);
       setIsExporting(false);
-      alert('Gagal mengekspor video. Pastikan browser mendukung Canvas Stream recording.');
+      alert('Gagal mengekspor video. Silakan gunakan tombol unduh mentahan MP4.');
     }
   };
 

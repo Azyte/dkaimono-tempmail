@@ -713,17 +713,19 @@ export default function Home() {
         }}
       />
 
-      <VideoClipEditorModal
-        isOpen={videoStudioOpen}
-        onClose={() => setVideoStudioOpen(false)}
-        initialVideoUrl="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-        initialTitle="TIPS RAHASIA VIRAL 99% ORANG BELUM TAHU! 😱"
-        initialHooks={[
-          'JANGAN PERNAH LAKUKAN INI! 😱',
-          '99% ORANG BELUM TAHU TRIK INI! 🤯',
-          'RAHASIA ALGORITMA TERBONGKAR! 🚨',
-        ]}
-      />
+      {videoStudioOpen && (
+        <VideoClipEditorModal
+          isOpen={videoStudioOpen}
+          onClose={() => setVideoStudioOpen(false)}
+          initialVideoUrl="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+          initialTitle="TIPS RAHASIA VIRAL 99% ORANG BELUM TAHU! 😱"
+          initialHooks={[
+            'JANGAN PERNAH LAKUKAN INI! 😱',
+            '99% ORANG BELUM TAHU TRIK INI! 🤯',
+            'RAHASIA ALGORITMA TERBONGKAR! 🚨',
+          ]}
+        />
+      )}
     </div>
   );
 }
