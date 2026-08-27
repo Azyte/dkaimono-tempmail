@@ -53,28 +53,28 @@ export function Navbar({
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
       <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8">
-        {/* Left: Brand Logo */}
-        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 shrink">
-          <div className="relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-rose-500 p-0.5 shadow-md shadow-indigo-500/20 shrink-0">
-            <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-slate-950">
+        {/* Left: Brand Logo & Title (Clear, Never Cut Off) */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-rose-500 p-0.5 shadow-md shrink-0">
+            <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-slate-950">
               <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-cyan-400" />
             </div>
-            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-500"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </span>
           </div>
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm sm:text-lg font-black tracking-tight text-white truncate">
+              <span className="text-sm sm:text-base md:text-lg font-black tracking-tight text-white whitespace-nowrap">
                 DKaimono<span className="bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">Studio</span>
               </span>
-              <span className="rounded-full bg-cyan-500/20 border border-cyan-500/30 px-1.5 py-0.2 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-cyan-300">
-                PRO MAX
+              <span className="rounded-full bg-cyan-500/20 border border-cyan-500/30 px-1.5 py-0.2 text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-cyan-300 shrink-0">
+                PRO
               </span>
             </div>
-            <p className="hidden md:block text-[10px] text-slate-400">TempMail Realtime & Viral Monetization Suite</p>
+            <p className="hidden md:block text-[10px] text-slate-400">TempMail Realtime &amp; Viral Monetization Suite</p>
           </div>
         </div>
 
@@ -92,13 +92,13 @@ export function Navbar({
           </div>
         </div>
 
-        {/* Right: Action Controls */}
+        {/* Right: Action Controls (Responsive & Optimized for Mobile Screens) */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Viral Video Studio Direct Button */}
+          {/* Viral Video Studio Direct Button (Desktop/Tablet) */}
           {onOpenVideoStudio && (
             <button
               onClick={onOpenVideoStudio}
-              className="hidden sm:flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-gradient-to-r from-rose-600/30 to-pink-500/30 px-2.5 py-1.5 text-xs font-bold text-rose-300 hover:from-rose-600/40 hover:to-pink-500/40 active:scale-95 transition-all shadow-sm"
+              className="hidden lg:flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-gradient-to-r from-rose-600/30 to-pink-500/30 px-2.5 py-1.5 text-xs font-bold text-rose-300 hover:from-rose-600/40 hover:to-pink-500/40 active:scale-95 transition-all shadow-sm"
               title="Buka Studio Edit Video 9:16"
             >
               <Scissors className="h-3.5 w-3.5 text-rose-400 shrink-0" />
@@ -106,20 +106,20 @@ export function Navbar({
             </button>
           )}
 
-          {/* Generator PRO Button */}
+          {/* Generator PRO Button (Desktop/Tablet) */}
           <button
             onClick={onOpenAmPremiumModal}
-            className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-600/30 to-teal-500/30 px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-bold text-emerald-300 hover:from-emerald-600/40 hover:to-teal-500/40 active:scale-95 transition-all shadow-sm"
+            className="hidden sm:flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-600/30 to-teal-500/30 px-2.5 py-1.5 text-xs font-bold text-emerald-300 hover:from-emerald-600/40 hover:to-teal-500/40 active:scale-95 transition-all shadow-sm"
             title="Auto Pro & Trial Generator"
           >
             <Zap className="h-3.5 w-3.5 fill-emerald-400 text-emerald-400 shrink-0" />
-            <span className="text-[11px] sm:text-xs">⚡ Generator</span>
+            <span className="text-xs">⚡ Generator</span>
           </button>
 
-          {/* QRIS / PRO Upgrade Button */}
+          {/* QRIS / PRO Upgrade Button (Desktop/Tablet) */}
           <button
             onClick={() => (onOpenQrisModal ? onOpenQrisModal() : onOpenSettings('pro'))}
-            className={`flex items-center gap-1 rounded-xl px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-bold transition-all active:scale-95 ${
+            className={`hidden sm:flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95 ${
               currentUser?.isPro
                 ? 'border border-amber-500/40 bg-amber-500/15 text-amber-300 shadow-sm'
                 : 'border border-amber-500/40 bg-gradient-to-r from-amber-600/25 to-amber-500/25 text-amber-300 hover:from-amber-600/35 hover:to-amber-500/35'
@@ -127,10 +127,10 @@ export function Navbar({
             title="Upgrade Akun PRO via QRIS Otomatis"
           >
             <Crown className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />
-            <span className="text-[11px] sm:text-xs">{currentUser?.isPro ? 'VIP' : 'QRIS PRO'}</span>
+            <span className="text-xs">{currentUser?.isPro ? 'VIP' : 'QRIS PRO'}</span>
           </button>
 
-          {/* Referral Bonus Chip */}
+          {/* Referral Bonus Chip (Desktop) */}
           {onOpenReferralModal && (
             <button
               onClick={onOpenReferralModal}
@@ -142,43 +142,43 @@ export function Navbar({
             </button>
           )}
 
-          {/* Theme Switcher Button */}
+          {/* Theme Switcher Button (Desktop/Tablet) */}
           {onOpenThemeModal && (
             <button
               onClick={onOpenThemeModal}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/90 text-indigo-400 hover:border-indigo-500/50 hover:bg-slate-800 active:scale-95 transition-all"
-              title="Ganti Tema Tampilan (Midnight, Tokyo, Emerald, Nordic, Nord)"
+              className="hidden sm:flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/90 text-indigo-400 hover:border-indigo-500/50 hover:bg-slate-800 active:scale-95 transition-all"
+              title="Ganti Tema Tampilan"
             >
               <Palette className="h-4 w-4" />
             </button>
           )}
 
-          {/* User Account Button */}
+          {/* User Account Button (Visible on all devices) */}
           <button
             onClick={onOpenAuthModal}
-            className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-900/90 px-2 py-1.5 sm:px-3 sm:py-2 text-xs font-medium text-slate-200 hover:border-slate-700 hover:bg-slate-800 active:scale-95 transition-all"
+            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-medium text-slate-200 hover:border-slate-700 hover:bg-slate-800 active:scale-95 transition-all"
             title={currentUser ? `Akun: @${currentUser.alias || currentUser.username}` : 'Masuk / Daftar'}
           >
             {currentUser ? (
               <>
                 <UserIcon className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-                <span className="hidden sm:inline max-w-[80px] truncate text-xs font-semibold">
+                <span className="hidden xs:inline max-w-[80px] sm:max-w-[100px] truncate text-xs font-semibold">
                   @{currentUser.alias || currentUser.username}
                 </span>
               </>
             ) : (
               <>
                 <LogIn className="h-3.5 w-3.5 text-sky-400 shrink-0" />
-                <span className="hidden sm:inline text-xs">Masuk</span>
+                <span className="text-xs">Masuk</span>
               </>
             )}
           </button>
 
-          {/* Sound Toggle */}
+          {/* Sound Toggle (Tablet/Desktop) */}
           <button
             onClick={onToggleSound}
             title={soundEnabled ? 'Suara Notifikasi: Aktif' : 'Suara Notifikasi: Hening'}
-            className={`hidden sm:flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border transition-all active:scale-95 ${
+            className={`hidden md:flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border transition-all active:scale-95 ${
               soundEnabled
                 ? 'border-indigo-500/30 bg-indigo-500/15 text-indigo-300'
                 : 'border-slate-800 bg-slate-900 text-slate-500 hover:bg-slate-800'
@@ -187,11 +187,11 @@ export function Navbar({
             {soundEnabled ? <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <VolumeX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
           </button>
 
-          {/* Settings Button */}
+          {/* Settings Button (Visible on all devices) */}
           <button
             onClick={() => onOpenSettings()}
-            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/90 text-slate-400 hover:border-slate-700 hover:bg-slate-800 hover:text-white active:scale-95 transition-all"
-            title="Pengaturan Domain & API"
+            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/90 text-slate-400 hover:border-slate-700 hover:bg-slate-800 hover:text-white active:scale-95 transition-all shrink-0"
+            title="Pengaturan Domain &amp; API"
           >
             <Settings className="h-4 w-4" />
           </button>
