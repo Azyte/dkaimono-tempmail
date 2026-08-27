@@ -513,7 +513,61 @@ export function AmAccountsTab({
                       </div>
                     )}
 
-                    {/* 2. Proxy Node VLESS URL Display */}
+                    {/* 2. NextDNS Pro Display */}
+                    {acc.serviceType === 'nextdns_pro' && acc.dotEndpoint && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">📱 Private DNS:</span>
+                          <span className="font-mono font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-500/30 px-2 py-0.5 rounded-lg">
+                            {acc.dotEndpoint}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(acc.dotEndpoint!, 'pass')}
+                            className="text-[10px] text-slate-400 hover:text-cyan-400 transition-colors"
+                          >
+                            Salin DNS
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. AI API Key Display */}
+                    {acc.serviceType === 'ai_tokens' && acc.apiKey && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">🔑 API Key:</span>
+                          <span className="font-mono font-bold text-amber-300 bg-amber-950/40 border border-amber-500/30 px-2 py-0.5 rounded-lg truncate max-w-[200px] sm:max-w-xs">
+                            {acc.apiKey}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(acc.apiKey!, 'pass')}
+                            className="text-[10px] text-slate-400 hover:text-amber-400 transition-colors"
+                          >
+                            Salin Key
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 4. Deezer Hi-Fi ARL Token Display */}
+                    {acc.serviceType === 'deezer_hifi' && acc.arlToken && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">🎵 ARL Cookie:</span>
+                          <span className="font-mono font-bold text-fuchsia-300 bg-fuchsia-950/40 border border-fuchsia-500/30 px-2 py-0.5 rounded-lg truncate max-w-[200px] sm:max-w-xs">
+                            {acc.arlToken}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(acc.arlToken!, 'pass')}
+                            className="text-[10px] text-slate-400 hover:text-fuchsia-400 transition-colors"
+                          >
+                            Salin ARL
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 5. Proxy Node VLESS URL Display */}
                     {acc.serviceType === 'proxy_nodes' && acc.configUri && (
                       <div className="space-y-1 pt-1">
                         <p className="text-xs font-mono text-cyan-400 truncate max-w-sm sm:max-w-md">
@@ -522,8 +576,8 @@ export function AmAccountsTab({
                       </div>
                     )}
 
-                    {/* 3. Password Display / Magic Link Notice for Other Services */}
-                    {acc.serviceType !== 'warp_plus' && acc.serviceType !== 'proxy_nodes' && (
+                    {/* 6. Password Display / Magic Link Notice for Other Services */}
+                    {!['warp_plus', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(acc.serviceType || '') && (
                       <>
                         {acc.password ? (
                           <div className="flex items-center gap-2 text-xs">
@@ -551,7 +605,7 @@ export function AmAccountsTab({
                     )}
 
                     {/* Inbox Link Display (if applicable) */}
-                    {acc.serviceType !== 'proxy_nodes' && (
+                    {!['proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(acc.serviceType || '') && (
                       <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
                         <span className="shrink-0 text-slate-500">🔗 Link Inbox:</span>
                         <span className="font-mono truncate text-cyan-400 max-w-[240px] sm:max-w-md">
@@ -617,15 +671,39 @@ export function AmAccountsTab({
                       </>
                     )}
 
-                    {/* Proxy Nodes Action Button */}
-                    {acc.serviceType === 'proxy_nodes' && acc.configUri && (
+                    {/* NextDNS Pro Action Button */}
+                    {acc.serviceType === 'nextdns_pro' && acc.dotEndpoint && (
                       <button
-                        onClick={() => handleCopy(acc.configUri!, 'email')}
-                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-cyan-500 hover:to-indigo-500 active:scale-95 transition-all"
-                        title="Salin URL VLESS / VMess siap konek"
+                        onClick={() => handleCopy(acc.dotEndpoint!, 'pass')}
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all"
+                        title="Salin Private DNS Hostname Android"
                       >
                         <Copy className="h-3.5 w-3.5" />
-                        <span>Salin VLESS URL</span>
+                        <span>Salin Private DNS</span>
+                      </button>
+                    )}
+
+                    {/* AI Key Action Button */}
+                    {acc.serviceType === 'ai_tokens' && acc.apiKey && (
+                      <button
+                        onClick={() => handleCopy(acc.apiKey!, 'pass')}
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-indigo-500 hover:to-cyan-500 active:scale-95 transition-all"
+                        title="Salin API Key AI"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Salin API Key</span>
+                      </button>
+                    )}
+
+                    {/* Deezer ARL Action Button */}
+                    {acc.serviceType === 'deezer_hifi' && acc.arlToken && (
+                      <button
+                        onClick={() => handleCopy(acc.arlToken!, 'pass')}
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-fuchsia-500 hover:to-pink-500 active:scale-95 transition-all"
+                        title="Salin ARL Cookie Deezer Hi-Fi"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Salin ARL Cookie</span>
                       </button>
                     )}
 

@@ -97,7 +97,19 @@ export interface AmPremiumAccount {
   email: string;
   alias: string;
   password?: string;
-  serviceType?: 'alight_motion' | 'warp_plus' | 'proxy_nodes' | 'canva_pro' | 'elevenlabs' | 'cursor_ai' | 'leonardo_ai' | 'custom' | string;
+  serviceType?:
+    | 'alight_motion'
+    | 'warp_plus'
+    | 'nextdns_pro'
+    | 'ai_tokens'
+    | 'deezer_hifi'
+    | 'proxy_nodes'
+    | 'canva_pro'
+    | 'elevenlabs'
+    | 'cursor_ai'
+    | 'leonardo_ai'
+    | 'custom'
+    | string;
   serviceName?: string;
   inboxUrl: string;
   duration: string;
@@ -108,6 +120,11 @@ export interface AmPremiumAccount {
   wireguardConfig?: string;
   configUri?: string;
   country?: string;
+  apiKey?: string;
+  baseUrl?: string;
+  arlToken?: string;
+  dohUrl?: string;
+  dotEndpoint?: string;
   error?: string;
   inviteUrl?: string;
   createdAt: string;

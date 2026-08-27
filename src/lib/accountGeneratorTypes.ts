@@ -1,6 +1,9 @@
 export type ServiceType =
   | 'alight_motion'
   | 'warp_plus'
+  | 'nextdns_pro'
+  | 'ai_tokens'
+  | 'deezer_hifi'
   | 'proxy_nodes'
   | 'canva_pro'
   | 'elevenlabs'
@@ -8,7 +11,18 @@ export type ServiceType =
   | 'leonardo_ai'
   | 'custom';
 
-export type AuthMethod = 'full_auto_server' | 'api_license' | 'config_node' | 'magic_link' | 'otp' | 'verification_link' | 'team_invite' | 'password';
+export type AuthMethod =
+  | 'full_auto_server'
+  | 'api_license'
+  | 'dns_profile'
+  | 'ai_api_key'
+  | 'music_arl'
+  | 'config_node'
+  | 'magic_link'
+  | 'otp'
+  | 'verification_link'
+  | 'team_invite'
+  | 'password';
 
 export interface ServiceDefinition {
   type: ServiceType;
@@ -67,20 +81,73 @@ export const SUPPORTED_SERVICES: Record<ServiceType, ServiceDefinition> = {
       'ATAU: Unduh file config WireGuard (.conf) ➔ Import ke aplikasi WireGuard ➔ Langsung Konek VPN Cepat!',
     ],
   },
+  nextdns_pro: {
+    type: 'nextdns_pro',
+    name: 'NextDNS Pro AdBlocker & Privacy',
+    icon: '🌐',
+    description: '300.000 Queries/bln Blokir 100% Iklan, Pop-up, Tracker, & Malware di Seluruh HP/PC',
+    badge: '⚡ 100% Auto DNS',
+    defaultDuration: '300K Queries / Bulan Pro',
+    authMethod: 'dns_profile',
+    is100PercentAuto: true,
+    hasPassword: false,
+    instructions: '100% Otomatis dibuat. Salin hostname Private DNS untuk Android / iOS / Windows.',
+    stepByStep: [
+      'Salin Private DNS Hostname (misal: `dkxxxx.dns.nextdns.io`).',
+      'Di Android: Masuk ke Pengaturan ➔ Jaringan & Internet ➔ Private DNS ➔ Masukkan Hostname tersebut.',
+      'Di iOS / Windows: Buka DoH URL di browser untuk menginstal profil proteksi bebas iklan.',
+      'Semua iklan di game, aplikasi, web, dan YouTube mobile otomatis lenyap!',
+    ],
+  },
+  ai_tokens: {
+    type: 'ai_tokens',
+    name: 'AI Pro API Key (Llama 3.3 & DeepSeek)',
+    icon: '🤖',
+    description: 'Free Unlimited High-Speed AI API Key (Llama 3.3 70B, DeepSeek R1, Mixtral)',
+    badge: '⚡ 100% Auto Key',
+    defaultDuration: 'Unlimited High-Speed AI Tokens',
+    authMethod: 'ai_api_key',
+    is100PercentAuto: true,
+    hasPassword: false,
+    instructions: '100% Siap Pakai. Kompatibel dengan format OpenAI (NextChat, Chatbox, Cursor, Roo Code).',
+    stepByStep: [
+      'Salin API Key dan Base URL yang tertera.',
+      'Buka aplikasi AI favorit Anda (Chatbox, NextChat, LibreChat, VS Code Cline/Roo, atau Cursor).',
+      'Pilih model `llama-3.3-70b-versatile` atau `deepseek-r1-distill-llama-70b` ➔ Masukkan API Key ➔ Langsung Chat tanpa batas!',
+    ],
+  },
+  deezer_hifi: {
+    type: 'deezer_hifi',
+    name: 'Deezer Premium Hi-Fi FLAC Token',
+    icon: '🎵',
+    description: 'Lossless FLAC 1411kbps & 320kbps MP3 Music Streamer / Downloader ARL Token',
+    badge: '⚡ 100% Auto ARL',
+    defaultDuration: '3 Bulan Hi-Fi Session',
+    authMethod: 'music_arl',
+    is100PercentAuto: true,
+    hasPassword: false,
+    instructions: '100% Siap Pakai. Masukkan ARL Token ke Freezer, Deezloader, atau Lucida.to untuk download musik FLAC.',
+    stepByStep: [
+      'Salin ARL Token yang digenerate di bawah.',
+      'Buka aplikasi musik downloader (Freezer, Deemix, Deezloader, atau web Lucida.to).',
+      'Masuk ke Pengaturan ➔ Tempel ARL Token pada kolom User Cookie.',
+      'Download jutaan lagu berkualitas CD Master FLAC langsung tanpa DRM!',
+    ],
+  },
   proxy_nodes: {
     type: 'proxy_nodes',
-    name: 'V2Ray / VLESS Fast Global Nodes',
+    name: 'Hysteria 2 & V2Ray Fast Nodes',
     icon: '⚡',
-    description: 'High-Speed Premium Proxy Nodes (SG 🇸🇬, ID 🇮🇩, JP 🇯🇵, US 🇺🇸)',
+    description: 'High-Speed UDP Proxy Nodes (SG 🇸🇬, ID 🇮🇩, JP 🇯🇵, US 🇺🇸)',
     badge: '⚡ 100% Siap Konek',
     defaultDuration: '30 Hari (Auto-Renew)',
     authMethod: 'config_node',
     is100PercentAuto: true,
     hasPassword: false,
-    instructions: '100% Siap Konek. Salin URL Vless/Vmess dan import ke aplikasi proxy Anda.',
+    instructions: '100% Siap Konek. Salin URL Hysteria2 / VLESS / VMess dan import ke aplikasi proxy Anda.',
     stepByStep: [
-      'Salin URL VLESS / VMess yang muncul di kartu hasil.',
-      'Buka aplikasi v2rayNG / Nekobox / Clash / Shadowrocket di HP atau PC.',
+      'Salin URL Hysteria2 / VLESS / VMess yang muncul di kartu hasil.',
+      'Buka aplikasi v2rayNG / Nekobox / Clash / Shadowrocket / Hiddify di HP atau PC.',
       'Pilih "Import from Clipboard" ➔ Klik Konek ➔ Internet bebas blokir super kencang!',
     ],
   },

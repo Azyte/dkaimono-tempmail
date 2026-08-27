@@ -1,7 +1,7 @@
 export interface ProxyNodeResult {
   success: boolean;
   serverName: string;
-  protocol: 'vless' | 'vmess' | 'shadowsocks' | 'trojan';
+  protocol: 'hysteria2' | 'vless' | 'vmess' | 'shadowsocks' | 'trojan';
   country: string;
   flag: string;
   configUri: string;
@@ -13,16 +13,16 @@ export interface ProxyNodeResult {
 export function generateFastProxyNodes(): ProxyNodeResult[] {
   const nodes = [
     {
-      serverName: 'SG-Fast-Premium-VIP-01',
-      protocol: 'vless' as const,
+      serverName: 'SG-Hysteria2-Extreme-VIP-01',
+      protocol: 'hysteria2' as const,
       country: 'Singapore',
       flag: '🇸🇬',
-      configUri: 'vless://dkaimono-sg-vip-01@sg1.freevpn.me:443?encryption=none&security=tls&type=ws&host=sg1.freevpn.me&path=%2Fvless-ws#🇸🇬+DKAIMONO-SG-VIP-FAST',
-      ping: '18ms',
+      configUri: 'hy2://dkaimono-sg-hy2@sg1.freevpn.me:443?insecure=1&sni=sg1.freevpn.me#🇸🇬+DKAIMONO-SG-HYSTERIA2-EXTREME-LOW-PING',
+      ping: '8ms (Ultra Fast)',
       expires: '30 Hari (Auto-Renew)',
     },
     {
-      serverName: 'ID-Jakarta-Hyper-VIP-02',
+      serverName: 'ID-Jakarta-LowPing-VIP-02',
       protocol: 'vless' as const,
       country: 'Indonesia',
       flag: '🇮🇩',
@@ -48,9 +48,18 @@ export function generateFastProxyNodes(): ProxyNodeResult[] {
       ping: '140ms',
       expires: '30 Hari (Auto-Renew)',
     },
+    {
+      serverName: 'SG-Shadowsocks-Fast-VIP-05',
+      protocol: 'shadowsocks' as const,
+      country: 'Singapore',
+      flag: '🇸🇬',
+      configUri: 'ss://YWVzLTI1Ni1nY206ZGthaW1vbm8tc2ctc3M=@sg2.openvpn.id:8388#🇸🇬+DKAIMONO-SG-SHADOWSOCKS-GAMING',
+      ping: '15ms',
+      expires: '30 Hari (Auto-Renew)',
+    },
   ];
 
-  return nodes.map(n => ({
+  return nodes.map((n) => ({
     success: true,
     ...n,
   }));

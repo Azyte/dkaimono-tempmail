@@ -167,15 +167,58 @@ async function processAccountGenerationBackground(
           inlineButtons.push([
             { text: '🌐 Buka di Web Dashboard', url: result.inboxUrl },
           ]);
+        } else if (serviceType === 'nextdns_pro') {
+          singleSuccessMsg =
+            `🌐 <b>PROFIL NEXTDNS PRO ADBLOCK AKTIF!</b> ✨\n\n` +
+            `🏷️ <b>Profil:</b> ${result.serviceName}\n` +
+            `📱 <b>Android Private DNS:</b>\n<code>${result.dotEndpoint}</code>\n\n` +
+            `🌐 <b>DoH URL (iOS/Windows):</b>\n<code>${result.dohUrl}</code>\n\n` +
+            `✨ <b>Proteksi:</b> <code>300K Queries / Bulan (AdBlock 100%)</code>\n\n` +
+            `📱 <b>Cara Pasang di HP:</b>\n` +
+            `1. Buka <b>Pengaturan HP ➔ Jaringan & Internet ➔ Private DNS</b>\n` +
+            `2. Masukkan hostname di atas ➔ Simpan\n` +
+            `3. Semua iklan web, game, & aplikasi otomatis bersih tanpa iklan!`;
+
+          inlineButtons.push([
+            { text: '🌐 Buka di Web Dashboard', url: result.inboxUrl },
+          ]);
+        } else if (serviceType === 'ai_tokens') {
+          singleSuccessMsg =
+            `🤖 <b>AI PRO API KEY SIAP DIGUNAKAN!</b> ✨\n\n` +
+            `🏷️ <b>Provider:</b> Groq & DeepSeek AI Engine\n` +
+            `🔑 <b>API Key:</b>\n<code>${result.apiKey}</code>\n\n` +
+            `🌐 <b>Base URL:</b> <code>${result.baseUrl}</code>\n` +
+            `⚡ <b>Model Rekomendasi:</b> <code>llama-3.3-70b-versatile</code> & <code>deepseek-r1-distill-llama-70b</code>\n` +
+            `✨ <b>Batas Penggunaan:</b> <code>Unlimited 14.400 Req/Hari</code>\n\n` +
+            `💡 <i>Kompatibel dengan Chatbox AI, NextChat, VS Code Cline/Roo, Cursor, dll!</i>`;
+
+          inlineButtons.push([
+            { text: '🌐 Buka di Web Dashboard', url: result.inboxUrl },
+          ]);
+        } else if (serviceType === 'deezer_hifi') {
+          singleSuccessMsg =
+            `🎵 <b>DEEZER HI-FI FLAC ARL TOKEN AKTIF!</b> ✨\n\n` +
+            `🏷️ <b>Layanan:</b> Deezer Hi-Fi Master Quality\n` +
+            `🔑 <b>ARL Cookie Token:</b>\n<code>${result.arlToken}</code>\n\n` +
+            `✨ <b>Kualitas Audio:</b> <code>FLAC 1411kbps Lossless CD Quality</code>\n` +
+            `⏳ <b>Masa Aktif:</b> <code>3 Bulan Hi-Fi Session</code>\n\n` +
+            `📱 <b>Cara Pakai:</b>\n` +
+            `1. Salin ARL Token di atas\n` +
+            `2. Masukkan pada User Cookie di <b>Freezer / Deezloader / Lucida.to</b>\n` +
+            `3. Langsung download jutaan lagu FLAC original tanpa batas!`;
+
+          inlineButtons.push([
+            { text: '🌐 Buka di Web Dashboard', url: result.inboxUrl },
+          ]);
         } else if (serviceType === 'proxy_nodes') {
           singleSuccessMsg =
-            `⚡ <b>NODE VLESS PREMIUM SIAP KONEK!</b> ✨\n\n` +
+            `⚡ <b>NODE ${result.serviceName.toUpperCase()} SIAP KONEK!</b> ✨\n\n` +
             `🏷️ <b>Server:</b> ${result.serviceName}\n` +
-            `✨ <b>Masa Aktif:</b> <code>${result.duration}</code>\n` +
-            `🔗 <b>URL VLESS:</b>\n<code>${result.configUri}</code>\n\n` +
+            `✨ <b>Status:</b> <code>${result.duration}</code>\n` +
+            `🔗 <b>URL Node:</b>\n<code>${result.configUri}</code>\n\n` +
             `📱 <b>Cara Pakai:</b>\n` +
             `1. Ketuk teks URL di atas untuk menyalin\n` +
-            `2. Buka aplikasi <b>v2rayNG / Nekobox / Clash / Shadowrocket</b>\n` +
+            `2. Buka aplikasi <b>v2rayNG / Nekobox / Clash / Shadowrocket / Hiddify</b>\n` +
             `3. Pilih <b>Import from clipboard</b> ➔ Langsung konek internet cepat bebas blokir!`;
 
           inlineButtons.push([
@@ -368,10 +411,13 @@ export async function POST(req: NextRequest) {
 
       const hubText =
         `🚀 <b>AUTO PRO &amp; TRIAL ACCOUNT GENERATOR</b> ✨\n\n` +
-        `<b>⚡ 100% TERIMA JADI (Auto Server / License / Node):</b>\n` +
+        `<b>⚡ 100% TERIMA JADI (Auto Server / Key / Token):</b>\n` +
         `• 🎬 <b>Alight Motion:</b> 1 Tahun Full Auto Magic Link\n` +
         `• 🛡️ <b>Cloudflare WARP+:</b> Unlimited VPN Key &amp; Config WireGuard\n` +
-        `• ⚡ <b>V2Ray / VLESS:</b> High-Speed Global Node (SG, ID, JP, US)\n\n` +
+        `• 🌐 <b>NextDNS Pro:</b> 300K Queries Blokir 100% Iklan &amp; Malware\n` +
+        `• 🤖 <b>AI Pro API Key:</b> Llama 3.3 70B &amp; DeepSeek R1 Key\n` +
+        `• 🎵 <b>Deezer Hi-Fi:</b> Lossless FLAC &amp; 320kbps ARL Token\n` +
+        `• ⚡ <b>Hysteria 2 &amp; V2Ray:</b> Ultra Low-Ping Node (SG, ID, JP, US)\n\n` +
         `<b>✉️ PRO TRIAL &amp; OTP HELPER:</b>\n` +
         `• 🎨 <b>Canva Pro:</b> Akun Tim Canva Pro\n` +
         `• 🤖 <b>ElevenLabs:</b> 10K Voice Text-to-Speech\n` +
@@ -383,20 +429,24 @@ export async function POST(req: NextRequest) {
       const hubKeyboard = {
         inline_keyboard: [
           [
-            { text: '🎬 Alight Motion 1 Tahun (Auto)', callback_data: 'cb_pick_srv_alight_motion' },
-            { text: '🛡️ WARP+ VPN Unlimited (Auto)', callback_data: 'cb_pick_srv_warp_plus' },
+            { text: '🎬 Alight Motion (Auto)', callback_data: 'cb_pick_srv_alight_motion' },
+            { text: '🛡️ WARP+ VPN (Auto)', callback_data: 'cb_pick_srv_warp_plus' },
           ],
           [
-            { text: '⚡ V2Ray / VLESS Node (Auto)', callback_data: 'cb_pick_srv_proxy_nodes' },
+            { text: '🌐 NextDNS AdBlock (Auto)', callback_data: 'cb_pick_srv_nextdns_pro' },
+            { text: '🤖 AI Pro API Key (Auto)', callback_data: 'cb_pick_srv_ai_tokens' },
+          ],
+          [
+            { text: '🎵 Deezer FLAC ARL (Auto)', callback_data: 'cb_pick_srv_deezer_hifi' },
+            { text: '⚡ Hysteria 2 & V2Ray', callback_data: 'cb_pick_srv_proxy_nodes' },
+          ],
+          [
             { text: '🎨 Canva Pro Team', callback_data: 'cb_pick_srv_canva_pro' },
-          ],
-          [
             { text: '🤖 ElevenLabs Voice', callback_data: 'cb_pick_srv_elevenlabs' },
-            { text: '💻 Cursor AI Pro', callback_data: 'cb_pick_srv_cursor_ai' },
           ],
           [
+            { text: '💻 Cursor AI Pro', callback_data: 'cb_pick_srv_cursor_ai' },
             { text: '✨ Leonardo AI', callback_data: 'cb_pick_srv_leonardo_ai' },
-            { text: '⚡ Akun Kustom', callback_data: 'cb_pick_srv_custom' },
           ],
         ],
       };
@@ -405,7 +455,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 3. SERVICE COUNT SELECTION: cb_pick_srv_<serviceType> OR direct shortcuts (/amprem, /warp, /v2ray, /elevenlabs, /cursor, /canva)
+    // 3. SERVICE COUNT SELECTION: cb_pick_srv_<serviceType> OR direct shortcuts
     let selectedServiceType: ServiceType | null = null;
     if (text.startsWith('cb_pick_srv_')) {
       selectedServiceType = text.replace('cb_pick_srv_', '').trim() as ServiceType;
@@ -413,7 +463,13 @@ export async function POST(req: NextRequest) {
       selectedServiceType = 'alight_motion';
     } else if (text === '/warp' || text === '/vpn') {
       selectedServiceType = 'warp_plus';
-    } else if (text === '/v2ray' || text === '/vless' || text === '/proxy') {
+    } else if (text === '/nextdns' || text === '/adblock' || text === '/dns') {
+      selectedServiceType = 'nextdns_pro';
+    } else if (text === '/aikey' || text === '/ai' || text === '/groq') {
+      selectedServiceType = 'ai_tokens';
+    } else if (text === '/deezer' || text === '/flac' || text === '/music') {
+      selectedServiceType = 'deezer_hifi';
+    } else if (text === '/v2ray' || text === '/vless' || text === '/hy2' || text === '/proxy') {
       selectedServiceType = 'proxy_nodes';
     } else if (text === '/elevenlabs' || text === '/voice') {
       selectedServiceType = 'elevenlabs';

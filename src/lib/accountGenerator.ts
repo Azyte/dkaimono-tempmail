@@ -2,6 +2,9 @@ import { db } from './db';
 import { AmPremiumAccount } from '@/types';
 import { createSingleAmPremium, AmAccountResult } from './alightMotion';
 import { createWarpPremiumAccount } from './warpGenerator';
+import { generateNextDnsProfile } from './nextdnsGenerator';
+import { generateFreeAiApiKey } from './aiTokenGenerator';
+import { generateDeezerArlToken } from './deezerArlGenerator';
 import { generateFastProxyNodes } from './proxyNodeGenerator';
 import { SUPPORTED_SERVICES, ServiceType, ServiceDefinition } from './accountGeneratorTypes';
 
@@ -26,7 +29,10 @@ export function getRandomServiceAlias(serviceType: ServiceType): string {
   const prefixMap: Record<ServiceType, string[]> = {
     alight_motion: ['ampro', 'alight', 'motion', 'vfx'],
     warp_plus: ['warp', 'cfvpn', 'cloudflare', 'wireguard'],
-    proxy_nodes: ['vless', 'v2ray', 'proxy', 'node'],
+    nextdns_pro: ['nextdns', 'adblock', 'privacy', 'dns'],
+    ai_tokens: ['groq', 'deepseek', 'aikey', 'llama'],
+    deezer_hifi: ['deezer', 'flac', 'music', 'hifi'],
+    proxy_nodes: ['hy2', 'vless', 'proxy', 'node'],
     canva_pro: ['canvapro', 'design', 'canva', 'art'],
     elevenlabs: ['voice', 'eleven', 'speech', 'audio'],
     cursor_ai: ['cursor', 'coder', 'dev', 'ai'],
@@ -56,6 +62,11 @@ export async function createMultiServiceAccount(
     wireguardConfig?: string;
     configUri?: string;
     country?: string;
+    apiKey?: string;
+    baseUrl?: string;
+    arlToken?: string;
+    dohUrl?: string;
+    dotEndpoint?: string;
   }
 > {
   const now = new Date().toISOString();
@@ -142,7 +153,140 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 3. SERVICE: V2Ray / VLESS Fast Global Proxy Nodes (100% Siap Konek)
+  // 3. SERVICE: NextDNS Pro AdBlock & Privacy DNS Profile (100% Auto DNS)
+  if (serviceType === 'nextdns_pro') {
+    const dnsRes = generateNextDnsProfile(customAlias);
+    const alias = customAlias || getRandomServiceAlias('nextdns_pro');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_dns_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'nextdns_pro',
+      serviceName: dnsRes.profileName,
+      inboxUrl,
+      duration: dnsRes.quota,
+      status: 'active',
+      dohUrl: dnsRes.dohUrl,
+      dotEndpoint: dnsRes.dotEndpoint,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'nextdns_pro',
+      serviceName: dnsRes.profileName,
+      dohUrl: dnsRes.dohUrl,
+      dotEndpoint: dnsRes.dotEndpoint,
+      inboxUrl,
+      success: true,
+      statusText: 'Profil AdBlock DNS Siap',
+      duration: dnsRes.quota,
+      message: `Profil NextDNS AdBlocker & Anti-Tracking berhasil dibuat!`,
+      createdAt: now,
+    };
+  }
+
+  // 4. SERVICE: AI Pro API Key Generator (100% Auto API Key)
+  if (serviceType === 'ai_tokens') {
+    const aiRes = generateFreeAiApiKey();
+    const alias = customAlias || getRandomServiceAlias('ai_tokens');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_ai_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'ai_tokens',
+      serviceName: aiRes.provider,
+      inboxUrl,
+      duration: aiRes.rateLimit,
+      status: 'active',
+      apiKey: aiRes.apiKey,
+      baseUrl: aiRes.baseUrl,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'ai_tokens',
+      serviceName: aiRes.provider,
+      apiKey: aiRes.apiKey,
+      baseUrl: aiRes.baseUrl,
+      inboxUrl,
+      success: true,
+      statusText: 'AI API Key Siap Pakai',
+      duration: aiRes.rateLimit,
+      message: `AI API Key (${aiRes.models[0].split(' ')[0]}) berhasil digenerate!`,
+      createdAt: now,
+    };
+  }
+
+  // 5. SERVICE: Deezer Hi-Fi FLAC & 320kbps Music Streamer ARL Token (100% Auto ARL)
+  if (serviceType === 'deezer_hifi') {
+    const arlRes = generateDeezerArlToken();
+    const alias = customAlias || getRandomServiceAlias('deezer_hifi');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_arl_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'deezer_hifi',
+      serviceName: arlRes.service,
+      inboxUrl,
+      duration: arlRes.duration,
+      status: 'active',
+      arlToken: arlRes.arlToken,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'deezer_hifi',
+      serviceName: arlRes.service,
+      arlToken: arlRes.arlToken,
+      inboxUrl,
+      success: true,
+      statusText: 'Deezer ARL Token Siap',
+      duration: arlRes.duration,
+      message: `Deezer Hi-Fi FLAC ARL Cookie Token berhasil dibuat!`,
+      createdAt: now,
+    };
+  }
+
+  // 6. SERVICE: Hysteria 2 & V2Ray Fast Global Proxy Nodes (100% Siap Konek)
   if (serviceType === 'proxy_nodes') {
     const nodes = generateFastProxyNodes();
     const pickedNode = nodes[Math.floor(Math.random() * nodes.length)];
@@ -159,7 +303,7 @@ export async function createMultiServiceAccount(
       serviceType: 'proxy_nodes',
       serviceName: `${pickedNode.flag} ${pickedNode.serverName}`,
       inboxUrl,
-      duration: pickedNode.expires,
+      duration: `${pickedNode.expires} • Ping: ${pickedNode.ping}`,
       status: 'active',
       configUri: pickedNode.configUri,
       country: pickedNode.country,
@@ -181,14 +325,14 @@ export async function createMultiServiceAccount(
       country: pickedNode.country,
       inboxUrl,
       success: true,
-      statusText: 'Node VLESS Siap Konek',
-      duration: pickedNode.expires,
-      message: `Node VLESS ${pickedNode.country} ${pickedNode.flag} siap digunakan!`,
+      statusText: `Node ${pickedNode.protocol.toUpperCase()} Siap Konek`,
+      duration: `${pickedNode.expires} • Ping: ${pickedNode.ping}`,
+      message: `Node ${pickedNode.protocol.toUpperCase()} ${pickedNode.country} ${pickedNode.flag} siap digunakan!`,
       createdAt: now,
     };
   }
 
-  // 4. Other Services (Canva Pro, ElevenLabs, Cursor AI, Leonardo AI, Custom)
+  // 7. Other Services (Canva Pro, ElevenLabs, Cursor AI, Leonardo AI, Custom)
   const alias = customAlias || getRandomServiceAlias(serviceType);
   const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
   const emailAddress = `${cleanAlias}@${domain}`;
@@ -196,10 +340,8 @@ export async function createMultiServiceAccount(
   const accountId = 'acc_' + Math.random().toString(36).substring(2, 11);
   const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
 
-  // Ensure mailbox exists in DB
   db.createOrGetMailbox(emailAddress, userId);
 
-  // Build Account Record
   const newRecord: AmPremiumAccount = {
     id: accountId,
     email: emailAddress,

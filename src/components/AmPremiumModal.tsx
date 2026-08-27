@@ -24,6 +24,9 @@ import {
   Download,
   Shield,
   Radio,
+  Globe,
+  Bot,
+  Music,
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
 import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
@@ -47,6 +50,9 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const [copiedPass, setCopiedPass] = useState<string | null>(null);
   const [copiedCombo, setCopiedCombo] = useState<string | null>(null);
   const [copiedConfig, setCopiedConfig] = useState<string | null>(null);
+  const [copiedDns, setCopiedDns] = useState<string | null>(null);
+  const [copiedAi, setCopiedAi] = useState<string | null>(null);
+  const [copiedArl, setCopiedArl] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
 
@@ -101,7 +107,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     }
   };
 
-  const handleCopyText = (text: string, type: 'key' | 'email' | 'pass' | 'combo' | 'config' | 'all') => {
+  const handleCopyText = (text: string, type: 'key' | 'email' | 'pass' | 'combo' | 'config' | 'dns' | 'ai' | 'arl' | 'all') => {
     navigator.clipboard.writeText(text);
     if (type === 'key') {
       setCopiedKey(text);
@@ -118,6 +124,15 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     } else if (type === 'config') {
       setCopiedConfig(text);
       setTimeout(() => setCopiedConfig(null), 2000);
+    } else if (type === 'dns') {
+      setCopiedDns(text);
+      setTimeout(() => setCopiedDns(null), 2000);
+    } else if (type === 'ai') {
+      setCopiedAi(text);
+      setTimeout(() => setCopiedAi(null), 2000);
+    } else if (type === 'arl') {
+      setCopiedArl(text);
+      setTimeout(() => setCopiedArl(null), 2000);
     } else {
       setCopiedAll(true);
       setTimeout(() => setCopiedAll(false), 2000);
@@ -141,6 +156,15 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
       .map((r, i) => {
         if (r.serviceType === 'warp_plus') {
           return `[${i + 1}] Cloudflare WARP+ License: ${r.licenseKey}\n    WireGuard Config:\n${r.wireguardConfig}`;
+        }
+        if (r.serviceType === 'nextdns_pro') {
+          return `[${i + 1}] NextDNS AdBlock Profile: ${r.serviceName}\n    Android Private DNS: ${r.dotEndpoint}\n    DoH URL: ${r.dohUrl}`;
+        }
+        if (r.serviceType === 'ai_tokens') {
+          return `[${i + 1}] AI API Key: ${r.apiKey}\n    Base URL: ${r.baseUrl}`;
+        }
+        if (r.serviceType === 'deezer_hifi') {
+          return `[${i + 1}] Deezer Hi-Fi ARL Token: ${r.arlToken}`;
         }
         if (r.serviceType === 'proxy_nodes') {
           return `[${i + 1}] Proxy Node ${r.serviceName}:\n    URL: ${r.configUri}`;
@@ -200,11 +224,11 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
                 <Zap className="h-3.5 w-3.5 fill-emerald-400" />
-                <span>100% Terima Jadi (Auto Server / Key / Node):</span>
+                <span>⚡ 100% Terima Jadi (Auto Server / Key / Token):</span>
               </label>
               <span className="text-[10px] text-slate-400">Tanpa Daftar Manual</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {autoServices.map((st) => {
                 const s = SUPPORTED_SERVICES[st];
                 const isSelected = serviceType === st;
@@ -229,7 +253,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         100% AUTO
                       </span>
                     </div>
-                    <p className="text-xs font-bold text-white truncate w-full">{s.name}</p>
+                    <p className="text-xs font-bold text-white truncate w-full">{s.name.split(' ')[0]}</p>
                     <p className="text-[10px] text-slate-400 line-clamp-1">{s.badge}</p>
                   </button>
                 );
@@ -326,7 +350,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             </div>
 
             {/* Custom Alias (Single account only) */}
-            {count === 1 && !['warp_plus', 'proxy_nodes'].includes(serviceType) && (
+            {count === 1 && !['warp_plus', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(serviceType) && (
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Nama Alias Kustom (Opsional):
@@ -411,8 +435,11 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                   const isEmailCopied = copiedEmail === acc.email;
                   const isKeyCopied = copiedKey === acc.licenseKey;
                   const isConfigCopied = copiedConfig === (acc.wireguardConfig || acc.configUri);
+                  const isDnsCopied = copiedDns === acc.dotEndpoint;
+                  const isAiCopied = copiedAi === acc.apiKey;
+                  const isArlCopied = copiedArl === acc.arlToken;
 
-                  // CASE A: Cloudflare WARP+ / WireGuard
+                  // 1. CLOUDFLARE WARP+
                   if (acc.serviceType === 'warp_plus') {
                     return (
                       <div
@@ -445,7 +472,6 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                           </div>
                         </div>
 
-                        {/* WireGuard Config Actions */}
                         {acc.wireguardConfig && (
                           <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
                             <button
@@ -471,7 +497,136 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // CASE B: V2Ray / VLESS Proxy Nodes
+                  // 2. NEXTDNS PRO ADBLOCK
+                  if (acc.serviceType === 'nextdns_pro') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-emerald-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Globe className="h-4 w-4 text-emerald-400" />
+                              <span className="font-bold text-white">{acc.serviceName}</span>
+                              <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">
+                                300K Queries Pro
+                              </span>
+                            </div>
+
+                            <div className="space-y-1 text-slate-300">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] text-slate-400 shrink-0">📱 Android Private DNS:</span>
+                                <span className="font-mono font-bold text-cyan-300 bg-cyan-950/50 border border-cyan-500/30 px-2 py-0.5 rounded truncate">
+                                  {acc.dotEndpoint}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate">
+                                <span>🌐 DoH URL:</span>
+                                <span className="font-mono text-slate-300 truncate">{acc.dohUrl}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(acc.dotEndpoint!, 'dns')}
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95"
+                          >
+                            {isDnsCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                            <span>{isDnsCopied ? 'Hostname Tersalin!' : '📋 Salin Private DNS Android'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 3. AI PRO API KEY
+                  if (acc.serviceType === 'ai_tokens') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-indigo-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Bot className="h-4 w-4 text-indigo-400" />
+                              <span className="font-bold text-white">{acc.serviceName}</span>
+                              <span className="rounded bg-indigo-500/15 border border-indigo-500/30 px-1.5 py-0.2 text-[9px] font-bold text-indigo-300">
+                                Llama 3.3 70B &amp; DeepSeek R1
+                              </span>
+                            </div>
+
+                            <div className="space-y-1 text-slate-300">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] text-slate-400 shrink-0">🔑 API Key:</span>
+                                <span className="font-mono font-bold text-amber-300 bg-amber-950/50 border border-amber-500/30 px-2 py-0.5 rounded truncate">
+                                  {acc.apiKey}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] text-slate-400 truncate">
+                                <span>🌐 Base URL:</span>
+                                <span className="font-mono text-cyan-300 truncate">{acc.baseUrl}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(acc.apiKey!, 'ai')}
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-cyan-500 active:scale-95"
+                          >
+                            {isAiCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                            <span>{isAiCopied ? 'API Key Tersalin!' : '📋 Salin API Key AI'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 4. DEEZER HI-FI FLAC ARL
+                  if (acc.serviceType === 'deezer_hifi') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-fuchsia-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Music className="h-4 w-4 text-fuchsia-400" />
+                              <span className="font-bold text-white">{acc.serviceName}</span>
+                              <span className="rounded bg-fuchsia-500/15 border border-fuchsia-500/30 px-1.5 py-0.2 text-[9px] font-bold text-fuchsia-300">
+                                FLAC 1411kbps Master
+                              </span>
+                            </div>
+
+                            <p className="font-mono text-[11px] text-slate-400 truncate max-w-full">
+                              ARL: {acc.arlToken}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(acc.arlToken!, 'arl')}
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-fuchsia-500 hover:to-pink-500 active:scale-95"
+                          >
+                            {isArlCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                            <span>{isArlCopied ? 'ARL Token Tersalin!' : '📋 Salin ARL Cookie Deezer'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 5. HYSTERIA 2 & V2RAY PROXY NODES
                   if (acc.serviceType === 'proxy_nodes') {
                     return (
                       <div
@@ -501,14 +656,14 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                             className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-cyan-500 hover:to-indigo-500 active:scale-95"
                           >
                             {isConfigCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                            <span>{isConfigCopied ? 'URL VLESS Tersalin!' : '📋 Salin URL VLESS (Siap Konek)'}</span>
+                            <span>{isConfigCopied ? 'URL Tersalin!' : '📋 Salin URL Node (Siap Konek)'}</span>
                           </button>
                         </div>
                       </div>
                     );
                   }
 
-                  // CASE C: Standard Accounts (Alight Motion, Canva, ElevenLabs, Cursor, Leonardo)
+                  // 6. STANDARD ACCOUNTS (Alight Motion, Canva, ElevenLabs, Cursor, Leonardo)
                   const comboText = `${acc.email}:${acc.password || ''}`;
                   const isComboCopied = copiedCombo === comboText;
                   const signupTarget = inviteUrl || currentService.signupUrl;
