@@ -648,7 +648,24 @@ export default function Home() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+        currentUser={currentUser}
+        onAuthSuccess={fetchCurrentUser}
         onSuccess={fetchCurrentUser}
+        onLogout={async () => {
+          try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('tempmail_session_token');
+              localStorage.removeItem('tempmail_saved_user');
+            }
+            setCurrentUser(null);
+          } catch (e) {}
+          setAuthModalOpen(false);
+        }}
+        onOpenProTab={() => {
+          setAuthModalOpen(false);
+          handleOpenSettings('pro');
+        }}
       />
 
       <AmPremiumModal

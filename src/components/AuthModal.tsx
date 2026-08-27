@@ -20,10 +20,11 @@ import { fireConfetti } from '@/lib/confetti';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUser: User | null;
-  onAuthSuccess: (user: User, token?: string) => void;
-  onLogout: () => void;
-  onOpenProTab: () => void;
+  currentUser?: User | null;
+  onAuthSuccess?: (user: User, token?: string) => void;
+  onSuccess?: () => void;
+  onLogout?: () => void;
+  onOpenProTab?: () => void;
 }
 
 export function AuthModal({
@@ -31,6 +32,7 @@ export function AuthModal({
   onClose,
   currentUser,
   onAuthSuccess,
+  onSuccess,
   onLogout,
   onOpenProTab,
 }: AuthModalProps) {
@@ -104,13 +106,18 @@ export function AuthModal({
           localStorage.setItem('tempmail_saved_user', JSON.stringify(data.user));
         }
         fireConfetti();
-        onAuthSuccess(data.user, data.token);
+        if (typeof onAuthSuccess === 'function') {
+          try { onAuthSuccess(data.user, data.token); } catch (e) {}
+        }
+        if (typeof onSuccess === 'function') {
+          try { onSuccess(); } catch (e) {}
+        }
         setTimeout(() => {
           onClose();
         }, 1000);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Gagal menghubungi server.');
+      setErrorMsg(err?.message || 'Gagal menghubungi server.');
       generateNewChallenge();
     } finally {
       setLoading(false);
@@ -192,7 +199,9 @@ export function AuthModal({
               <button
                 onClick={() => {
                   onClose();
-                  onOpenProTab();
+                  if (typeof onOpenProTab === 'function') {
+                    onOpenProTab();
+                  }
                 }}
                 className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 py-2.5 text-xs font-bold text-white shadow-md hover:from-indigo-500 hover:to-indigo-600 active:scale-95 transition-all"
               >
@@ -201,7 +210,21 @@ export function AuthModal({
               </button>
 
               <button
-                onClick={onLogout}
+                onClick={async () => {
+                  if (typeof onLogout === 'function') {
+                    onLogout();
+                  } else {
+                    try {
+                      await fetch('/api/auth/logout', { method: 'POST' });
+                      if (typeof window !== 'undefined') {
+                        localStorage.removeItem('tempmail_session_token');
+                        localStorage.removeItem('tempmail_saved_user');
+                      }
+                      if (typeof onSuccess === 'function') onSuccess();
+                    } catch (e) {}
+                  }
+                  onClose();
+                }}
                 className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/20 active:scale-95 transition-all"
               >
                 <LogOut className="h-3.5 w-3.5" />
