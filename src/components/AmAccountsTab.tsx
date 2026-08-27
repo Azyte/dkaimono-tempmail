@@ -495,37 +495,70 @@ export function AmAccountsTab({
                       )}
                     </div>
 
-                    {/* Password Display / Magic Link Notice */}
-                    {acc.password ? (
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-slate-400 flex items-center gap-1">
-                          <Key className="h-3 w-3 text-amber-400" />
-                          <span>Password:</span>
-                        </span>
-                        <span className="font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-lg">
-                          {showPasswords ? acc.password : '••••••••••••'}
-                        </span>
-                        <button
-                          onClick={() => handleCopy(acc.password!, 'pass')}
-                          className="text-[10px] text-slate-400 hover:text-emerald-400 transition-colors"
-                        >
-                          {isPassCopied ? 'Tersalin' : 'Salin Pass'}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-xs text-emerald-400/90 font-medium">
-                        <Mail className="h-3.5 w-3.5 text-emerald-400" />
-                        <span>Login Magic Link (Tanpa Password - Masukkan email di aplikasi HP)</span>
+                    {/* 1. WARP+ License & WireGuard Display */}
+                    {acc.serviceType === 'warp_plus' && acc.licenseKey && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-slate-400">🔑 License Key:</span>
+                          <span className="font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+                            {acc.licenseKey}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(acc.licenseKey!, 'pass')}
+                            className="text-[10px] text-slate-400 hover:text-emerald-400 transition-colors"
+                          >
+                            Salin Key
+                          </button>
+                        </div>
                       </div>
                     )}
 
-                    {/* Inbox Link Display */}
-                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                      <span className="shrink-0 text-slate-500">🔗 Link Inbox:</span>
-                      <span className="font-mono truncate text-cyan-400 max-w-[240px] sm:max-w-md">
-                        {acc.inboxUrl}
-                      </span>
-                    </div>
+                    {/* 2. Proxy Node VLESS URL Display */}
+                    {acc.serviceType === 'proxy_nodes' && acc.configUri && (
+                      <div className="space-y-1 pt-1">
+                        <p className="text-xs font-mono text-cyan-400 truncate max-w-sm sm:max-w-md">
+                          {acc.configUri}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 3. Password Display / Magic Link Notice for Other Services */}
+                    {acc.serviceType !== 'warp_plus' && acc.serviceType !== 'proxy_nodes' && (
+                      <>
+                        {acc.password ? (
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-slate-400 flex items-center gap-1">
+                              <Key className="h-3 w-3 text-amber-400" />
+                              <span>Password:</span>
+                            </span>
+                            <span className="font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+                              {showPasswords ? acc.password : '••••••••••••'}
+                            </span>
+                            <button
+                              onClick={() => handleCopy(acc.password!, 'pass')}
+                              className="text-[10px] text-slate-400 hover:text-emerald-400 transition-colors"
+                            >
+                              {isPassCopied ? 'Tersalin' : 'Salin Pass'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-xs text-emerald-400/90 font-medium">
+                            <Mail className="h-3.5 w-3.5 text-emerald-400" />
+                            <span>Login Magic Link (Tanpa Password - Masukkan email di aplikasi HP)</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Inbox Link Display (if applicable) */}
+                    {acc.serviceType !== 'proxy_nodes' && (
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                        <span className="shrink-0 text-slate-500">🔗 Link Inbox:</span>
+                        <span className="font-mono truncate text-cyan-400 max-w-[240px] sm:max-w-md">
+                          {acc.inboxUrl}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-2 text-[10px] text-slate-500">
                       <Clock className="h-3 w-3" />
@@ -547,6 +580,52 @@ export function AmAccountsTab({
                       >
                         <Zap className={`h-3.5 w-3.5 fill-white ${isActivating ? 'animate-spin' : ''}`} />
                         <span>{isActivating ? 'Mengaktivasi...' : '⚡ Aktivasi Sekarang'}</span>
+                      </button>
+                    )}
+
+                    {/* WARP+ Action Buttons */}
+                    {acc.serviceType === 'warp_plus' && (
+                      <>
+                        {acc.wireguardConfig && (
+                          <button
+                            onClick={() => {
+                              const blob = new Blob([acc.wireguardConfig!], { type: 'text/plain;charset=utf-8' });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `warp-plus-${acc.id.substring(0, 6)}.conf`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
+                            className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all"
+                            title="Unduh file konfigurasi WireGuard .conf"
+                          >
+                            <span>Unduh .conf</span>
+                          </button>
+                        )}
+                        {acc.licenseKey && (
+                          <button
+                            onClick={() => handleCopy(acc.licenseKey!, 'pass')}
+                            className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 active:scale-95 transition-all"
+                            title="Salin License Key"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            <span>Salin Key</span>
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {/* Proxy Nodes Action Button */}
+                    {acc.serviceType === 'proxy_nodes' && acc.configUri && (
+                      <button
+                        onClick={() => handleCopy(acc.configUri!, 'email')}
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-cyan-500 hover:to-indigo-500 active:scale-95 transition-all"
+                        title="Salin URL VLESS / VMess siap konek"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Salin VLESS URL</span>
                       </button>
                     )}
 
@@ -576,19 +655,21 @@ export function AmAccountsTab({
                       </button>
                     )}
 
-                    {/* Copy Email Button */}
-                    <button
-                      onClick={() => handleCopy(acc.email, 'email')}
-                      className={`flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
-                        isEmailCopied
-                          ? 'border border-emerald-500/40 bg-emerald-500/20 text-emerald-300'
-                          : 'border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                      }`}
-                      title="Salin alamat email"
-                    >
-                      {isEmailCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                      <span>{isEmailCopied ? 'Tersalin' : 'Salin Email'}</span>
-                    </button>
+                    {/* Copy Email Button (for email-based services) */}
+                    {acc.serviceType !== 'warp_plus' && acc.serviceType !== 'proxy_nodes' && (
+                      <button
+                        onClick={() => handleCopy(acc.email, 'email')}
+                        className={`flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
+                          isEmailCopied
+                            ? 'border border-emerald-500/40 bg-emerald-500/20 text-emerald-300'
+                            : 'border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                        }`}
+                        title="Salin alamat email"
+                      >
+                        {isEmailCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                        <span>{isEmailCopied ? 'Tersalin' : 'Salin Email'}</span>
+                      </button>
+                    )}
 
                     {/* Copy Pass Button (if present) */}
                     {acc.password && (

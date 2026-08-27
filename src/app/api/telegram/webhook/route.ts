@@ -151,6 +151,36 @@ async function processAccountGenerationBackground(
           inlineButtons.push([
             { text: '📬 Buka Inbox Login', url: result.inboxUrl },
           ]);
+        } else if (serviceType === 'warp_plus') {
+          singleSuccessMsg =
+            `🛡️ <b>CLOUDFLARE WARP+ LICENSE PREMIUM AKTIF!</b> ✨\n\n` +
+            `🏷️ <b>Layanan:</b> 🛡️ Cloudflare WARP+ / WireGuard VPN\n` +
+            `🔑 <b>License Key:</b> <code>${result.licenseKey}</code>\n` +
+            `✨ <b>Kuota:</b> <code>Unlimited WARP+ High Speed</code>\n` +
+            `🌐 <b>Endpoint:</b> <code>engage.cloudflareclient.com:2408</code>\n\n` +
+            `📱 <b>Cara Pakai di HP / PC:</b>\n` +
+            `1. Buka aplikasi <b>1.1.1.1: Faster Internet</b>\n` +
+            `2. Masuk ke <b>Settings ⚙️ ➔ Account ➔ Key</b>\n` +
+            `3. Masukkan License Key di atas ➔ Status langsung WARP+ Unlimited!\n\n` +
+            `<i>(Bisa juga unduh file .conf WireGuard dari dashboard web)</i>`;
+
+          inlineButtons.push([
+            { text: '🌐 Buka di Web Dashboard', url: result.inboxUrl },
+          ]);
+        } else if (serviceType === 'proxy_nodes') {
+          singleSuccessMsg =
+            `⚡ <b>NODE VLESS PREMIUM SIAP KONEK!</b> ✨\n\n` +
+            `🏷️ <b>Server:</b> ${result.serviceName}\n` +
+            `✨ <b>Masa Aktif:</b> <code>${result.duration}</code>\n` +
+            `🔗 <b>URL VLESS:</b>\n<code>${result.configUri}</code>\n\n` +
+            `📱 <b>Cara Pakai:</b>\n` +
+            `1. Ketuk teks URL di atas untuk menyalin\n` +
+            `2. Buka aplikasi <b>v2rayNG / Nekobox / Clash / Shadowrocket</b>\n` +
+            `3. Pilih <b>Import from clipboard</b> ➔ Langsung konek internet cepat bebas blokir!`;
+
+          inlineButtons.push([
+            { text: '🌐 Buka di Web Dashboard', url: result.inboxUrl },
+          ]);
         } else {
           singleSuccessMsg =
             `🎉 <b>AKUN ${serviceDef.name.toUpperCase()} [${i + 1}/${count}] SIAP!</b> ✨\n\n` +
@@ -338,28 +368,35 @@ export async function POST(req: NextRequest) {
 
       const hubText =
         `🚀 <b>AUTO PRO &amp; TRIAL ACCOUNT GENERATOR</b> ✨\n\n` +
-        `Pilih layanan yang ingin kamu generate secara otomatis:\n\n` +
-        `🎬 <b>Alight Motion:</b> 1 Tahun Full Auto Magic Link\n` +
-        `🎨 <b>Canva Pro:</b> Akun Tim Canva Pro\n` +
-        `🤖 <b>ElevenLabs:</b> 10.000 Karakter AI Voice Text-to-Speech\n` +
-        `💻 <b>Cursor AI:</b> 14 Hari Pro Trial (Claude 3.5 &amp; GPT-4o)\n` +
-        `✨ <b>Leonardo AI:</b> 150 Token Fast Image Gen\n` +
-        `⚡ <b>Kustom:</b> Email + Password acak siap pakai\n\n` +
+        `<b>⚡ 100% TERIMA JADI (Auto Server / License / Node):</b>\n` +
+        `• 🎬 <b>Alight Motion:</b> 1 Tahun Full Auto Magic Link\n` +
+        `• 🛡️ <b>Cloudflare WARP+:</b> Unlimited VPN Key &amp; Config WireGuard\n` +
+        `• ⚡ <b>V2Ray / VLESS:</b> High-Speed Global Node (SG, ID, JP, US)\n\n` +
+        `<b>✉️ PRO TRIAL &amp; OTP HELPER:</b>\n` +
+        `• 🎨 <b>Canva Pro:</b> Akun Tim Canva Pro\n` +
+        `• 🤖 <b>ElevenLabs:</b> 10K Voice Text-to-Speech\n` +
+        `• 💻 <b>Cursor AI:</b> 14 Hari Pro Trial OTP\n` +
+        `• ✨ <b>Leonardo AI:</b> 150 Token Daily OTP\n` +
+        `• ⚡ <b>Kustom:</b> Email + Password acak siap pakai\n\n` +
         `<i>Pilih layanan di bawah ini:</i>`;
 
       const hubKeyboard = {
         inline_keyboard: [
           [
-            { text: '🎬 Alight Motion 1 Tahun', callback_data: 'cb_pick_srv_alight_motion' },
+            { text: '🎬 Alight Motion 1 Tahun (Auto)', callback_data: 'cb_pick_srv_alight_motion' },
+            { text: '🛡️ WARP+ VPN Unlimited (Auto)', callback_data: 'cb_pick_srv_warp_plus' },
+          ],
+          [
+            { text: '⚡ V2Ray / VLESS Node (Auto)', callback_data: 'cb_pick_srv_proxy_nodes' },
             { text: '🎨 Canva Pro Team', callback_data: 'cb_pick_srv_canva_pro' },
           ],
           [
-            { text: '🤖 ElevenLabs (10K Voice)', callback_data: 'cb_pick_srv_elevenlabs' },
-            { text: '💻 Cursor AI Pro (14 Hari)', callback_data: 'cb_pick_srv_cursor_ai' },
+            { text: '🤖 ElevenLabs Voice', callback_data: 'cb_pick_srv_elevenlabs' },
+            { text: '💻 Cursor AI Pro', callback_data: 'cb_pick_srv_cursor_ai' },
           ],
           [
             { text: '✨ Leonardo AI', callback_data: 'cb_pick_srv_leonardo_ai' },
-            { text: '⚡ Akun Kustom / Lainnya', callback_data: 'cb_pick_srv_custom' },
+            { text: '⚡ Akun Kustom', callback_data: 'cb_pick_srv_custom' },
           ],
         ],
       };
@@ -368,12 +405,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // 3. SERVICE COUNT SELECTION: cb_pick_srv_<serviceType> OR direct shortcuts (/amprem, /elevenlabs, /cursor, /canva)
+    // 3. SERVICE COUNT SELECTION: cb_pick_srv_<serviceType> OR direct shortcuts (/amprem, /warp, /v2ray, /elevenlabs, /cursor, /canva)
     let selectedServiceType: ServiceType | null = null;
     if (text.startsWith('cb_pick_srv_')) {
       selectedServiceType = text.replace('cb_pick_srv_', '').trim() as ServiceType;
     } else if (text === '/amprem' || text === 'cb_ask_amprem' || text === 'cb_amprem') {
       selectedServiceType = 'alight_motion';
+    } else if (text === '/warp' || text === '/vpn') {
+      selectedServiceType = 'warp_plus';
+    } else if (text === '/v2ray' || text === '/vless' || text === '/proxy') {
+      selectedServiceType = 'proxy_nodes';
     } else if (text === '/elevenlabs' || text === '/voice') {
       selectedServiceType = 'elevenlabs';
     } else if (text === '/cursor' || text === '/cursorai') {

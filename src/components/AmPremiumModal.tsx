@@ -21,6 +21,9 @@ import {
   ArrowRight,
   Smartphone,
   Info,
+  Download,
+  Shield,
+  Radio,
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
 import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
@@ -39,9 +42,11 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [copiedPass, setCopiedPass] = useState<string | null>(null);
   const [copiedCombo, setCopiedCombo] = useState<string | null>(null);
+  const [copiedConfig, setCopiedConfig] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
 
@@ -96,9 +101,12 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     }
   };
 
-  const handleCopyText = (text: string, type: 'email' | 'pass' | 'combo' | 'all') => {
+  const handleCopyText = (text: string, type: 'key' | 'email' | 'pass' | 'combo' | 'config' | 'all') => {
     navigator.clipboard.writeText(text);
-    if (type === 'email') {
+    if (type === 'key') {
+      setCopiedKey(text);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } else if (type === 'email') {
       setCopiedEmail(text);
       setTimeout(() => setCopiedEmail(null), 2000);
     } else if (type === 'pass') {
@@ -107,16 +115,36 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     } else if (type === 'combo') {
       setCopiedCombo(text);
       setTimeout(() => setCopiedCombo(null), 2000);
+    } else if (type === 'config') {
+      setCopiedConfig(text);
+      setTimeout(() => setCopiedConfig(null), 2000);
     } else {
       setCopiedAll(true);
       setTimeout(() => setCopiedAll(false), 2000);
     }
   };
 
+  const handleDownloadWireguard = (config: string, filename = 'warp-wireguard.conf') => {
+    const blob = new Blob([config], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleCopyAll = () => {
     const text = results
       .filter((r) => r.success)
       .map((r, i) => {
+        if (r.serviceType === 'warp_plus') {
+          return `[${i + 1}] Cloudflare WARP+ License: ${r.licenseKey}\n    WireGuard Config:\n${r.wireguardConfig}`;
+        }
+        if (r.serviceType === 'proxy_nodes') {
+          return `[${i + 1}] Proxy Node ${r.serviceName}:\n    URL: ${r.configUri}`;
+        }
         if (!r.password) {
           return `[${i + 1}] Layanan: ${r.serviceName || currentService.name}\n    Email: ${r.email}\n    Metode: Magic Link (Tanpa Password)\n    Link Inbox: ${r.inboxUrl}\n    Status: ${r.duration || '1 Tahun Premium'}`;
         }
@@ -125,6 +153,13 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
       .join('\n\n');
     handleCopyText(text, 'all');
   };
+
+  const autoServices = (Object.keys(SUPPORTED_SERVICES) as ServiceType[]).filter(
+    (st) => SUPPORTED_SERVICES[st].is100PercentAuto
+  );
+  const helperServices = (Object.keys(SUPPORTED_SERVICES) as ServiceType[]).filter(
+    (st) => !SUPPORTED_SERVICES[st].is100PercentAuto
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-md animate-in fade-in duration-200">
@@ -141,12 +176,12 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white">Auto Pro &amp; Trial Generator</h3>
+                <h3 className="text-base font-bold text-white">Auto Pro &amp; Trial Hub</h3>
                 <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
                   PRO VIP
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Pilih aplikasi target untuk generate akun instan.</p>
+              <p className="text-xs text-slate-400">Pilih aplikasi target untuk generate instan.</p>
             </div>
           </div>
 
@@ -160,13 +195,17 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
 
         {/* Modal Body (Scrollable) */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Service Selector Tabs */}
+          {/* Section 1: 100% TERIMA JADI (Full Auto Server / Key / Nodes) */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Pilih Layanan Target:
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(Object.keys(SUPPORTED_SERVICES) as ServiceType[]).map((st) => {
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
+                <Zap className="h-3.5 w-3.5 fill-emerald-400" />
+                <span>100% Terima Jadi (Auto Server / Key / Node):</span>
+              </label>
+              <span className="text-[10px] text-slate-400">Tanpa Daftar Manual</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {autoServices.map((st) => {
                 const s = SUPPORTED_SERVICES[st];
                 const isSelected = serviceType === st;
                 return (
@@ -186,10 +225,48 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                   >
                     <div className="flex items-center justify-between w-full mb-1">
                       <span className="text-base">{s.icon}</span>
-                      {isSelected && <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>}
+                      <span className="rounded bg-emerald-500/20 px-1 py-0.2 text-[8px] font-bold text-emerald-300">
+                        100% AUTO
+                      </span>
                     </div>
                     <p className="text-xs font-bold text-white truncate w-full">{s.name}</p>
                     <p className="text-[10px] text-slate-400 line-clamp-1">{s.badge}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 2: Pro Trial & TempMail Helpers */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-2">
+              Layanan Lainnya (TempMail &amp; OTP Helper):
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {helperServices.map((st) => {
+                const s = SUPPORTED_SERVICES[st];
+                const isSelected = serviceType === st;
+                return (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => {
+                      setServiceType(st);
+                      setResults([]);
+                      setErrorMsg('');
+                    }}
+                    className={`flex flex-col items-start p-2 rounded-xl border text-left transition-all ${
+                      isSelected
+                        ? 'border-cyan-500 bg-cyan-950/40 shadow-md shadow-cyan-500/10'
+                        : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full mb-1">
+                      <span className="text-sm">{s.icon}</span>
+                      {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse"></span>}
+                    </div>
+                    <p className="text-[11px] font-bold text-white truncate w-full">{s.name.split(' ')[0]}</p>
+                    <p className="text-[9px] text-slate-400 truncate w-full">{s.badge}</p>
                   </button>
                 );
               })}
@@ -201,47 +278,34 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 font-bold text-indigo-300">
                 <HelpCircle className="h-4 w-4 text-cyan-400 shrink-0" />
-                <span>Panduan &amp; Cara Login {currentService.name}:</span>
+                <span>Panduan &amp; Cara Pakai {currentService.name}:</span>
               </div>
-              <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${
-                currentService.hasPassword 
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
-                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-              }`}>
-                {currentService.hasPassword ? '🔑 Butuh Password' : '✉️ Passwordless (Magic Link)'}
+              <span
+                className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${
+                  currentService.is100PercentAuto
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                }`}
+              >
+                {currentService.is100PercentAuto ? '⚡ 100% Terima Jadi' : '🔑 Butuh Form Daftar'}
               </span>
             </div>
 
             <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300 leading-relaxed pl-0.5">
               {currentService.stepByStep.map((step, idx) => (
-                <li key={idx} className="pl-1">{step}</li>
+                <li key={idx} className="pl-1">
+                  {step}
+                </li>
               ))}
             </ol>
           </div>
 
           {/* Form Controls */}
           <form onSubmit={handleGenerate} className="space-y-3.5">
-            {/* Canva Invite Link (If Canva selected) */}
-            {currentService.requiresInviteUrl && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <LinkIcon className="h-3.5 w-3.5 text-cyan-400" />
-                  <span>Link Undangan Tim Canva (Opsional):</span>
-                </label>
-                <input
-                  type="url"
-                  value={inviteUrl}
-                  onChange={(e) => setInviteUrl(e.target.value)}
-                  placeholder="https://www.canva.com/brand/join?token=..."
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
-                />
-              </div>
-            )}
-
             {/* Account Count Selection */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Jumlah Akun Sekaligus (Batch):
+                Jumlah yang Digenerate (Batch):
               </label>
               <div className="grid grid-cols-5 gap-2">
                 {[1, 2, 3, 5, 10].map((num) => (
@@ -255,14 +319,14 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                     }`}
                   >
-                    {num} Akun
+                    {num} Item
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Custom Alias (Single account only) */}
-            {count === 1 && (
+            {count === 1 && !['warp_plus', 'proxy_nodes'].includes(serviceType) && (
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Nama Alias Kustom (Opsional):
@@ -277,35 +341,6 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                   />
                   <span className="text-xs font-mono text-slate-500">@loginptn.xyz</span>
                 </div>
-              </div>
-            )}
-
-            {/* Password Info Box (Only for password services) */}
-            {currentService.hasPassword ? (
-              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2">
-                <div className="flex items-center gap-2">
-                  <Key className="h-4 w-4 text-amber-400" />
-                  <div>
-                    <p className="text-xs font-bold text-slate-200">Password Otomatis Kuat</p>
-                    <p className="text-[10px] text-slate-400">Password unik otomatis dibuat untuk registrasi.</p>
-                  </div>
-                </div>
-                <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                  Auto-Secure
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-emerald-400" />
-                  <div>
-                    <p className="text-xs font-bold text-slate-200">Login Tanpa Password (Magic Link)</p>
-                    <p className="text-[10px] text-slate-400">Alight Motion login langsung via tautan email di HP.</p>
-                  </div>
-                </div>
-                <span className="rounded-lg bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 text-[10px] font-bold text-cyan-300">
-                  Passwordless
-                </span>
               </div>
             )}
 
@@ -326,12 +361,12 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
               {loading ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>Memproses {count} Akun {currentService.name}...</span>
+                  <span>Memproses {count} {currentService.name}...</span>
                 </>
               ) : (
                 <>
                   <Zap className="h-4 w-4 fill-white" />
-                  <span>⚡ Eksekusi Buat {count} Akun Sekarang</span>
+                  <span>⚡ Eksekusi Generate {count} Sekarang</span>
                 </>
               )}
             </button>
@@ -374,7 +409,106 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
               <div className="space-y-2.5">
                 {results.map((acc, idx) => {
                   const isEmailCopied = copiedEmail === acc.email;
-                  const isPassCopied = copiedPass === acc.password;
+                  const isKeyCopied = copiedKey === acc.licenseKey;
+                  const isConfigCopied = copiedConfig === (acc.wireguardConfig || acc.configUri);
+
+                  // CASE A: Cloudflare WARP+ / WireGuard
+                  if (acc.serviceType === 'warp_plus') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-emerald-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Shield className="h-4 w-4 text-emerald-400" />
+                              <span className="font-bold text-white">Cloudflare WARP+ License Key</span>
+                              <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-300">
+                                100% Active
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 pt-1">
+                              <span className="font-mono text-sm font-black text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-xl selection:bg-amber-500">
+                                {acc.licenseKey}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(acc.licenseKey!, 'key')}
+                                className="flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 px-2 py-1 text-[11px] font-bold text-slate-200"
+                              >
+                                {isKeyCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                                <span>{isKeyCopied ? 'Tersalin' : 'Salin Key'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* WireGuard Config Actions */}
+                        {acc.wireguardConfig && (
+                          <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadWireguard(acc.wireguardConfig!, `warp-plus-${idx + 1}.conf`)}
+                              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              <span>Unduh Config WireGuard (.conf)</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCopyText(acc.wireguardConfig!, 'config')}
+                              className="flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 active:scale-95"
+                            >
+                              {isConfigCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                              <span>{isConfigCopied ? 'Tersalin' : 'Salin Config'}</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // CASE B: V2Ray / VLESS Proxy Nodes
+                  if (acc.serviceType === 'proxy_nodes') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-cyan-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Radio className="h-4 w-4 text-cyan-400" />
+                              <span className="font-bold text-white">{acc.serviceName}</span>
+                              <span className="rounded bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.2 text-[9px] font-bold text-cyan-300">
+                                {acc.duration}
+                              </span>
+                            </div>
+
+                            <p className="font-mono text-[11px] text-slate-400 truncate max-w-full">
+                              {acc.configUri}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(acc.configUri!, 'config')}
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-cyan-500 hover:to-indigo-500 active:scale-95"
+                          >
+                            {isConfigCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                            <span>{isConfigCopied ? 'URL VLESS Tersalin!' : '📋 Salin URL VLESS (Siap Konek)'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // CASE C: Standard Accounts (Alight Motion, Canva, ElevenLabs, Cursor, Leonardo)
                   const comboText = `${acc.email}:${acc.password || ''}`;
                   const isComboCopied = copiedCombo === comboText;
                   const signupTarget = inviteUrl || currentService.signupUrl;
@@ -411,7 +545,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                                 onClick={() => handleCopyText(acc.password, 'pass')}
                                 className="text-[10px] text-slate-400 hover:text-emerald-400 ml-1"
                               >
-                                {isPassCopied ? 'Tersalin' : 'Salin'}
+                                Salin
                               </button>
                             </div>
                           ) : (
@@ -446,7 +580,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                         </button>
                       </div>
 
-                      {/* Direct Action Buttons on Result Card */}
+                      {/* Direct Action Buttons */}
                       <div className="flex items-center gap-2 pt-2 border-t border-slate-800/80 flex-wrap sm:flex-nowrap">
                         {acc.password ? (
                           <>

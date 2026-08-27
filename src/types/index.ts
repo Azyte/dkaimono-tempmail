@@ -97,13 +97,17 @@ export interface AmPremiumAccount {
   email: string;
   alias: string;
   password?: string;
-  serviceType?: 'alight_motion' | 'canva_pro' | 'elevenlabs' | 'cursor_ai' | 'leonardo_ai' | 'custom' | string;
+  serviceType?: 'alight_motion' | 'warp_plus' | 'proxy_nodes' | 'canva_pro' | 'elevenlabs' | 'cursor_ai' | 'leonardo_ai' | 'custom' | string;
   serviceName?: string;
   inboxUrl: string;
   duration: string;
   status: 'active' | 'pending' | 'failed';
   magicLink?: string;
   orderId?: string;
+  licenseKey?: string;
+  wireguardConfig?: string;
+  configUri?: string;
+  country?: string;
   error?: string;
   inviteUrl?: string;
   createdAt: string;
