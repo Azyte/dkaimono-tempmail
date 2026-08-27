@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
 import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
+import { VideoClipEditorModal } from './VideoClipEditorModal';
 
 interface AmPremiumModalProps {
   isOpen: boolean;
@@ -114,6 +115,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const [copiedAll, setCopiedAll] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
+  const [editingClip, setEditingClip] = useState<any | null>(null);
 
   if (!isOpen) return null;
 
@@ -710,16 +712,16 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                           </div>
                         </div>
 
-                        {/* Download MP4 + Audio MP3 */}
+                        {/* Action Buttons: Download MP4 + Audio MP3 */}
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
                           <a
                             href={acc.hdVideoUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 py-2.5 px-2 text-xs font-bold text-white shadow-md hover:from-rose-500 hover:to-pink-500 active:scale-95 transition-all"
+                            className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 py-2.5 px-2 text-xs font-bold text-slate-200 border border-slate-700 active:scale-95 transition-all"
                           >
                             <Download className="h-4 w-4" />
-                            <span>📥 Unduh MP4 (9:16 HD)</span>
+                            <span>📥 Unduh MP4 Mentahan</span>
                           </a>
                           <a
                             href={acc.audioMp3Url}
@@ -730,6 +732,18 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                             <Music className="h-4 w-4" />
                             <span>🎵 Unduh Audio MP3</span>
                           </a>
+                        </div>
+
+                        {/* Interactive In-Browser Studio Video Editor */}
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setEditingClip(acc)}
+                            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-rose-600 to-amber-600 py-3 px-3 text-xs font-bold text-white shadow-xl hover:from-purple-500 hover:to-amber-500 active:scale-95 transition-all"
+                          >
+                            <Sparkles className="h-4 w-4" />
+                            <span>🎬 Edit Video di Studio (Auto Split-Screen, Subtitle & Anti-Copyright)</span>
+                          </button>
                         </div>
                       </div>
                     );
@@ -1345,6 +1359,20 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
           )}
         </div>
       </div>
+
+      {/* Interactive In-Browser Video Clip Studio Editor */}
+      {editingClip && (
+        <VideoClipEditorModal
+          isOpen={!!editingClip}
+          onClose={() => setEditingClip(null)}
+          initialVideoUrl={editingClip.hdVideoUrl}
+          initialTitle={editingClip.videoTitle}
+          initialHooks={editingClip.viralHooks}
+          initialHashtags={editingClip.viralHashtags}
+          initialCta={editingClip.pinnedCommentCta}
+          initialDisclaimer={editingClip.copyrightDisclaimer}
+        />
+      )}
     </div>
   );
 }

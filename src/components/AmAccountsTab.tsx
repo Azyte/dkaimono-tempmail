@@ -23,6 +23,7 @@ import {
 import { AmPremiumAccount, User } from '@/types';
 import { fireConfetti } from '@/lib/confetti';
 import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
+import { VideoClipEditorModal } from './VideoClipEditorModal';
 
 interface AmAccountsTabProps {
   currentUser: User | null;
@@ -48,6 +49,7 @@ export function AmAccountsTab({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedService, setSelectedService] = useState<string>('all');
   const [showPasswords, setShowPasswords] = useState(false);
+  const [editingClip, setEditingClip] = useState<AmPremiumAccount | null>(null);
 
   const getSessionHeaders = () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -812,16 +814,25 @@ export function AmAccountsTab({
 
                     {/* Video Clipper Action Buttons */}
                     {acc.serviceType === 'video_clipper' && (
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => setEditingClip(acc)}
+                          className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-purple-600 to-rose-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:from-purple-500 hover:to-rose-500 active:scale-95"
+                          title="Buka Studio Edit Video (Crop 9:16, Subtitle & Split Screen)"
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          <span>🎬 Edit Studio</span>
+                        </button>
                         {acc.hdVideoUrl && (
                           <a
                             href={acc.hdVideoUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:from-rose-500 hover:to-pink-500 active:scale-95"
+                            className="flex items-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 text-xs font-bold text-slate-200 border border-slate-700 active:scale-95"
                           >
                             <Download className="h-3.5 w-3.5" />
-                            <span>Unduh MP4 9:16</span>
+                            <span>MP4 9:16</span>
                           </a>
                         )}
                         {acc.audioMp3Url && (
@@ -832,7 +843,7 @@ export function AmAccountsTab({
                             className="flex items-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 text-xs font-bold text-slate-200 border border-slate-700 active:scale-95"
                           >
                             <Music className="h-3.5 w-3.5" />
-                            <span>Audio MP3</span>
+                            <span>MP3</span>
                           </a>
                         )}
                       </div>
@@ -1092,6 +1103,20 @@ export function AmAccountsTab({
             );
           })}
         </div>
+      )}
+
+      {/* Interactive Video Studio Modal */}
+      {editingClip && (
+        <VideoClipEditorModal
+          isOpen={!!editingClip}
+          onClose={() => setEditingClip(null)}
+          initialVideoUrl={editingClip.hdVideoUrl}
+          initialTitle={editingClip.videoTitle}
+          initialHooks={editingClip.viralHooks}
+          initialHashtags={editingClip.viralHashtags}
+          initialCta={editingClip.pinnedCommentCta}
+          initialDisclaimer={editingClip.copyrightDisclaimer}
+        />
       )}
     </div>
   );
