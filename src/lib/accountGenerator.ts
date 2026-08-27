@@ -2,6 +2,9 @@ import { db } from './db';
 import { AmPremiumAccount } from '@/types';
 import { createSingleAmPremium, AmAccountResult } from './alightMotion';
 import { createWarpPremiumAccount } from './warpGenerator';
+import { generateOutlineAccessKey } from './outlineVpnGenerator';
+import { generateProtonVpnConfig } from './protonVpnGenerator';
+import { generateGamingSshAccount } from './gamingSshGenerator';
 import { generateNextDnsProfile } from './nextdnsGenerator';
 import { generateFreeAiApiKey } from './aiTokenGenerator';
 import { generateDeezerArlToken } from './deezerArlGenerator';
@@ -29,6 +32,9 @@ export function getRandomServiceAlias(serviceType: ServiceType): string {
   const prefixMap: Record<ServiceType, string[]> = {
     alight_motion: ['ampro', 'alight', 'motion', 'vfx'],
     warp_plus: ['warp', 'cfvpn', 'cloudflare', 'wireguard'],
+    outline_vpn: ['outline', 'sskey', 'jigsaw', 'shadow'],
+    proton_vpn: ['proton', 'ovpn', 'privacy', 'safevpn'],
+    gaming_ssh: ['gaming', 'sshws', 'lowping', 'gamer'],
     nextdns_pro: ['nextdns', 'adblock', 'privacy', 'dns'],
     ai_tokens: ['groq', 'deepseek', 'aikey', 'llama'],
     deezer_hifi: ['deezer', 'flac', 'music', 'hifi'],
@@ -60,7 +66,12 @@ export async function createMultiServiceAccount(
     serviceName?: string;
     licenseKey?: string;
     wireguardConfig?: string;
+    ovpnConfig?: string;
     configUri?: string;
+    accessKey?: string;
+    host?: string;
+    port?: string | number;
+    payload?: string;
     country?: string;
     apiKey?: string;
     baseUrl?: string;
@@ -153,7 +164,152 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 3. SERVICE: NextDNS Pro AdBlock & Privacy DNS Profile (100% Auto DNS)
+  // 3. SERVICE: Outline VPN (Google / Jigsaw Shadowsocks Access Key)
+  if (serviceType === 'outline_vpn') {
+    const outlineRes = generateOutlineAccessKey();
+    const alias = customAlias || getRandomServiceAlias('outline_vpn');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_outline_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'outline_vpn',
+      serviceName: outlineRes.serverName,
+      inboxUrl,
+      duration: `${outlineRes.duration} • Ping: ${outlineRes.ping}`,
+      status: 'active',
+      accessKey: outlineRes.accessKey,
+      country: outlineRes.country,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      serviceType: 'outline_vpn',
+      serviceName: outlineRes.serverName,
+      accessKey: outlineRes.accessKey,
+      country: outlineRes.country,
+      inboxUrl,
+      success: true,
+      statusText: 'Outline Access Key Siap Konek',
+      duration: `${outlineRes.duration} • Ping: ${outlineRes.ping}`,
+      message: `Access Key Outline VPN ${outlineRes.country} ${outlineRes.flag} berhasil digenerate!`,
+      createdAt: now,
+    };
+  }
+
+  // 4. SERVICE: ProtonVPN Free OpenVPN & WireGuard Config
+  if (serviceType === 'proton_vpn') {
+    const protonRes = generateProtonVpnConfig();
+    const alias = customAlias || getRandomServiceAlias('proton_vpn');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_proton_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      password: protonRes.passwordAuth,
+      serviceType: 'proton_vpn',
+      serviceName: protonRes.serverName,
+      inboxUrl,
+      duration: `${protonRes.duration} • Ping: ${protonRes.ping}`,
+      status: 'active',
+      ovpnConfig: protonRes.ovpnConfig,
+      wireguardConfig: protonRes.wireguardConfig,
+      country: protonRes.country,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      password: protonRes.passwordAuth,
+      serviceType: 'proton_vpn',
+      serviceName: protonRes.serverName,
+      ovpnConfig: protonRes.ovpnConfig,
+      wireguardConfig: protonRes.wireguardConfig,
+      country: protonRes.country,
+      inboxUrl,
+      success: true,
+      statusText: 'Config OpenVPN & WireGuard Siap',
+      duration: `${protonRes.duration} • Ping: ${protonRes.ping}`,
+      message: `Config OpenVPN & WireGuard ProtonVPN ${protonRes.country} ${protonRes.flag} siap digunakan!`,
+      createdAt: now,
+    };
+  }
+
+  // 5. SERVICE: Gaming SSH WebSocket VPN Account
+  if (serviceType === 'gaming_ssh') {
+    const sshRes = generateGamingSshAccount();
+    const alias = customAlias || getRandomServiceAlias('gaming_ssh');
+    const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+    const emailAddress = `${cleanAlias}@${domain}`;
+    const accountId = 'acc_ssh_' + Math.random().toString(36).substring(2, 11);
+    const inboxUrl = `https://dkaimono-tempmail-production-51e8.up.railway.app/?mail=${encodeURIComponent(cleanAlias)}`;
+
+    const newRecord: AmPremiumAccount = {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      password: sshRes.passwordAuth,
+      serviceType: 'gaming_ssh',
+      serviceName: sshRes.serverName,
+      inboxUrl,
+      duration: `${sshRes.duration} • Ping: ${sshRes.ping}`,
+      status: 'active',
+      host: sshRes.host,
+      port: sshRes.portSsh,
+      payload: sshRes.payload,
+      country: sshRes.country,
+      createdAt: now,
+      userId,
+      deviceFingerprint,
+    };
+
+    db.createOrGetMailbox(emailAddress, userId);
+    db.saveAmAccount(newRecord);
+
+    return {
+      id: accountId,
+      email: emailAddress,
+      alias: cleanAlias,
+      password: sshRes.passwordAuth,
+      serviceType: 'gaming_ssh',
+      serviceName: sshRes.serverName,
+      host: sshRes.host,
+      port: sshRes.portSsh,
+      payload: sshRes.payload,
+      country: sshRes.country,
+      inboxUrl,
+      success: true,
+      statusText: 'Akun Gaming SSH Siap Konek',
+      duration: `${sshRes.duration} • Ping: ${sshRes.ping}`,
+      message: `Akun Gaming SSH ${sshRes.country} ${sshRes.flag} (Ping ${sshRes.ping}) siap digunakan!`,
+      createdAt: now,
+    };
+  }
+
+  // 6. SERVICE: NextDNS Pro AdBlock & Privacy DNS Profile (100% Auto DNS)
   if (serviceType === 'nextdns_pro') {
     const dnsRes = generateNextDnsProfile(customAlias);
     const alias = customAlias || getRandomServiceAlias('nextdns_pro');
@@ -198,7 +354,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 4. SERVICE: AI Pro API Key Generator (100% Auto API Key)
+  // 7. SERVICE: AI Pro API Key Generator (100% Auto API Key)
   if (serviceType === 'ai_tokens') {
     const aiRes = generateFreeAiApiKey();
     const alias = customAlias || getRandomServiceAlias('ai_tokens');
@@ -243,7 +399,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 5. SERVICE: Deezer Hi-Fi FLAC & 320kbps Music Streamer ARL Token (100% Auto ARL)
+  // 8. SERVICE: Deezer Hi-Fi FLAC & 320kbps Music Streamer ARL Token (100% Auto ARL)
   if (serviceType === 'deezer_hifi') {
     const arlRes = generateDeezerArlToken();
     const alias = customAlias || getRandomServiceAlias('deezer_hifi');
@@ -286,7 +442,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 6. SERVICE: Hysteria 2 & V2Ray Fast Global Proxy Nodes (100% Siap Konek)
+  // 9. SERVICE: Hysteria 2 & V2Ray Fast Global Proxy Nodes (100% Siap Konek)
   if (serviceType === 'proxy_nodes') {
     const nodes = generateFastProxyNodes();
     const pickedNode = nodes[Math.floor(Math.random() * nodes.length)];
@@ -332,7 +488,7 @@ export async function createMultiServiceAccount(
     };
   }
 
-  // 7. Other Services (Canva Pro, ElevenLabs, Cursor AI, Leonardo AI, Custom)
+  // 10. Other Services (Canva Pro, ElevenLabs, Cursor AI, Leonardo AI, Custom)
   const alias = customAlias || getRandomServiceAlias(serviceType);
   const cleanAlias = alias.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
   const emailAddress = `${cleanAlias}@${domain}`;

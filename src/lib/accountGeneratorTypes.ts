@@ -1,6 +1,9 @@
 export type ServiceType =
   | 'alight_motion'
   | 'warp_plus'
+  | 'outline_vpn'
+  | 'proton_vpn'
+  | 'gaming_ssh'
   | 'nextdns_pro'
   | 'ai_tokens'
   | 'deezer_hifi'
@@ -14,6 +17,9 @@ export type ServiceType =
 export type AuthMethod =
   | 'full_auto_server'
   | 'api_license'
+  | 'vpn_access_key'
+  | 'vpn_config'
+  | 'ssh_account'
   | 'dns_profile'
   | 'ai_api_key'
   | 'music_arl'
@@ -79,6 +85,59 @@ export const SUPPORTED_SERVICES: Record<ServiceType, ServiceDefinition> = {
       'Salin License Key yang dihasilkan di bawah ini.',
       'Buka aplikasi Cloudflare 1.1.1.1 di Android / iOS / PC ➔ Pengaturan ➔ Akun ➔ Masukkan Kunci Lisensi.',
       'ATAU: Unduh file config WireGuard (.conf) ➔ Import ke aplikasi WireGuard ➔ Langsung Konek VPN Cepat!',
+    ],
+  },
+  outline_vpn: {
+    type: 'outline_vpn',
+    name: 'Outline VPN (Google / Jigsaw)',
+    icon: '🛡️',
+    description: 'Shadowsocks Access Key (`ss://...`) Anti-Blokir & Sensor (SG 🇸🇬, ID 🇮🇩, JP 🇯🇵, US 🇺🇸)',
+    badge: '⚡ 100% Auto Key',
+    defaultDuration: '30 Hari (Unlimited Bandwidth)',
+    authMethod: 'vpn_access_key',
+    is100PercentAuto: true,
+    hasPassword: false,
+    signupUrl: 'https://getoutline.org',
+    instructions: '100% Siap Konek. Salin Access Key dan buka aplikasi Outline VPN.',
+    stepByStep: [
+      'Salin Access Key (`ss://...`) yang digenerate di bawah.',
+      'Buka aplikasi Outline VPN di HP (Android/iOS) atau PC (Windows/Mac).',
+      'Aplikasi Outline akan otomatis mendeteksi kunci dari clipboard ➔ Klik "Add Server" ➔ Klik "Connect"!',
+    ],
+  },
+  proton_vpn: {
+    type: 'proton_vpn',
+    name: 'ProtonVPN (OpenVPN & WireGuard)',
+    icon: '🔒',
+    description: 'Config OpenVPN (.ovpn) & WireGuard (.conf) No-Logs Privacy (SG, NL, US, JP)',
+    badge: '⚡ 100% Auto Config',
+    defaultDuration: 'Unlimited Bandwidth (No Logs)',
+    authMethod: 'vpn_config',
+    is100PercentAuto: true,
+    hasPassword: false,
+    signupUrl: 'https://protonvpn.com',
+    instructions: '100% Siap Pakai. Unduh file .ovpn atau .conf untuk langsung konek di aplikasi OpenVPN / WireGuard.',
+    stepByStep: [
+      'Unduh file config OpenVPN (.ovpn) atau WireGuard (.conf) yang tersedia.',
+      'Buka aplikasi OpenVPN Connect atau WireGuard di perangkat Anda.',
+      'Import file konfigurasi tersebut ➔ Masukkan kredensial otomatis yang tertera ➔ Terkoneksi!',
+    ],
+  },
+  gaming_ssh: {
+    type: 'gaming_ssh',
+    name: 'Gaming SSH WebSocket VPN',
+    icon: '🎮',
+    description: 'Zero Lag SSH Tunneling & BadVPN UDPGW Port untuk Game Online (MLBB, FF, PUBG)',
+    badge: '⚡ 100% Auto Gaming',
+    defaultDuration: '30 Hari (High-Speed Gaming)',
+    authMethod: 'ssh_account',
+    is100PercentAuto: true,
+    hasPassword: false,
+    instructions: '100% Siap Pakai. Masukkan Host, Port, Username, dan Password ke HTTP Custom / HTTP Injector / NetMod.',
+    stepByStep: [
+      'Salin info Host, Port SSH/WS, Username, dan Password yang digenerate.',
+      'Buka aplikasi HTTP Custom, NetMod Syna, atau HTTP Injector di Android/PC.',
+      'Masukkan akun SSH tersebut ➔ Centang BadVPN UDPGW ➔ Konek untuk ping hijau stabil di game!',
     ],
   },
   nextdns_pro: {

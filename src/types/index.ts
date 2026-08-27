@@ -100,6 +100,9 @@ export interface AmPremiumAccount {
   serviceType?:
     | 'alight_motion'
     | 'warp_plus'
+    | 'outline_vpn'
+    | 'proton_vpn'
+    | 'gaming_ssh'
     | 'nextdns_pro'
     | 'ai_tokens'
     | 'deezer_hifi'
@@ -118,7 +121,12 @@ export interface AmPremiumAccount {
   orderId?: string;
   licenseKey?: string;
   wireguardConfig?: string;
+  ovpnConfig?: string;
   configUri?: string;
+  accessKey?: string;
+  host?: string;
+  port?: string | number;
+  payload?: string;
   country?: string;
   apiKey?: string;
   baseUrl?: string;

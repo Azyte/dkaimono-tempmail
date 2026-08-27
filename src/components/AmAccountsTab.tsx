@@ -513,7 +513,53 @@ export function AmAccountsTab({
                       </div>
                     )}
 
-                    {/* 2. NextDNS Pro Display */}
+                    {/* 2. Outline VPN Access Key Display */}
+                    {acc.serviceType === 'outline_vpn' && acc.accessKey && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">🛡️ Outline Key:</span>
+                          <span className="font-mono font-bold text-teal-300 bg-teal-950/40 border border-teal-500/30 px-2 py-0.5 rounded-lg truncate max-w-[200px] sm:max-w-xs">
+                            {acc.accessKey}
+                          </span>
+                          <button
+                            onClick={() => handleCopy(acc.accessKey!, 'pass')}
+                            className="text-[10px] text-slate-400 hover:text-teal-400 transition-colors"
+                          >
+                            Salin Key
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. ProtonVPN Display */}
+                    {acc.serviceType === 'proton_vpn' && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="flex items-center gap-3 text-slate-300">
+                          <div>
+                            <span className="text-slate-500">User: </span>
+                            <span className="font-mono font-bold text-cyan-300">{acc.email}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">Pass: </span>
+                            <span className="font-mono font-bold text-amber-300">{acc.password}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 4. Gaming SSH WebSocket Display */}
+                    {acc.serviceType === 'gaming_ssh' && (
+                      <div className="space-y-1 pt-1 text-xs">
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11px] text-slate-300">
+                          <div><span className="text-slate-500">Host:</span> <span className="font-mono text-cyan-300">{acc.host}</span></div>
+                          <div><span className="text-slate-500">Port:</span> <span className="font-mono text-slate-200">{acc.port}</span></div>
+                          <div><span className="text-slate-500">User:</span> <span className="font-mono text-emerald-300">{acc.alias}</span></div>
+                          <div><span className="text-slate-500">Pass:</span> <span className="font-mono text-amber-300">{acc.password}</span></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 5. NextDNS Pro Display */}
                     {acc.serviceType === 'nextdns_pro' && acc.dotEndpoint && (
                       <div className="space-y-1 pt-1 text-xs">
                         <div className="flex items-center gap-2">
@@ -531,7 +577,7 @@ export function AmAccountsTab({
                       </div>
                     )}
 
-                    {/* 3. AI API Key Display */}
+                    {/* 6. AI API Key Display */}
                     {acc.serviceType === 'ai_tokens' && acc.apiKey && (
                       <div className="space-y-1 pt-1 text-xs">
                         <div className="flex items-center gap-2">
@@ -549,7 +595,7 @@ export function AmAccountsTab({
                       </div>
                     )}
 
-                    {/* 4. Deezer Hi-Fi ARL Token Display */}
+                    {/* 7. Deezer Hi-Fi ARL Token Display */}
                     {acc.serviceType === 'deezer_hifi' && acc.arlToken && (
                       <div className="space-y-1 pt-1 text-xs">
                         <div className="flex items-center gap-2">
@@ -567,7 +613,7 @@ export function AmAccountsTab({
                       </div>
                     )}
 
-                    {/* 5. Proxy Node VLESS URL Display */}
+                    {/* 8. Proxy Node VLESS URL Display */}
                     {acc.serviceType === 'proxy_nodes' && acc.configUri && (
                       <div className="space-y-1 pt-1">
                         <p className="text-xs font-mono text-cyan-400 truncate max-w-sm sm:max-w-md">
@@ -576,8 +622,8 @@ export function AmAccountsTab({
                       </div>
                     )}
 
-                    {/* 6. Password Display / Magic Link Notice for Other Services */}
-                    {!['warp_plus', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(acc.serviceType || '') && (
+                    {/* 9. Password Display / Magic Link Notice for Other Services */}
+                    {!['warp_plus', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(acc.serviceType || '') && (
                       <>
                         {acc.password ? (
                           <div className="flex items-center gap-2 text-xs">
@@ -605,7 +651,7 @@ export function AmAccountsTab({
                     )}
 
                     {/* Inbox Link Display (if applicable) */}
-                    {!['proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(acc.serviceType || '') && (
+                    {!['proxy_nodes', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(acc.serviceType || '') && (
                       <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
                         <span className="shrink-0 text-slate-500">🔗 Link Inbox:</span>
                         <span className="font-mono truncate text-cyan-400 max-w-[240px] sm:max-w-md">
@@ -669,6 +715,72 @@ export function AmAccountsTab({
                           </button>
                         )}
                       </>
+                    )}
+
+                    {/* Outline VPN Action Button */}
+                    {acc.serviceType === 'outline_vpn' && acc.accessKey && (
+                      <button
+                        onClick={() => handleCopy(acc.accessKey!, 'pass')}
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-teal-500 hover:to-emerald-500 active:scale-95 transition-all"
+                        title="Salin Access Key Outline VPN (ss://)"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Salin Key Outline</span>
+                      </button>
+                    )}
+
+                    {/* ProtonVPN Action Buttons */}
+                    {acc.serviceType === 'proton_vpn' && (
+                      <div className="flex items-center gap-1.5">
+                        {acc.ovpnConfig && (
+                          <button
+                            onClick={() => {
+                              const blob = new Blob([acc.ovpnConfig!], { type: 'text/plain;charset=utf-8' });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `protonvpn-${acc.id.substring(0, 6)}.ovpn`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
+                            className="flex items-center gap-1 rounded-xl bg-violet-600 hover:bg-violet-500 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm"
+                            title="Unduh file config OpenVPN .ovpn"
+                          >
+                            <span>Unduh .ovpn</span>
+                          </button>
+                        )}
+                        {acc.wireguardConfig && (
+                          <button
+                            onClick={() => {
+                              const blob = new Blob([acc.wireguardConfig!], { type: 'text/plain;charset=utf-8' });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `protonvpn-wg-${acc.id.substring(0, 6)}.conf`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
+                            className="flex items-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 text-xs font-bold text-slate-200 border border-slate-700"
+                            title="Unduh file config WireGuard .conf"
+                          >
+                            <span>Unduh .conf</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Gaming SSH Action Button */}
+                    {acc.serviceType === 'gaming_ssh' && (
+                      <button
+                        onClick={() => handleCopy(`Host: ${acc.host}\nPort: 443\nUser: ${acc.alias}\nPass: ${acc.password}\nPayload: ${acc.payload}`, 'combo')}
+                        className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:from-amber-500 hover:to-orange-500 active:scale-95 transition-all"
+                        title="Salin Akun Gaming SSH"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Salin Akun SSH</span>
+                      </button>
                     )}
 
                     {/* NextDNS Pro Action Button */}

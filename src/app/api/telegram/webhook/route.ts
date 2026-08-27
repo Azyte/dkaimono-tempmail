@@ -164,6 +164,48 @@ async function processAccountGenerationBackground(
             `3. Masukkan License Key di atas ➔ Status langsung WARP+ Unlimited!\n\n` +
             `<i>(Bisa juga unduh file .conf WireGuard dari dashboard web)</i>`;
 
+        } else if (serviceType === 'outline_vpn') {
+          singleSuccessMsg =
+            `🛡️ <b>OUTLINE VPN ACCESS KEY SIAP KONEK!</b> ✨\n\n` +
+            `🏷️ <b>Server:</b> ${result.serviceName}\n` +
+            `🔑 <b>Access Key (Shadowsocks):</b>\n<code>${result.accessKey}</code>\n\n` +
+            `✨ <b>Status:</b> <code>${result.duration}</code>\n\n` +
+            `📱 <b>Cara Pakai:</b>\n` +
+            `1. Salin teks Access Key di atas\n` +
+            `2. Buka aplikasi <b>Outline VPN</b> (Android/iOS/PC)\n` +
+            `3. Aplikasi otomatis mendeteksi kunci ➔ Klik <b>Add Server</b> ➔ <b>Connect</b>!`;
+
+          inlineButtons.push([
+            { text: '🌐 Buka di Web Dashboard', url: result.inboxUrl },
+          ]);
+        } else if (serviceType === 'proton_vpn') {
+          singleSuccessMsg =
+            `🔒 <b>PROTONVPN CONFIG SIAP PAKAI!</b> ✨\n\n` +
+            `🏷️ <b>Server:</b> ${result.serviceName}\n` +
+            `👤 <b>Username:</b> <code>${result.email}</code>\n` +
+            `🔑 <b>Password:</b> <code>${result.password}</code>\n` +
+            `✨ <b>Status:</b> <code>${result.duration}</code>\n\n` +
+            `📱 <b>Cara Pakai:</b>\n` +
+            `1. Buka dashboard web TempMail untuk mengunduh file <b>.ovpn</b> atau <b>.conf</b>\n` +
+            `2. Import ke aplikasi <b>OpenVPN Connect</b> atau <b>WireGuard</b>\n` +
+            `3. Konek VPN tanpa batas kuota!`;
+
+          inlineButtons.push([
+            { text: '📥 Unduh Config di Web Dashboard', url: result.inboxUrl },
+          ]);
+        } else if (serviceType === 'gaming_ssh') {
+          singleSuccessMsg =
+            `🎮 <b>AKUN GAMING SSH WEBSOCKET SIAP KONEK!</b> ✨\n\n` +
+            `🏷️ <b>Server:</b> ${result.serviceName}\n` +
+            `🌐 <b>Host:</b> <code>${result.host}</code>\n` +
+            `🔌 <b>Port:</b> <code>${result.port}</code>\n` +
+            `👤 <b>Username:</b> <code>${result.alias}</code>\n` +
+            `🔑 <b>Password:</b> <code>${result.password}</code>\n` +
+            `✨ <b>Status:</b> <code>${result.duration}</code>\n\n` +
+            `📱 <b>Cara Pakai:</b>\n` +
+            `1. Buka aplikasi <b>HTTP Custom / NetMod / HTTP Injector</b>\n` +
+            `2. Masukkan Host, User, dan Password di atas ➔ Konek untuk ping hijau stabil di game!`;
+
           inlineButtons.push([
             { text: '🌐 Buka di Web Dashboard', url: result.inboxUrl },
           ]);
@@ -411,9 +453,12 @@ export async function POST(req: NextRequest) {
 
       const hubText =
         `🚀 <b>AUTO PRO &amp; TRIAL ACCOUNT GENERATOR</b> ✨\n\n` +
-        `<b>⚡ 100% TERIMA JADI (Auto Server / Key / Token):</b>\n` +
+        `<b>⚡ 100% TERIMA JADI (Auto Server / Key / VPN / Token):</b>\n` +
         `• 🎬 <b>Alight Motion:</b> 1 Tahun Full Auto Magic Link\n` +
         `• 🛡️ <b>Cloudflare WARP+:</b> Unlimited VPN Key &amp; Config WireGuard\n` +
+        `• 🛡️ <b>Outline VPN:</b> Shadowsocks Access Key (ss://) Anti-Sensor\n` +
+        `• 🔒 <b>ProtonVPN:</b> Config OpenVPN (.ovpn) &amp; WireGuard (.conf)\n` +
+        `• 🎮 <b>Gaming SSH:</b> Zero Lag Dropbear &amp; BadVPN UDPGW\n` +
         `• 🌐 <b>NextDNS Pro:</b> 300K Queries Blokir 100% Iklan &amp; Malware\n` +
         `• 🤖 <b>AI Pro API Key:</b> Llama 3.3 70B &amp; DeepSeek R1 Key\n` +
         `• 🎵 <b>Deezer Hi-Fi:</b> Lossless FLAC &amp; 320kbps ARL Token\n` +
@@ -433,20 +478,24 @@ export async function POST(req: NextRequest) {
             { text: '🛡️ WARP+ VPN (Auto)', callback_data: 'cb_pick_srv_warp_plus' },
           ],
           [
-            { text: '🌐 NextDNS AdBlock (Auto)', callback_data: 'cb_pick_srv_nextdns_pro' },
-            { text: '🤖 AI Pro API Key (Auto)', callback_data: 'cb_pick_srv_ai_tokens' },
+            { text: '🛡️ Outline VPN (Auto)', callback_data: 'cb_pick_srv_outline_vpn' },
+            { text: '🔒 ProtonVPN (Auto)', callback_data: 'cb_pick_srv_proton_vpn' },
           ],
           [
-            { text: '🎵 Deezer FLAC ARL (Auto)', callback_data: 'cb_pick_srv_deezer_hifi' },
-            { text: '⚡ Hysteria 2 & V2Ray', callback_data: 'cb_pick_srv_proxy_nodes' },
+            { text: '🎮 Gaming SSH (Auto)', callback_data: 'cb_pick_srv_gaming_ssh' },
+            { text: '⚡ Hysteria 2 / V2Ray', callback_data: 'cb_pick_srv_proxy_nodes' },
           ],
           [
+            { text: '🌐 NextDNS AdBlock', callback_data: 'cb_pick_srv_nextdns_pro' },
+            { text: '🤖 AI Pro API Key', callback_data: 'cb_pick_srv_ai_tokens' },
+          ],
+          [
+            { text: '🎵 Deezer FLAC ARL', callback_data: 'cb_pick_srv_deezer_hifi' },
             { text: '🎨 Canva Pro Team', callback_data: 'cb_pick_srv_canva_pro' },
-            { text: '🤖 ElevenLabs Voice', callback_data: 'cb_pick_srv_elevenlabs' },
           ],
           [
+            { text: '🤖 ElevenLabs Voice', callback_data: 'cb_pick_srv_elevenlabs' },
             { text: '💻 Cursor AI Pro', callback_data: 'cb_pick_srv_cursor_ai' },
-            { text: '✨ Leonardo AI', callback_data: 'cb_pick_srv_leonardo_ai' },
           ],
         ],
       };
@@ -463,6 +512,12 @@ export async function POST(req: NextRequest) {
       selectedServiceType = 'alight_motion';
     } else if (text === '/warp' || text === '/vpn') {
       selectedServiceType = 'warp_plus';
+    } else if (text === '/outline' || text === '/ss' || text === '/shadowsocks') {
+      selectedServiceType = 'outline_vpn';
+    } else if (text === '/proton' || text === '/protonvpn' || text === '/ovpn') {
+      selectedServiceType = 'proton_vpn';
+    } else if (text === '/ssh' || text === '/gaming' || text === '/mlbb') {
+      selectedServiceType = 'gaming_ssh';
     } else if (text === '/nextdns' || text === '/adblock' || text === '/dns') {
       selectedServiceType = 'nextdns_pro';
     } else if (text === '/aikey' || text === '/ai' || text === '/groq') {

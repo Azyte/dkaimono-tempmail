@@ -27,6 +27,9 @@ import {
   Globe,
   Bot,
   Music,
+  Gamepad2,
+  Lock,
+  Server,
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
 import { SUPPORTED_SERVICES, ServiceType } from '@/lib/accountGeneratorTypes';
@@ -53,6 +56,8 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const [copiedDns, setCopiedDns] = useState<string | null>(null);
   const [copiedAi, setCopiedAi] = useState<string | null>(null);
   const [copiedArl, setCopiedArl] = useState<string | null>(null);
+  const [copiedOutline, setCopiedOutline] = useState<string | null>(null);
+  const [copiedSsh, setCopiedSsh] = useState<string | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
 
@@ -107,7 +112,10 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     }
   };
 
-  const handleCopyText = (text: string, type: 'key' | 'email' | 'pass' | 'combo' | 'config' | 'dns' | 'ai' | 'arl' | 'all') => {
+  const handleCopyText = (
+    text: string,
+    type: 'key' | 'email' | 'pass' | 'combo' | 'config' | 'dns' | 'ai' | 'arl' | 'outline' | 'ssh' | 'all'
+  ) => {
     navigator.clipboard.writeText(text);
     if (type === 'key') {
       setCopiedKey(text);
@@ -133,14 +141,20 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
     } else if (type === 'arl') {
       setCopiedArl(text);
       setTimeout(() => setCopiedArl(null), 2000);
+    } else if (type === 'outline') {
+      setCopiedOutline(text);
+      setTimeout(() => setCopiedOutline(null), 2000);
+    } else if (type === 'ssh') {
+      setCopiedSsh(text);
+      setTimeout(() => setCopiedSsh(null), 2000);
     } else {
       setCopiedAll(true);
       setTimeout(() => setCopiedAll(false), 2000);
     }
   };
 
-  const handleDownloadWireguard = (config: string, filename = 'warp-wireguard.conf') => {
-    const blob = new Blob([config], { type: 'text/plain;charset=utf-8' });
+  const handleDownloadFile = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -156,6 +170,15 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
       .map((r, i) => {
         if (r.serviceType === 'warp_plus') {
           return `[${i + 1}] Cloudflare WARP+ License: ${r.licenseKey}\n    WireGuard Config:\n${r.wireguardConfig}`;
+        }
+        if (r.serviceType === 'outline_vpn') {
+          return `[${i + 1}] Outline VPN Access Key (${r.serviceName}):\n    ${r.accessKey}`;
+        }
+        if (r.serviceType === 'proton_vpn') {
+          return `[${i + 1}] ProtonVPN (${r.serviceName}):\n    User: ${r.email}\n    Pass: ${r.password}\n    Ping: ${r.duration}`;
+        }
+        if (r.serviceType === 'gaming_ssh') {
+          return `[${i + 1}] Gaming SSH (${r.serviceName}):\n    Host: ${r.host}\n    Port: ${r.port}\n    User: ${r.alias}\n    Pass: ${r.password}\n    Payload: ${r.payload}`;
         }
         if (r.serviceType === 'nextdns_pro') {
           return `[${i + 1}] NextDNS AdBlock Profile: ${r.serviceName}\n    Android Private DNS: ${r.dotEndpoint}\n    DoH URL: ${r.dohUrl}`;
@@ -187,7 +210,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-3 sm:p-4 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative max-h-[92vh] w-full max-w-xl overflow-hidden rounded-3xl border border-emerald-500/30 bg-slate-900 shadow-2xl flex flex-col">
+      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-emerald-500/30 bg-slate-900 shadow-2xl flex flex-col">
         {/* Glow Effects */}
         <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-emerald-500/15 blur-3xl"></div>
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-500/15 blur-3xl"></div>
@@ -224,7 +247,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
                 <Zap className="h-3.5 w-3.5 fill-emerald-400" />
-                <span>⚡ 100% Terima Jadi (Auto Server / Key / Token):</span>
+                <span>⚡ 100% Terima Jadi (Auto Server / Key / VPN / Token):</span>
               </label>
               <span className="text-[10px] text-slate-400">Tanpa Daftar Manual</span>
             </div>
@@ -350,7 +373,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             </div>
 
             {/* Custom Alias (Single account only) */}
-            {count === 1 && !['warp_plus', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(serviceType) && (
+            {count === 1 && !['warp_plus', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(serviceType) && (
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Nama Alias Kustom (Opsional):
@@ -438,6 +461,8 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                   const isDnsCopied = copiedDns === acc.dotEndpoint;
                   const isAiCopied = copiedAi === acc.apiKey;
                   const isArlCopied = copiedArl === acc.arlToken;
+                  const isOutlineCopied = copiedOutline === acc.accessKey;
+                  const isSshCopied = copiedSsh === acc.password;
 
                   // 1. CLOUDFLARE WARP+
                   if (acc.serviceType === 'warp_plus') {
@@ -476,7 +501,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                           <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
                             <button
                               type="button"
-                              onClick={() => handleDownloadWireguard(acc.wireguardConfig!, `warp-plus-${idx + 1}.conf`)}
+                              onClick={() => handleDownloadFile(acc.wireguardConfig!, `warp-plus-${idx + 1}.conf`)}
                               className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-emerald-500 hover:to-teal-500 active:scale-95"
                             >
                               <Download className="h-3.5 w-3.5" />
@@ -497,7 +522,138 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 2. NEXTDNS PRO ADBLOCK
+                  // 2. OUTLINE VPN (Google / Jigsaw)
+                  if (acc.serviceType === 'outline_vpn') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-teal-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <ShieldCheck className="h-4 w-4 text-teal-400" />
+                              <span className="font-bold text-white">{acc.serviceName}</span>
+                              <span className="rounded bg-teal-500/15 border border-teal-500/30 px-1.5 py-0.2 text-[9px] font-bold text-teal-300">
+                                {acc.duration}
+                              </span>
+                            </div>
+
+                            <p className="font-mono text-[11px] text-slate-400 truncate max-w-full">
+                              {acc.accessKey}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(acc.accessKey!, 'outline')}
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-teal-500 hover:to-emerald-500 active:scale-95"
+                          >
+                            {isOutlineCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                            <span>{isOutlineCopied ? 'Access Key Tersalin!' : '📋 Salin Access Key Outline (ss://)'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 3. PROTONVPN (OpenVPN & WireGuard)
+                  if (acc.serviceType === 'proton_vpn') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-violet-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Lock className="h-4 w-4 text-violet-400" />
+                              <span className="font-bold text-white">{acc.serviceName}</span>
+                              <span className="rounded bg-violet-500/15 border border-violet-500/30 px-1.5 py-0.2 text-[9px] font-bold text-violet-300">
+                                {acc.duration}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1 text-slate-300">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] text-slate-400">👤 User:</span>
+                                <span className="font-mono text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded">{acc.email}</span>
+                                <span className="text-[11px] text-slate-400 ml-2">🔑 Pass:</span>
+                                <span className="font-mono text-amber-300 bg-slate-900 px-1.5 py-0.5 rounded">{acc.password}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                          {acc.ovpnConfig && (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadFile(acc.ovpnConfig!, `protonvpn-${idx + 1}.ovpn`)}
+                              className="flex items-center justify-center gap-1 rounded-xl bg-violet-600 hover:bg-violet-500 py-2 px-2 text-xs font-bold text-white shadow-sm"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              <span>Unduh .ovpn</span>
+                            </button>
+                          )}
+                          {acc.wireguardConfig && (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadFile(acc.wireguardConfig!, `protonvpn-wg-${idx + 1}.conf`)}
+                              className="flex items-center justify-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 py-2 px-2 text-xs font-bold text-slate-200 border border-slate-700"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                              <span>Unduh .conf</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 4. GAMING SSH WEBSOCKET
+                  if (acc.serviceType === 'gaming_ssh') {
+                    return (
+                      <div
+                        key={acc.id || idx}
+                        className="rounded-2xl border border-amber-500/40 bg-slate-950/90 p-3.5 text-xs space-y-3 shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Gamepad2 className="h-4 w-4 text-amber-400" />
+                              <span className="font-bold text-white">{acc.serviceName}</span>
+                              <span className="rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-bold text-amber-300">
+                                {acc.duration}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-300 text-[11px] pt-1">
+                              <div><span className="text-slate-500">Host:</span> <span className="font-mono text-cyan-300">{acc.host}</span></div>
+                              <div><span className="text-slate-500">Port:</span> <span className="font-mono text-slate-200">{acc.port}</span></div>
+                              <div><span className="text-slate-500">User:</span> <span className="font-mono text-emerald-300">{acc.alias}</span></div>
+                              <div><span className="text-slate-500">Pass:</span> <span className="font-mono text-amber-300">{acc.password}</span></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(`Host: ${acc.host}\nPort: 443\nUser: ${acc.alias}\nPass: ${acc.password}\nPayload: ${acc.payload}`, 'ssh')}
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 py-2 px-3 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-orange-500 active:scale-95"
+                          >
+                            {isSshCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                            <span>{isSshCopied ? 'Info Akun Tersalin!' : '📋 Salin Info Akun Gaming SSH'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 5. NEXTDNS PRO ADBLOCK
                   if (acc.serviceType === 'nextdns_pro') {
                     return (
                       <div
@@ -543,7 +699,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 3. AI PRO API KEY
+                  // 6. AI PRO API KEY
                   if (acc.serviceType === 'ai_tokens') {
                     return (
                       <div
@@ -589,7 +745,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 4. DEEZER HI-FI FLAC ARL
+                  // 7. DEEZER HI-FI FLAC ARL
                   if (acc.serviceType === 'deezer_hifi') {
                     return (
                       <div
@@ -626,7 +782,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 5. HYSTERIA 2 & V2RAY PROXY NODES
+                  // 8. HYSTERIA 2 & V2RAY PROXY NODES
                   if (acc.serviceType === 'proxy_nodes') {
                     return (
                       <div
@@ -663,7 +819,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     );
                   }
 
-                  // 6. STANDARD ACCOUNTS (Alight Motion, Canva, ElevenLabs, Cursor, Leonardo)
+                  // 9. STANDARD ACCOUNTS (Alight Motion, Canva, ElevenLabs, Cursor, Leonardo)
                   const comboText = `${acc.email}:${acc.password || ''}`;
                   const isComboCopied = copiedCombo === comboText;
                   const signupTarget = inviteUrl || currentService.signupUrl;
