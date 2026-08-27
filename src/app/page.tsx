@@ -13,9 +13,11 @@ import { QrCodeModal } from '@/components/QrCodeModal';
 import { AuthModal } from '@/components/AuthModal';
 import { AmPremiumModal } from '@/components/AmPremiumModal';
 import { AmAccountsTab } from '@/components/AmAccountsTab';
+import { ThemeModal } from '@/components/ThemeModal';
+import { applyTheme, getInitialTheme } from '@/lib/theme';
 import { AppSettings, DomainConfig, EmailMessage, Mailbox, User } from '@/types';
 import { playNotificationSound } from '@/lib/sound';
-import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical, Crown, Zap } from 'lucide-react';
+import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical, Crown, Zap, Palette } from 'lucide-react';
 
 export default function Home() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -49,6 +51,7 @@ export default function Home() {
   const [customAliasModalOpen, setCustomAliasModalOpen] = useState(false);
   const [qrCodeModalOpen, setQrCodeModalOpen] = useState(false);
   const [amPremiumModalOpen, setAmPremiumModalOpen] = useState(false);
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
 
   // Keep previous messages count to detect incoming mail and play chime
   const prevCountRef = useRef<number>(0);
@@ -213,6 +216,7 @@ export default function Home() {
   }, [activeDomain, fetchMessages]);
 
   useEffect(() => {
+    applyTheme(getInitialTheme());
     fetchSettingsAndDomains();
     fetchCurrentUser();
     fetchAmAccountsCount();
@@ -364,7 +368,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#060913] text-slate-100 pb-20 md:pb-8">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-main)] text-[var(--text-main)] pb-20 md:pb-8 transition-colors duration-200">
       {/* Top Navbar */}
       <Navbar
         settings={settings}
@@ -372,6 +376,7 @@ export default function Home() {
         onOpenSettings={handleOpenSettings}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
+        onOpenThemeModal={() => setThemeModalOpen(true)}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
         activeDomain={activeDomain}
@@ -621,6 +626,11 @@ export default function Home() {
         isOpen={qrCodeModalOpen}
         onClose={() => setQrCodeModalOpen(false)}
         emailAddress={mailbox?.address || ''}
+      />
+
+      <ThemeModal
+        isOpen={themeModalOpen}
+        onClose={() => setThemeModalOpen(false)}
       />
     </div>
   );

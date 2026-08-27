@@ -10,6 +10,8 @@ import { ApiTab } from './settings/ApiTab';
 import { LogsTab } from './settings/LogsTab';
 import { ProTab } from './settings/ProTab';
 import { UsersTab } from './settings/UsersTab';
+import { ThemeTab } from './settings/ThemeTab';
+import { Palette } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -55,7 +57,7 @@ export function SettingsModal({
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-bold text-white">Dashboard &amp; Setting TempMail</h3>
-              <p className="text-[11px] sm:text-xs text-slate-400">Konfigurasi Domain, Bot Telegram PRO, Spam &amp; API</p>
+              <p className="text-[11px] sm:text-xs text-slate-400">Konfigurasi Domain, Bot Telegram PRO, Tema &amp; API</p>
             </div>
           </div>
 
@@ -71,6 +73,7 @@ export function SettingsModal({
         <div className="flex border-b border-slate-800/80 bg-slate-900/40 px-3 sm:px-6 overflow-x-auto custom-scrollbar">
           {[
             { id: 'pro', label: '👑 Konfigurasi PRO & Bot', icon: Crown, highlight: true },
+            { id: 'theme', label: '🎨 Tema Tampilan', icon: Palette, highlight: false },
             { id: 'users', label: '👥 Akun Terdaftar', icon: Users },
             { id: 'dns', label: 'Domain & MX', icon: Globe },
             { id: 'cloudflare', label: 'Cloudflare Worker', icon: Zap },
@@ -116,6 +119,8 @@ export function SettingsModal({
               onOpenAuthModal={onOpenAuthModal}
             />
           )}
+
+          {activeTab === 'theme' && <ThemeTab />}
 
           {activeTab === 'users' && <UsersTab />}
 

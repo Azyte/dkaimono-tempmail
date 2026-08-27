@@ -1,64 +1,119 @@
 @import "tailwindcss";
 
-:root {
-  --background: #060913;
-  --foreground: #f8fafc;
+/* 1. THEME DEFINITIONS */
+:root,
+[data-theme="tokyonight"] {
+  --bg-main: #16161e;
+  --bg-surface: #1a1b26;
+  --bg-elevated: #24283b;
+  --border-color: rgba(41, 46, 66, 0.9);
+  --border-active: rgba(122, 162, 247, 0.6);
+  --text-main: #c0caf5;
+  --text-muted: #7982a9;
+  --text-bright: #ffffff;
+  --accent-primary: #7aa2f7;
+  --accent-secondary: #7dcfff;
+  --accent-emerald: #73daca;
+  --accent-amber: #e0af68;
+  --glow-primary: rgba(122, 162, 247, 0.15);
+  --glow-secondary: rgba(125, 207, 255, 0.15);
+}
+
+[data-theme="nord"] {
+  --bg-main: #242933;
+  --bg-surface: #2e3440;
+  --bg-elevated: #3b4252;
+  --border-color: rgba(67, 76, 94, 0.9);
+  --border-active: rgba(136, 192, 208, 0.6);
+  --text-main: #eceff4;
+  --text-muted: #98a4b8;
+  --text-bright: #ffffff;
+  --accent-primary: #88c0d0;
+  --accent-secondary: #81a1c1;
+  --accent-emerald: #a3be8c;
+  --accent-amber: #ebcb8b;
+  --glow-primary: rgba(136, 192, 208, 0.15);
+  --glow-secondary: rgba(129, 161, 193, 0.15);
+}
+
+[data-theme="catppuccin"] {
+  --bg-main: #181825;
+  --bg-surface: #1e1e2e;
+  --bg-elevated: #313244;
+  --border-color: rgba(69, 71, 90, 0.9);
+  --border-active: rgba(203, 166, 247, 0.6);
+  --text-main: #cdd6f4;
+  --text-muted: #9399b2;
+  --text-bright: #ffffff;
+  --accent-primary: #cba6f7;
+  --accent-secondary: #89b4fa;
+  --accent-emerald: #a6e3a1;
+  --accent-amber: #f9e2af;
+  --glow-primary: rgba(203, 166, 247, 0.15);
+  --glow-secondary: rgba(137, 180, 250, 0.15);
+}
+
+[data-theme="matcha"] {
+  --bg-main: #0e1513;
+  --bg-surface: #131d1a;
+  --bg-elevated: #1a2924;
+  --border-color: rgba(38, 61, 53, 0.9);
+  --border-active: rgba(74, 222, 128, 0.6);
+  --text-main: #e1efe6;
+  --text-muted: #82a494;
+  --text-bright: #ffffff;
+  --accent-primary: #4ade80;
+  --accent-secondary: #2dd4bf;
+  --accent-emerald: #86efac;
+  --accent-amber: #fde047;
+  --glow-primary: rgba(74, 222, 128, 0.15);
+  --glow-secondary: rgba(45, 212, 191, 0.15);
 }
 
 body {
-  background-color: #060913;
-  color: #f8fafc;
+  background-color: var(--bg-main);
+  color: var(--text-main);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   overflow-x: hidden;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Custom Sleek Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
+.custom-scrollbar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
   width: 5px;
   height: 5px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+.custom-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+  background: var(--text-muted);
+  opacity: 0.3;
   border-radius: 9999px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
-}
-
-/* Animations */
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.05);
-  }
-}
-
-.animate-pulse-glow {
-  animation: pulseGlow 4s ease-in-out infinite;
-}
-
-/* Glassmorphism helpers */
+/* Glassmorphism helpers with CSS variables */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--bg-surface);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(51, 65, 85, 0.6);
+  border: 1px solid var(--border-color);
 }
 
 .glass-card {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--bg-surface);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(51, 65, 85, 0.5);
+  border: 1px solid var(--border-color);
+}
+
+/* Smooth Interactive Elements */
+button, a {
+  transition: all 0.15s ease-in-out;
 }
