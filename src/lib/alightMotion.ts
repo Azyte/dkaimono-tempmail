@@ -1,7 +1,8 @@
 import { db } from './db';
+import { syncExternalInbox } from './publicMailboxBridge';
 import { AmPremiumAccount } from '@/types';
 
-export type AmEngine = 'auto' | 'v1' | 'v2' | 'v3' | 'v4';
+export type AmEngine = 'auto' | 'all4' | 'v1' | 'v2' | 'v3' | 'v4';
 
 export interface AmAccountResult {
   id: string;
@@ -108,7 +109,17 @@ export async function requestMagicLink(
     }
   }
 
-  // Auto Mode: Cascading through Firebase -> V4 -> V3 -> V1 -> V2
+  // Auto / All4 Mode: Cascading through V4 -> Firebase Core -> V3 -> V1 -> V2
+  try {
+    const r4 = await fetch('https://dapjimotionpro.my.id/api/proxy-rafael?action=send', {
+      method: 'POST',
+      headers: HEADERS,
+      body: JSON.stringify({ email: emailAddress }),
+    });
+    const d4 = await r4.json().catch(() => ({}));
+    if (d4.success || d4.status) return { success: true, engineUsed: 'Generator V4 (Rafael VIP)' };
+  } catch (e) {}
+
   try {
     const fbRes = await fetch(
       `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${FIREBASE_API_KEY}`,
@@ -128,22 +139,10 @@ export async function requestMagicLink(
     );
     const fbData = await fbRes.json().catch(() => ({}));
     if (fbRes.ok && fbData.email) {
-      return { success: true, engineUsed: 'Firebase Direct Core (Zero Rate-Limit)' };
+      return { success: true, engineUsed: 'Firebase Direct Core' };
     }
   } catch (e) {}
 
-  // Fallback V4
-  try {
-    const r4 = await fetch('https://dapjimotionpro.my.id/api/proxy-rafael?action=send', {
-      method: 'POST',
-      headers: HEADERS,
-      body: JSON.stringify({ email: emailAddress }),
-    });
-    const d4 = await r4.json().catch(() => ({}));
-    if (d4.success || d4.status) return { success: true, engineUsed: 'Generator V4 (Rafael VIP)' };
-  } catch (e) {}
-
-  // Fallback V3
   try {
     const r3 = await fetch('https://dapjimotionpro.my.id/api/proxy-qsr', {
       method: 'POST',
@@ -154,7 +153,6 @@ export async function requestMagicLink(
     if (d3.success || d3.status) return { success: true, engineUsed: 'Generator V3 (QSR Cloud)' };
   } catch (e) {}
 
-  // Fallback V1
   try {
     const r1 = await fetch('https://dapjimotionpro.my.id/api/proxy-v1', {
       method: 'POST',
@@ -168,38 +166,24 @@ export async function requestMagicLink(
   return { success: false, engineUsed: 'auto', error: 'Semua 4 server generator sedang cooldown. Coba sesaat lagi.' };
 }
 
-function extractMagicLinkFromEmail(html: string, text: string): string | null {
-  let rawLink: string | null = null;
+export function extractMagicLinkFromEmail(html: string, text: string): string | null {
+  const combined = (html || '') + ' ' + (text || '');
 
-  if (html) {
-    const linkMatch =
-      html.match(/href=["'](https:\/\/alight-creative\.firebaseapp\.com\/__\/auth\/links[^"'>\s]+)["']/i) ||
-      html.match(/href=["'](https:\/\/[^"'>\s]*alightcreative\.com\/auth_action[^"'>\s]+)["']/i) ||
-      html.match(/href=["'](https:\/\/[^"'>\s]*oobCode=[^"'>\s]+)["']/i);
-
-    if (linkMatch) {
-      rawLink = linkMatch[1].replace(/&amp;/g, '&');
-    }
+  // 1. Match href attributes with Firebase Auth / Alight Creative action URL
+  const hrefMatch =
+    combined.match(/href=["']([^"']*(?:firebaseapp\.com\/__\/auth\/links|alightcreative\.com\/auth_action|oobCode=)[^"']*)["']/i);
+  if (hrefMatch) {
+    return hrefMatch[1].replace(/&amp;/g, '&').replace(/[.,;)]+$/, '').trim();
   }
 
-  if (!rawLink && text) {
-    const textMatch =
-      text.match(/(https:\/\/alight-creative\.firebaseapp\.com\/__\/auth\/links[^\s<>"']+)/i) ||
-      text.match(/(https:\/\/[^\s<>"']*alightcreative\.com\/auth_action[^\s<>"']+)/i) ||
-      text.match(/(https:\/\/[^\s<>"']*oobCode=[^\s<>"']+)/i);
-
-    if (textMatch) {
-      rawLink = textMatch[1].replace(/[.,;)]+$/, '').replace(/&amp;/g, '&');
-    }
+  // 2. Match raw text URLs
+  const textMatch =
+    combined.match(/(https?:\/\/[^\s<>"']*(?:firebaseapp\.com\/__\/auth\/links|alightcreative\.com\/auth_action|oobCode=)[^\s<>"']*)/i);
+  if (textMatch) {
+    return textMatch[1].replace(/&amp;/g, '&').replace(/[.,;)]+$/, '').trim();
   }
 
-  if (!rawLink) return null;
-
-  if (rawLink.startsWith('https://alight-creative.firebaseapp.com/')) {
-    return rawLink;
-  }
-
-  return `https://alight-creative.firebaseapp.com/__/auth/links?link=${encodeURIComponent(rawLink)}`;
+  return null;
 }
 
 // 2. Verification across all 4 generators
@@ -208,34 +192,47 @@ export async function verifyAmMagicLink(
   magicLink: string,
   engine: AmEngine = 'auto'
 ): Promise<{ success: boolean; duration?: string; orderId?: string; engineUsed?: string; message?: string; error?: string; isRateLimit?: boolean }> {
-  const wrappedLink = magicLink.startsWith('https://alight-creative.firebaseapp.com/')
-    ? magicLink
-    : `https://alight-creative.firebaseapp.com/__/auth/links?link=${encodeURIComponent(magicLink)}`;
+  const rawLink = magicLink.replace(/&amp;/g, '&').trim();
+  const wrappedLink = rawLink.startsWith('https://alight-creative.firebaseapp.com/')
+    ? rawLink
+    : `https://alight-creative.firebaseapp.com/__/auth/links?link=${encodeURIComponent(rawLink)}`;
 
   // Engine 4: Rafael VIP verify + apply
-  if (engine === 'v4' || engine === 'auto') {
+  if (engine === 'v4' || engine === 'auto' || engine === 'all4') {
     try {
-      const v4Res = await fetch('https://dapjimotionpro.my.id/api/proxy-rafael?action=verify', {
+      // Try rawLink first, fallback to wrappedLink
+      let v4Res = await fetch('https://dapjimotionpro.my.id/api/proxy-rafael?action=verify', {
         method: 'POST',
         headers: HEADERS,
-        body: JSON.stringify({ email: emailAddress, link: wrappedLink }),
+        body: JSON.stringify({ email: emailAddress, link: rawLink }),
       });
-      const v4Data = await v4Res.json().catch(() => ({}));
-      if (v4Data.success) {
-        // Now apply premium
+      let v4Data = await v4Res.json().catch(() => ({}));
+
+      if (!v4Data.success && !v4Data.idToken) {
+        v4Res = await fetch('https://dapjimotionpro.my.id/api/proxy-rafael?action=verify', {
+          method: 'POST',
+          headers: HEADERS,
+          body: JSON.stringify({ email: emailAddress, link: wrappedLink }),
+        });
+        v4Data = await v4Res.json().catch(() => ({}));
+      }
+
+      const idToken = v4Data.idToken || v4Data.profile?.idToken;
+      if (v4Data.success && idToken) {
+        // Apply premium using idToken
         const applyRes = await fetch('https://dapjimotionpro.my.id/api/proxy-rafael?action=apply', {
           method: 'POST',
           headers: HEADERS,
-          body: JSON.stringify({ email: emailAddress, verifiedData: v4Data }),
+          body: JSON.stringify({ email: emailAddress, idToken }),
         });
         const applyData = await applyRes.json().catch(() => ({}));
         if (applyData.success || applyData.status) {
           return {
             success: true,
-            duration: applyData.duration || '1 Tahun Premium (V4 Rafael VIP)',
-            orderId: v4Data.codeOrder || 'ORD_V4_' + Math.random().toString(36).substring(2, 7),
+            duration: '1 Tahun Premium (V4 Rafael VIP)',
+            orderId: v4Data.codeOrder || applyData.data?.codeorder || 'ORD_V4_' + Math.random().toString(36).substring(2, 7),
             engineUsed: 'Generator 4 (Rafael VIP)',
-            message: 'Akun Alight Motion Pro berhasil diaktifkan via Generator V4!',
+            message: 'Akun Alight Motion Pro 1 Tahun Sukses Diaktifkan!',
           };
         }
       }
@@ -246,7 +243,7 @@ export async function verifyAmMagicLink(
   }
 
   // Engine 3: QSR Cloud
-  if (engine === 'v3' || engine === 'auto') {
+  if (engine === 'v3' || engine === 'auto' || engine === 'all4') {
     try {
       const encEmail = encodeURIComponent(emailAddress);
       const encLink = encodeURIComponent(wrappedLink);
@@ -264,7 +261,6 @@ export async function verifyAmMagicLink(
         };
       }
 
-      // Fallback via dapji proxy-qsr
       const p3Res = await fetch('https://dapjimotionpro.my.id/api/proxy-qsr', {
         method: 'POST',
         headers: HEADERS,
@@ -287,7 +283,7 @@ export async function verifyAmMagicLink(
   }
 
   // Engine 1: Dapji V1
-  if (engine === 'v1' || engine === 'auto') {
+  if (engine === 'v1' || engine === 'auto' || engine === 'all4') {
     try {
       const v1Res = await fetch('https://dapjimotionpro.my.id/api/proxy-v1', {
         method: 'POST',
@@ -311,7 +307,7 @@ export async function verifyAmMagicLink(
   }
 
   // Engine 2: AmPrem V2
-  if (engine === 'v2' || engine === 'auto') {
+  if (engine === 'v2' || engine === 'auto' || engine === 'all4') {
     try {
       const v2Res = await fetch('https://dapjimotionpro.my.id/api/proxy-amprem', {
         method: 'POST',
@@ -391,17 +387,22 @@ export async function createSingleAmPremium(
   // Poll for magic link and auto verify
   let magicLink: string | null = null;
   const startTime = Date.now();
-  const timeoutMs = 25000;
+  const timeoutMs = 28000;
 
   while (Date.now() - startTime < timeoutMs) {
     await new Promise((r) => setTimeout(r, 2000));
+    // Live sync from external provider (Guerrilla, Mail.tm, etc.)
+    await syncExternalInbox(emailAddress);
+
     const messages = db.getMessages(emailAddress);
     const amEmail = messages.find(
       (m) =>
         m.from.address.toLowerCase().includes('alight') ||
         m.from.address.toLowerCase().includes('firebase') ||
         m.subject.toLowerCase().includes('alight') ||
-        m.subject.toLowerCase().includes('sign in')
+        m.subject.toLowerCase().includes('sign in') ||
+        (m.html && m.html.includes('auth_action')) ||
+        (m.text && m.text.includes('auth_action'))
     );
 
     if (amEmail) {
@@ -517,7 +518,7 @@ export async function createBatchAmPremium(
   deviceFingerprint?: string,
   engine: AmEngine = 'auto'
 ): Promise<AmAccountResult[]> {
-  if (engine === ('all4' as any)) {
+  if (engine === 'all4') {
     return await createAll4GensParallel(domain, userId, deviceFingerprint);
   }
 
@@ -546,7 +547,9 @@ export async function verifyExistingAmAccount(
     return { success: false, error: 'Akun tidak ditemukan' };
   }
 
-  // Find magic link if missing
+  // 1. Sync live external inbox first
+  await syncExternalInbox(target.email);
+
   let magicLink = target.magicLink;
   if (!magicLink) {
     const messages = db.getMessages(target.email);
@@ -555,17 +558,47 @@ export async function verifyExistingAmAccount(
         m.from.address.toLowerCase().includes('alight') ||
         m.from.address.toLowerCase().includes('firebase') ||
         m.subject.toLowerCase().includes('alight') ||
-        m.subject.toLowerCase().includes('sign in')
+        m.subject.toLowerCase().includes('sign in') ||
+        (m.html && m.html.includes('auth_action')) ||
+        (m.text && m.text.includes('auth_action'))
     );
     if (amEmail) {
       magicLink = extractMagicLinkFromEmail(amEmail.html, amEmail.text) || undefined;
     }
   }
 
+  // 2. If magicLink is still missing, auto-request a fresh magic link and wait
   if (!magicLink) {
-    return { success: false, error: 'Tautan magic link email belum ditemukan di kotak masuk.' };
+    await requestMagicLink(target.email, engine);
+    const startTime = Date.now();
+    while (Date.now() - startTime < 15000) {
+      await new Promise((r) => setTimeout(r, 2000));
+      await syncExternalInbox(target.email);
+      const messages = db.getMessages(target.email);
+      const amEmail = messages.find(
+        (m) =>
+          m.from.address.toLowerCase().includes('alight') ||
+          m.from.address.toLowerCase().includes('firebase') ||
+          m.subject.toLowerCase().includes('alight') ||
+          m.subject.toLowerCase().includes('sign in') ||
+          (m.html && m.html.includes('auth_action')) ||
+          (m.text && m.text.includes('auth_action'))
+      );
+      if (amEmail) {
+        magicLink = extractMagicLinkFromEmail(amEmail.html, amEmail.text) || undefined;
+        if (magicLink) break;
+      }
+    }
   }
 
+  if (!magicLink) {
+    return {
+      success: false,
+      error: 'Tautan magic link sedang dalam proses pengiriman server. Silakan cek kotak masuk Anda.',
+    };
+  }
+
+  // 3. Verify magic link across 4 engines
   const result = await verifyAmMagicLink(target.email, magicLink, engine);
   if (result.success) {
     const updated: AmPremiumAccount = {
