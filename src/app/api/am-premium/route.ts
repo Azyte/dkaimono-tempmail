@@ -110,16 +110,17 @@ export async function POST(req: NextRequest) {
     const serviceType: ServiceType = body.serviceType || 'alight_motion';
     const customAlias = body.customAlias ? String(body.customAlias).trim() : undefined;
     const inviteUrl = body.inviteUrl ? String(body.inviteUrl).trim() : undefined;
+    const amEngine = body.amEngine || 'auto';
 
     if (isNaN(count) || count < 1) count = 1;
     if (count > 10) count = 10; // Max 10 per batch
 
-    const domain = db.getSettings().defaultDomain || 'loginptn.xyz';
+    const domain = body.domain || db.getSettings().defaultDomain || 'loginptn.xyz';
     const results = [];
 
     for (let i = 0; i < count; i++) {
       const alias = count === 1 ? customAlias : undefined;
-      const result = await createMultiServiceAccount(serviceType, alias, inviteUrl, domain, user.id, deviceId);
+      const result = await createMultiServiceAccount(serviceType, alias, inviteUrl, domain, user.id, deviceId, amEngine);
       results.push(result);
 
       if (result.success) {

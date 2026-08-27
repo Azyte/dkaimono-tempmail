@@ -1,6 +1,6 @@
 import { db } from './db';
 import { AmPremiumAccount } from '@/types';
-import { createSingleAmPremium, AmAccountResult } from './alightMotion';
+import { createSingleAmPremium, AmAccountResult, AmEngine } from './alightMotion';
 import { createWarpPremiumAccount } from './warpGenerator';
 import { generateOutlineAccessKey } from './outlineVpnGenerator';
 import { generateProtonVpnConfig } from './protonVpnGenerator';
@@ -66,7 +66,8 @@ export async function createMultiServiceAccount(
   inviteUrl?: string,
   domain = 'loginptn.xyz',
   userId?: string,
-  deviceFingerprint?: string
+  deviceFingerprint?: string,
+  amEngine: AmEngine = 'auto'
 ): Promise<
   AmAccountResult & {
     password?: string;
@@ -99,9 +100,9 @@ export async function createMultiServiceAccount(
   const now = new Date().toISOString();
   const serviceDef = SUPPORTED_SERVICES[serviceType] || SUPPORTED_SERVICES.custom;
 
-  // 1. SERVICE: Alight Motion Premium (100% Full Auto Server)
+  // 1. SERVICE: Alight Motion Premium (100% Full Auto 4-Engine Server)
   if (serviceType === 'alight_motion') {
-    const amRes = await createSingleAmPremium(customAlias, domain, userId, deviceFingerprint);
+    const amRes = await createSingleAmPremium(customAlias, domain, userId, deviceFingerprint, amEngine);
 
     if (amRes.id) {
       const savedAccounts = db.getAmAccounts(userId);

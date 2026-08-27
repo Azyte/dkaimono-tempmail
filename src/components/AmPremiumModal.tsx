@@ -92,6 +92,7 @@ const CATEGORIES: CategoryTab[] = [
 export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumModalProps) {
   const [activeCategory, setActiveCategory] = useState<ServiceCategory>('all');
   const [serviceType, setServiceType] = useState<ServiceType>('alight_motion');
+  const [amEngine, setAmEngine] = useState<'auto' | 'v1' | 'v2' | 'v3' | 'v4'>('auto');
   const [count, setCount] = useState<number>(1);
   const [customAlias, setCustomAlias] = useState<string>('');
   const [inviteUrl, setInviteUrl] = useState<string>('');
@@ -144,6 +145,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
         body: JSON.stringify({
           serviceType,
           count,
+          amEngine,
           customAlias: count === 1 && customAlias.trim() ? customAlias.trim() : undefined,
           inviteUrl: inviteUrl.trim() || undefined,
         }),
@@ -439,10 +441,46 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
 
           {/* Generator Form */}
           <form onSubmit={handleGenerate} className="space-y-3.5">
+            {/* Alight Motion 4 Generator Engines Selector */}
+            {serviceType === 'alight_motion' && (
+              <div className="space-y-2 rounded-2xl border border-indigo-500/30 bg-indigo-950/25 p-3 sm:p-3.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>Pilih Engine Server Generator (4 Generator Dapmojin):</span>
+                  </label>
+                  <span className="text-[10px] text-emerald-400 font-medium">Bisa Create Banyak Akun</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-0.5">
+                  {[
+                    { id: 'auto', name: '⚡ Auto (Semua 4)', desc: 'Auto Coba Semua' },
+                    { id: 'v1', name: '🚀 Gen 1 (Dapji)', desc: 'Dapji Classic V1' },
+                    { id: 'v2', name: '⚡ Gen 2 (AmPrem)', desc: 'Turbo Server V2' },
+                    { id: 'v3', name: '☁️ Gen 3 (QSR)', desc: 'QSR Cloud V3' },
+                    { id: 'v4', name: '👑 Gen 4 (Rafael)', desc: 'VIP Key V4' },
+                  ].map((eng) => (
+                    <button
+                      key={eng.id}
+                      type="button"
+                      onClick={() => setAmEngine(eng.id as any)}
+                      className={`p-2 rounded-xl border text-left transition-all ${
+                        amEngine === eng.id
+                          ? 'border-cyan-400 bg-cyan-950/60 text-white font-bold ring-1 ring-cyan-400/50 shadow-sm'
+                          : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                      }`}
+                    >
+                      <div className="text-[11px] font-bold truncate">{eng.name}</div>
+                      <div className="text-[9px] text-slate-500 truncate">{eng.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Batch Count Selector */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-300">
-                Jumlah Output yang Dibuat:
+                Jumlah Akun yang Dibuat Sekaligus:
               </label>
               <div className="grid grid-cols-5 gap-1.5">
                 {[1, 2, 3, 5, 10].map((num) => (

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { syncExternalInbox } from '@/lib/publicMailboxBridge';
 
 interface RouteContext {
   params: Promise<{ address: string }>;
@@ -10,6 +11,9 @@ export async function GET(req: NextRequest, context: RouteContext) {
     const { address } = await context.params;
     const decoded = decodeURIComponent(address);
     const { searchParams } = new URL(req.url);
+
+    // Sync live incoming emails from external public providers if applicable
+    await syncExternalInbox(decoded);
 
     const folder = (searchParams.get('folder') || 'all') as 'all' | 'inbox' | 'spam' | 'starred';
     const search = searchParams.get('search') || undefined;
