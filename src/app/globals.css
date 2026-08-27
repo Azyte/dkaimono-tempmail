@@ -2,6 +2,23 @@
 
 /* 1. THEME DEFINITIONS */
 :root,
+[data-theme="midnight"] {
+  --bg-main: #080b11;
+  --bg-surface: #0f1523;
+  --bg-elevated: #162033;
+  --border-color: rgba(30, 41, 59, 0.85);
+  --border-active: rgba(6, 182, 212, 0.6);
+  --text-main: #e2e8f0;
+  --text-muted: #64748b;
+  --text-bright: #ffffff;
+  --accent-primary: #06b6d4;
+  --accent-secondary: #38bdf8;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --glow-primary: rgba(6, 182, 212, 0.15);
+  --glow-secondary: rgba(56, 189, 248, 0.15);
+}
+
 [data-theme="tokyonight"] {
   --bg-main: #16161e;
   --bg-surface: #1a1b26;
@@ -12,11 +29,45 @@
   --text-muted: #7982a9;
   --text-bright: #ffffff;
   --accent-primary: #7aa2f7;
-  --accent-secondary: #7dcfff;
+  --accent-secondary: #f43f5e;
   --accent-emerald: #73daca;
   --accent-amber: #e0af68;
   --glow-primary: rgba(122, 162, 247, 0.15);
-  --glow-secondary: rgba(125, 207, 255, 0.15);
+  --glow-secondary: rgba(244, 63, 94, 0.15);
+}
+
+[data-theme="emerald"] {
+  --bg-main: #091512;
+  --bg-surface: #11221d;
+  --bg-elevated: #19332b;
+  --border-color: rgba(30, 60, 50, 0.85);
+  --border-active: rgba(16, 185, 129, 0.6);
+  --text-main: #ecfdf5;
+  --text-muted: #6ee7b7;
+  --text-bright: #ffffff;
+  --accent-primary: #10b981;
+  --accent-secondary: #34d399;
+  --accent-emerald: #6ee7b7;
+  --accent-amber: #fbbf24;
+  --glow-primary: rgba(16, 185, 129, 0.15);
+  --glow-secondary: rgba(52, 211, 153, 0.15);
+}
+
+[data-theme="nordic"] {
+  --bg-main: #181a1f;
+  --bg-surface: #22262e;
+  --bg-elevated: #2c323d;
+  --border-color: rgba(55, 65, 81, 0.85);
+  --border-active: rgba(245, 158, 11, 0.6);
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --text-bright: #ffffff;
+  --accent-primary: #f59e0b;
+  --accent-secondary: #fbbf24;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  --glow-primary: rgba(245, 158, 11, 0.15);
+  --glow-secondary: rgba(251, 191, 36, 0.15);
 }
 
 [data-theme="nord"] {
@@ -34,40 +85,6 @@
   --accent-amber: #ebcb8b;
   --glow-primary: rgba(136, 192, 208, 0.15);
   --glow-secondary: rgba(129, 161, 193, 0.15);
-}
-
-[data-theme="catppuccin"] {
-  --bg-main: #181825;
-  --bg-surface: #1e1e2e;
-  --bg-elevated: #313244;
-  --border-color: rgba(69, 71, 90, 0.9);
-  --border-active: rgba(203, 166, 247, 0.6);
-  --text-main: #cdd6f4;
-  --text-muted: #9399b2;
-  --text-bright: #ffffff;
-  --accent-primary: #cba6f7;
-  --accent-secondary: #89b4fa;
-  --accent-emerald: #a6e3a1;
-  --accent-amber: #f9e2af;
-  --glow-primary: rgba(203, 166, 247, 0.15);
-  --glow-secondary: rgba(137, 180, 250, 0.15);
-}
-
-[data-theme="matcha"] {
-  --bg-main: #0e1513;
-  --bg-surface: #131d1a;
-  --bg-elevated: #1a2924;
-  --border-color: rgba(38, 61, 53, 0.9);
-  --border-active: rgba(74, 222, 128, 0.6);
-  --text-main: #e1efe6;
-  --text-muted: #82a494;
-  --text-bright: #ffffff;
-  --accent-primary: #4ade80;
-  --accent-secondary: #2dd4bf;
-  --accent-emerald: #86efac;
-  --accent-amber: #fde047;
-  --glow-primary: rgba(74, 222, 128, 0.15);
-  --glow-secondary: rgba(45, 212, 191, 0.15);
 }
 
 body {
@@ -98,19 +115,38 @@ body {
   border-radius: 9999px;
 }
 
-/* Glassmorphism helpers with CSS variables */
-.glass-panel {
+/* Glassmorphism Bento Card Helpers */
+.bento-card {
   background: var(--bg-surface);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
 }
 
-.glass-card {
+.bento-card-interactive {
   background: var(--bg-surface);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bento-card-interactive:hover {
+  border-color: var(--border-active);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px -10px var(--glow-primary);
+}
+
+/* Pulse animation for live indicators */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.15); }
+}
+
+.animate-live-pulse {
+  animation: live-pulse 2s infinite ease-in-out;
 }
 
 /* Smooth Interactive Elements */

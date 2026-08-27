@@ -5,7 +5,7 @@ import { Palette, Check, Info } from 'lucide-react';
 import { THEME_OPTIONS, AppTheme, applyTheme, getInitialTheme } from '@/lib/theme';
 
 export function ThemeTab() {
-  const [currentTheme, setCurrentTheme] = useState<AppTheme>('tokyonight');
+  const [currentTheme, setCurrentTheme] = useState<AppTheme>('midnight');
 
   useEffect(() => {
     setCurrentTheme(getInitialTheme());

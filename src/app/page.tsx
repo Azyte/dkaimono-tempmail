@@ -14,10 +14,40 @@ import { AuthModal } from '@/components/AuthModal';
 import { AmPremiumModal } from '@/components/AmPremiumModal';
 import { AmAccountsTab } from '@/components/AmAccountsTab';
 import { ThemeModal } from '@/components/ThemeModal';
+import { VideoClipEditorModal } from '@/components/VideoClipEditorModal';
+import { QrisPaymentModal } from '@/components/QrisPaymentModal';
+import { ReferralModal } from '@/components/ReferralModal';
+import { ServerHealthCard } from '@/components/ServerHealthCard';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { applyTheme, getInitialTheme } from '@/lib/theme';
 import { AppSettings, DomainConfig, EmailMessage, Mailbox, User } from '@/types';
 import { playNotificationSound } from '@/lib/sound';
-import { Mail, Inbox, ShieldAlert, Star, Shuffle, Settings, FlaskConical, Crown, Zap, Palette } from 'lucide-react';
+import {
+  triggerEmailNotification,
+  requestNotificationPermission,
+} from '@/lib/notifications';
+import {
+  Mail,
+  Inbox,
+  ShieldAlert,
+  Star,
+  Shuffle,
+  Settings,
+  FlaskConical,
+  Crown,
+  Zap,
+  Palette,
+  Scissors,
+  Gift,
+  QrCode,
+  Sparkles,
+  Layers,
+  Activity,
+  ArrowUpRight,
+  ShieldCheck,
+  CheckCircle2,
+} from 'lucide-react';
+import { fireConfetti } from '@/lib/confetti';
 
 export default function Home() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -52,6 +82,9 @@ export default function Home() {
   const [qrCodeModalOpen, setQrCodeModalOpen] = useState(false);
   const [amPremiumModalOpen, setAmPremiumModalOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
+  const [qrisModalOpen, setQrisModalOpen] = useState(false);
+  const [referralModalOpen, setReferralModalOpen] = useState(false);
+  const [videoStudioOpen, setVideoStudioOpen] = useState(false);
 
   // Keep previous messages count to detect incoming mail and play chime
   const prevCountRef = useRef<number>(0);
@@ -60,7 +93,9 @@ export default function Home() {
   const fetchAmAccountsCount = useCallback(async () => {
     if (typeof window === 'undefined') return;
     const token = localStorage.getItem('tempmail_session_token');
-    const deviceId = localStorage.getItem('tempmail_device_id') || 'dev_' + Math.random().toString(36).substring(2, 9);
+    const deviceId =
+      localStorage.getItem('tempmail_device_id') ||
+      'dev_' + Math.random().toString(36).substring(2, 9);
     localStorage.setItem('tempmail_device_id', deviceId);
 
     const headers: Record<string, string> = { 'x-device-id': deviceId };
@@ -120,255 +155,203 @@ export default function Home() {
       const settData = await settRes.json();
       const domData = await domRes.json();
 
-      if (settData.success && settData.settings) {
+      if (settData.success) {
         setSettings(settData.settings);
-        setSoundEnabled(settData.settings.soundEnabled);
       }
 
-      if (domData.success && domData.domains) {
+      if (domData.success && domData.domains && domData.domains.length > 0) {
         setDomains(domData.domains);
         const primary = domData.domains.find((d: DomainConfig) => d.isPrimary) || domData.domains[0];
-        if (primary && !activeDomain) {
-          setActiveDomain(primary.name);
-        }
+        setActiveDomain(primary.domain);
+      } else {
+        setActiveDomain('loginptn.xyz');
       }
     } catch (err) {
-      console.error('Error fetching settings/domains:', err);
+      console.error('Error loading settings/domains:', err);
+      setActiveDomain('loginptn.xyz');
     }
-  }, [activeDomain]);
+  }, []);
 
   // 2. Fetch messages for active mailbox
-  const fetchMessages = useCallback(async (mailboxAddress: string, folder = currentFolder) => {
-    if (!mailboxAddress) return;
-    if (folder === 'am_accounts') return;
-    setIsRefreshing(true);
-    try {
-      const res = await fetch(
-        `/api/mailboxes/${encodeURIComponent(mailboxAddress)}/messages?folder=${folder}`
-      );
-      const data = await res.json();
-      if (data.success && Array.isArray(data.messages)) {
-        setMessages(data.messages);
+  const fetchMessages = useCallback(
+    async (address: string, silent = false) => {
+      if (!silent) setIsRefreshing(true);
+      try {
+        const res = await fetch(`/api/mailboxes/${encodeURIComponent(address)}/messages`);
+        const data = await res.json();
 
-        if (data.messages.length > prevCountRef.current && prevCountRef.current !== 0) {
-          if (soundEnabled) {
-            playNotificationSound();
+        if (data.success && Array.isArray(data.messages)) {
+          setMessages(data.messages);
+
+          // If new mail arrived
+          if (data.messages.length > prevCountRef.current && prevCountRef.current > 0) {
+            if (soundEnabled) {
+              playNotificationSound();
+            }
+            const latestMsg = data.messages[0];
+            if (latestMsg) {
+              triggerEmailNotification(latestMsg.from, latestMsg.subject, latestMsg.snippet);
+            }
           }
+          prevCountRef.current = data.messages.length;
         }
-        prevCountRef.current = data.messages.length;
-
-        if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-          if (!selectedMessageId && data.messages.length > 0) {
-            setSelectedMessageId(data.messages[0].id);
-          }
-        }
+      } catch (err) {
+        console.error('Error fetching messages:', err);
+      } finally {
+        if (!silent) setIsRefreshing(false);
       }
-    } catch (err) {
-      console.error('Error fetching messages:', err);
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [currentFolder, selectedMessageId, soundEnabled]);
+    },
+    [soundEnabled]
+  );
 
-  // 3. Initialize or switch mailbox
-  const initMailbox = useCallback(async (targetAddress?: string) => {
-    try {
-      let url = '/api/mailboxes';
-      let options: RequestInit = { method: 'GET' };
+  // Initialize Mailbox
+  const initMailbox = useCallback(
+    async (targetAddress?: string) => {
+      const currentDom = activeDomain || 'loginptn.xyz';
+      let addressToUse = targetAddress;
 
-      if (targetAddress) {
-        url = `/api/mailboxes/${encodeURIComponent(targetAddress)}`;
-      } else {
-        options = {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ generateRandom: true, domain: activeDomain || 'loginptn.xyz' }),
-        };
-      }
-
-      const res = await fetch(url, options);
-      const data = await res.json();
-
-      if (data.success && data.mailbox) {
-        setMailbox(data.mailbox);
-        setSelectedMessageId(null);
-        prevCountRef.current = 0;
-        fetchMessages(data.mailbox.address);
-
-        if (typeof window !== 'undefined') {
-          const token = localStorage.getItem('tempmail_session_token');
-          if (token) {
-            fetch('/api/auth/save-mailbox', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-                'x-session-token': token,
-              },
-              body: JSON.stringify({ emailAddress: data.mailbox.address }),
-            }).catch(() => {});
-          }
+      if (!addressToUse) {
+        const saved = typeof window !== 'undefined' ? localStorage.getItem('tempmail_address') : null;
+        if (saved && saved.includes('@')) {
+          addressToUse = saved;
+        } else {
+          const randName = 'user' + Math.random().toString(36).substring(2, 8);
+          addressToUse = `${randName}@${currentDom}`;
         }
       }
-    } catch (err) {
-      console.error('Error initializing mailbox:', err);
-    }
-  }, [activeDomain, fetchMessages]);
 
+      const [local, dom] = addressToUse.split('@');
+      const finalDom = dom || currentDom;
+      const finalAddress = `${local}@${finalDom}`;
+
+      const mb: Mailbox = {
+        id: finalAddress,
+        address: finalAddress,
+        name: local,
+        domain: finalDom,
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        isStarred: false,
+        totalMessages: 0,
+      };
+
+      setMailbox(mb);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tempmail_address', finalAddress);
+      }
+
+      await fetchMessages(finalAddress);
+    },
+    [activeDomain, fetchMessages]
+  );
+
+  // Initial Load
   useEffect(() => {
     applyTheme(getInitialTheme());
     fetchSettingsAndDomains();
     fetchCurrentUser();
     fetchAmAccountsCount();
-  }, [fetchSettingsAndDomains, fetchCurrentUser, fetchAmAccountsCount]);
+    requestNotificationPermission();
 
-  useEffect(() => {
-    if (domains.length > 0 && !mailbox) {
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        const mailParam = urlParams.get('mail');
-        if (mailParam) {
-          const cleanAlias = mailParam.split('@')[0];
-          const targetDomain = mailParam.includes('@') ? mailParam.split('@')[1] : activeDomain || domains[0].name;
-          initMailbox(`${cleanAlias}@${targetDomain}`);
-          return;
+    // Check query params for shared alias or referral code
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const mailParam = params.get('mail');
+      const refParam = params.get('ref');
+
+      if (mailParam) {
+        const clean = mailParam.replace(/[^a-z0-9._-]/gi, '').toLowerCase();
+        if (clean) {
+          initMailbox(`${clean}@${activeDomain || 'loginptn.xyz'}`);
         }
+      } else {
+        initMailbox();
       }
-      initMailbox();
+
+      if (refParam) {
+        setReferralModalOpen(true);
+      }
     }
-  }, [domains, mailbox, initMailbox, activeDomain]);
+  }, [fetchSettingsAndDomains, fetchCurrentUser, fetchAmAccountsCount, initMailbox, activeDomain]);
 
-  // Periodic Auto-refresh Timer
+  // Polling Interval every 10 seconds
   useEffect(() => {
-    const intervalSeconds = settings?.autoRefreshSeconds || 10;
-    setRefreshCountdown(intervalSeconds);
+    if (!mailbox?.address) return;
 
-    const timer = setInterval(() => {
+    const interval = setInterval(() => {
       setRefreshCountdown((prev) => {
         if (prev <= 1) {
-          if (mailbox && currentFolder !== 'am_accounts') {
-            fetchMessages(mailbox.address, currentFolder);
-          }
-          return intervalSeconds;
+          fetchMessages(mailbox.address, true);
+          return 10;
         }
         return prev - 1;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [mailbox, currentFolder, settings?.autoRefreshSeconds, fetchMessages]);
+    return () => clearInterval(interval);
+  }, [mailbox?.address, fetchMessages]);
 
-  // Switch folder
+  // Handlers
+  const handleSelectDomain = (newDomain: string) => {
+    setActiveDomain(newDomain);
+    if (mailbox) {
+      const [local] = mailbox.address.split('@');
+      initMailbox(`${local}@${newDomain}`);
+    }
+  };
+
+  const handleGenerateRandom = () => {
+    const randName = 'user' + Math.random().toString(36).substring(2, 8);
+    initMailbox(`${randName}@${activeDomain || 'loginptn.xyz'}`);
+    fireConfetti();
+  };
+
+  const handleClearMailbox = () => {
+    setMessages([]);
+    setSelectedMessageId(null);
+    prevCountRef.current = 0;
+  };
+
+  const handleToggleSound = () => {
+    setSoundEnabled((prev) => !prev);
+  };
+
   const handleSelectFolder = (folder: FolderType) => {
     setCurrentFolder(folder);
     setSelectedMessageId(null);
-    if (mailbox && folder !== 'am_accounts') {
-      fetchMessages(mailbox.address, folder);
-    }
   };
 
-  // Generate random new mailbox
-  const handleGenerateRandom = () => {
-    initMailbox();
+  const handleToggleStar = async (msgId: string) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, isStarred: !m.isStarred } : m))
+    );
   };
 
-  // Switch domain
-  const handleSelectDomain = (domName: string) => {
-    setActiveDomain(domName);
-    if (mailbox) {
-      const newAddress = `${mailbox.name}@${domName}`;
-      initMailbox(newAddress);
-    }
-  };
-
-  // Toggle Star
-  const handleToggleStar = async (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    try {
-      const res = await fetch(`/api/messages/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'star' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === id ? { ...m, isStarred: data.isStarred } : m))
-        );
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Delete message
-  const handleDeleteMessage = async (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    try {
-      await fetch(`/api/messages/${id}`, { method: 'DELETE' });
-      setMessages((prev) => prev.filter((m) => m.id !== id));
-      if (selectedMessageId === id) {
-        setSelectedMessageId(null);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Clear all messages in mailbox
-  const handleClearMailbox = async () => {
-    if (!mailbox) return;
-    if (!confirm('Hapus SEMUA pesan di kotak masuk ini?')) return;
-    try {
-      await fetch(`/api/mailboxes/${encodeURIComponent(mailbox.address)}/messages`, {
-        method: 'DELETE',
-      });
-      setMessages([]);
+  const handleDeleteMessage = (msgId: string) => {
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    if (selectedMessageId === msgId) {
       setSelectedMessageId(null);
-    } catch (e) {
-      console.error(e);
     }
   };
 
-  // Open settings with specific tab
   const handleOpenSettings = (tab = 'dns') => {
     setSettingsInitialTab(tab);
     setSettingsModalOpen(true);
   };
 
-  // Toggle sound
-  const handleToggleSound = () => {
-    setSoundEnabled(!soundEnabled);
-  };
-
-  // Handle Logout
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('tempmail_session_token');
-        localStorage.removeItem('tempmail_saved_user');
-      }
-      setCurrentUser(null);
-      setAuthModalOpen(false);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const selectedMessage = messages.find((m) => m.id === selectedMessageId) || null;
-
+  // Folder Counts
   const counts = {
     all: messages.length,
     inbox: messages.filter((m) => !m.isSpam).length,
     spam: messages.filter((m) => m.isSpam).length,
     starred: messages.filter((m) => m.isStarred).length,
-    logs: 0,
     amAccounts: amAccountsCount,
   };
 
+  const selectedMessage = messages.find((m) => m.id === selectedMessageId) || null;
+
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg-main)] text-[var(--text-main)] pb-20 md:pb-8 transition-colors duration-200">
+    <div className="flex min-h-screen flex-col bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-200">
       {/* Top Navbar */}
       <Navbar
         settings={settings}
@@ -377,6 +360,9 @@ export default function Home() {
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
         onOpenThemeModal={() => setThemeModalOpen(true)}
+        onOpenQrisModal={() => setQrisModalOpen(true)}
+        onOpenReferralModal={() => setReferralModalOpen(true)}
+        onOpenVideoStudio={() => setVideoStudioOpen(true)}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
         activeDomain={activeDomain}
@@ -384,28 +370,118 @@ export default function Home() {
       />
 
       {/* Main Container */}
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-3 sm:gap-5 p-2.5 sm:p-5 lg:p-8">
-        {/* Hero Mailbox Bar (Hidden when in AM Accounts tab or viewing individual email) */}
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-3 sm:p-5 lg:p-6 pb-24 md:pb-8">
+        {/* Bento Row 1: Hero Mailbox & Quick Tools Launcher */}
         {currentFolder !== 'am_accounts' && (
-          <div className={selectedMessageId ? 'hidden md:block' : 'block'}>
-            <MailboxHeader
-              mailbox={mailbox}
-              domains={domains}
-              activeDomain={activeDomain}
-              onSelectDomain={handleSelectDomain}
-              onSelectMailbox={(address) => initMailbox(address)}
-              onGenerateRandom={handleGenerateRandom}
-              onOpenCustomAlias={() => setCustomAliasModalOpen(true)}
-              onOpenQrCode={() => setQrCodeModalOpen(true)}
-              onOpenTestEmail={() => setTestEmailModalOpen(true)}
-              onRefresh={() => mailbox && fetchMessages(mailbox.address)}
-              onClearMailbox={handleClearMailbox}
-              onOpenSettings={handleOpenSettings}
-              onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
-              isRefreshing={isRefreshing}
-              refreshCountdown={refreshCountdown}
-              totalMessages={messages.length}
-            />
+          <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 ${selectedMessageId ? 'hidden md:grid' : 'grid'}`}>
+            {/* Left Bento: Mailbox Header Controller */}
+            <div className="lg:col-span-8">
+              <MailboxHeader
+                mailbox={mailbox}
+                domains={domains}
+                activeDomain={activeDomain}
+                onSelectDomain={handleSelectDomain}
+                onSelectMailbox={(address) => initMailbox(address)}
+                onGenerateRandom={handleGenerateRandom}
+                onOpenCustomAlias={() => setCustomAliasModalOpen(true)}
+                onOpenQrCode={() => setQrCodeModalOpen(true)}
+                onOpenTestEmail={() => setTestEmailModalOpen(true)}
+                onRefresh={() => mailbox && fetchMessages(mailbox.address)}
+                onClearMailbox={handleClearMailbox}
+                onOpenSettings={handleOpenSettings}
+                onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
+                isRefreshing={isRefreshing}
+                refreshCountdown={refreshCountdown}
+                totalMessages={messages.length}
+              />
+            </div>
+
+            {/* Right Bento: Studio Quick Actions & Server Health */}
+            <div className="lg:col-span-4 flex flex-col gap-3">
+              {/* Studio & Generator Bento Tiles */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Tile 1: Video Clipper Studio */}
+                <button
+                  type="button"
+                  onClick={() => setVideoStudioOpen(true)}
+                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 mb-2 group-hover:scale-110 transition-transform">
+                    <Scissors className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-bold text-white flex items-center gap-1">
+                    <span>✂️ Video Studio</span>
+                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
+                  </span>
+                  <span className="text-[10px] text-slate-400">9:16 Shorts & Reels</span>
+                </button>
+
+                {/* Tile 2: Auto PRO Generator */}
+                <button
+                  type="button"
+                  onClick={() => setAmPremiumModalOpen(true)}
+                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 mb-2 group-hover:scale-110 transition-transform">
+                    <Zap className="h-5 w-5 fill-emerald-400" />
+                  </div>
+                  <span className="text-xs font-bold text-white flex items-center gap-1">
+                    <span>⚡ Generator PRO</span>
+                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
+                  </span>
+                  <span className="text-[10px] text-slate-400">Alight Motion V1-V4</span>
+                </button>
+
+                {/* Tile 3: QRIS Upgrade */}
+                <button
+                  type="button"
+                  onClick={() => setQrisModalOpen(true)}
+                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 mb-2 group-hover:scale-110 transition-transform">
+                    <QrCode className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-bold text-white flex items-center gap-1">
+                    <span>💳 QRIS Instant</span>
+                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
+                  </span>
+                  <span className="text-[10px] text-slate-400">Upgrade Otomatis</span>
+                </button>
+
+                {/* Tile 4: Referral Rewards */}
+                <button
+                  type="button"
+                  onClick={() => setReferralModalOpen(true)}
+                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-400 mb-2 group-hover:scale-110 transition-transform">
+                    <Gift className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-bold text-white flex items-center gap-1">
+                    <span>🎁 Referral Poin</span>
+                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
+                  </span>
+                  <span className="text-[10px] text-slate-400">Hadiah & Komisi</span>
+                </button>
+              </div>
+
+              {/* Server Ping Health Widget */}
+              <div className="bento-card rounded-2xl p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-live-pulse" />
+                  <div>
+                    <span className="text-[11px] font-bold text-white block">Cluster Server Online</span>
+                    <span className="text-[9px] text-slate-400">Ping 18ms • Siap TempMail & Generator</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAmPremiumModalOpen(true)}
+                  className="rounded-lg bg-slate-800 hover:bg-slate-700 px-2 py-1 text-[10px] font-bold text-slate-300 border border-slate-700"
+                >
+                  Cek Status
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -429,7 +505,7 @@ export default function Home() {
                     isActive
                       ? item.id === 'am_accounts'
                         ? 'bg-gradient-to-r from-emerald-600 to-cyan-600 text-white shadow-md'
-                        : 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-600/30'
+                        : 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-md shadow-cyan-600/30'
                       : 'border border-slate-800 bg-slate-900/90 text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -517,100 +593,31 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Floating Bottom Quick Action Bar for Mobile View */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800/90 bg-slate-950/95 p-1.5 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl md:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-around gap-1">
-          {/* ONLY show AM Prem button if user is PRO */}
-          {currentUser?.isPro && (
-            <button
-              onClick={() => setAmPremiumModalOpen(true)}
-              className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-bold text-emerald-400 active:scale-95 transition-all hover:bg-slate-900"
-            >
-              <Zap className="h-4 w-4 text-emerald-400 fill-emerald-400/20" />
-              <span>AM Prem</span>
-            </button>
-          )}
-
-          <button
-            onClick={handleGenerateRandom}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
-          >
-            <Shuffle className="h-4 w-4 text-amber-400" />
-            <span>Acak</span>
-          </button>
-
-          <button
-            onClick={() => setCustomAliasModalOpen(true)}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
-          >
-            <Mail className="h-4 w-4 text-sky-400" />
-            <span>Custom</span>
-          </button>
-
-          <button
-            onClick={() => handleOpenSettings('pro')}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-medium text-amber-300 active:scale-95 transition-all hover:bg-slate-900"
-          >
-            <Crown className="h-4 w-4 text-amber-400 fill-amber-400" />
-            <span>VIP</span>
-          </button>
-
-          <button
-            onClick={() => handleOpenSettings()}
-            className="flex flex-1 flex-col items-center gap-0.5 rounded-xl p-1.5 text-[9px] font-medium text-slate-300 active:scale-95 transition-all hover:bg-slate-900"
-          >
-            <Settings className="h-4 w-4 text-cyan-400" />
-            <span>Setting</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Modals */}
-      <AmPremiumModal
-        isOpen={amPremiumModalOpen}
-        onClose={() => setAmPremiumModalOpen(false)}
-        onSuccessCreated={() => {
-          fetchAmAccountsCount();
-          if (mailbox) fetchMessages(mailbox.address);
-        }}
+      {/* Floating Bottom Quick Action Dock for Mobile View */}
+      <MobileBottomNav
+        currentFolder={currentFolder}
+        onSelectFolder={handleSelectFolder}
+        onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
+        onOpenVideoStudio={() => setVideoStudioOpen(true)}
+        onOpenQrisModal={() => setQrisModalOpen(true)}
+        onOpenThemeModal={() => setThemeModalOpen(true)}
+        onOpenReferralModal={() => setReferralModalOpen(true)}
+        unreadCount={counts.inbox}
       />
 
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        currentUser={currentUser}
-        onAuthSuccess={(user, token) => {
-          setCurrentUser(user);
-          if (token && typeof window !== 'undefined') {
-            localStorage.setItem('tempmail_session_token', token);
-            localStorage.setItem('tempmail_saved_user', JSON.stringify(user));
-          }
-          fetchAmAccountsCount();
-        }}
-        onLogout={handleLogout}
-        onOpenProTab={() => handleOpenSettings('pro')}
-      />
-
+      {/* Modals & Dialogs */}
       <SettingsModal
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
         initialTab={settingsInitialTab}
-        settings={settings}
-        domains={domains}
         currentUser={currentUser}
-        onRefreshSettings={fetchSettingsAndDomains}
-        onRefreshDomains={fetchSettingsAndDomains}
-        onRefreshUser={() => {
-          fetchCurrentUser();
-          fetchAmAccountsCount();
-        }}
-        onOpenAuthModal={() => setAuthModalOpen(true)}
+        onUserUpdated={fetchCurrentUser}
       />
 
       <TestEmailModal
         isOpen={testEmailModalOpen}
         onClose={() => setTestEmailModalOpen(false)}
-        recipientEmail={mailbox?.address || `test@${activeDomain || 'loginptn.xyz'}`}
+        recipientAddress={mailbox?.address || ''}
         onSuccess={() => mailbox && fetchMessages(mailbox.address)}
       />
 
@@ -619,18 +626,78 @@ export default function Home() {
         onClose={() => setCustomAliasModalOpen(false)}
         domains={domains}
         activeDomain={activeDomain}
-        onSelectMailbox={(address) => initMailbox(address)}
+        onCreateAlias={(address) => initMailbox(address)}
+        isPro={currentUser?.isPro}
+        onOpenUpgrade={() => setQrisModalOpen(true)}
       />
 
       <QrCodeModal
         isOpen={qrCodeModalOpen}
         onClose={() => setQrCodeModalOpen(false)}
-        emailAddress={mailbox?.address || ''}
+        address={mailbox?.address || ''}
+      />
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={fetchCurrentUser}
+      />
+
+      <AmPremiumModal
+        isOpen={amPremiumModalOpen}
+        onClose={() => {
+          setAmPremiumModalOpen(false);
+          fetchAmAccountsCount();
+        }}
+        domains={domains}
+        activeDomain={activeDomain}
+        currentUser={currentUser}
+        onOpenMailbox={(alias) => {
+          initMailbox(`${alias}@${activeDomain || 'loginptn.xyz'}`);
+          setCurrentFolder('inbox');
+          setAmPremiumModalOpen(false);
+        }}
+        onOpenAuthModal={() => {
+          setAmPremiumModalOpen(false);
+          setAuthModalOpen(true);
+        }}
       />
 
       <ThemeModal
         isOpen={themeModalOpen}
         onClose={() => setThemeModalOpen(false)}
+      />
+
+      <QrisPaymentModal
+        isOpen={qrisModalOpen}
+        onClose={() => setQrisModalOpen(false)}
+        currentUser={currentUser}
+        onUpgradeSuccess={(upgraded) => {
+          setCurrentUser(upgraded);
+          fetchCurrentUser();
+        }}
+      />
+
+      <ReferralModal
+        isOpen={referralModalOpen}
+        onClose={() => setReferralModalOpen(false)}
+        currentUser={currentUser}
+        onOpenQrisModal={() => {
+          setReferralModalOpen(false);
+          setQrisModalOpen(true);
+        }}
+      />
+
+      <VideoClipEditorModal
+        isOpen={videoStudioOpen}
+        onClose={() => setVideoStudioOpen(false)}
+        initialVideoUrl="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+        initialTitle="TIPS RAHASIA VIRAL 99% ORANG BELUM TAHU! 😱"
+        initialHooks={[
+          'JANGAN PERNAH LAKUKAN INI! 😱',
+          '99% ORANG BELUM TAHU TRIK INI! 🤯',
+          'RAHASIA ALGORITMA TERBONGKAR! 🚨',
+        ]}
       />
     </div>
   );
