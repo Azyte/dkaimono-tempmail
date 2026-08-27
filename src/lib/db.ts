@@ -178,6 +178,95 @@ const DEFAULT_DOMAINS: DomainConfig[] = [
     mxRecords: ['10 route1.mx.cloudflare.net', '20 route2.mx.cloudflare.net', '30 route3.mx.cloudflare.net'],
     spfRecord: 'v=spf1 include:_spf.mx.cloudflare.net ~all',
   },
+  {
+    id: 'dom_dkaimono',
+    name: 'dkaimono.site',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    mxRecords: ['10 route1.mx.cloudflare.net', '20 route2.mx.cloudflare.net', '30 route3.mx.cloudflare.net'],
+  },
+  {
+    id: 'dom_tempmailpro',
+    name: 'tempmailpro.online',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dom_devinbox',
+    name: 'devinbox.tech',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dom_fastinbox',
+    name: 'fastinbox.space',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dom_cloudmail',
+    name: 'cloudmail.store',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dom_mohmal',
+    name: 'mohmal.me',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dom_guerrilla',
+    name: 'guerrillamail.biz',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dom_10minute',
+    name: '10minutemail.live',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dom_disposable',
+    name: 'disposable.cloud',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dom_vmail',
+    name: 'vmail.top',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'dom_dropmail',
+    name: 'dropmail.vip',
+    isPrimary: false,
+    isCatchAll: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  },
 ];
 
 const DEFAULT_VOUCHERS: Voucher[] = [
@@ -229,8 +318,18 @@ function loadDb(): DatabaseSchema {
       const content = fs.readFileSync(DB_PATH, 'utf-8');
       const parsed = JSON.parse(content) as DatabaseSchema;
       lastMtimeMs = stats.mtimeMs;
+
+      // Merge missing default domains so any newly added domain options are always available
+      const existingDomainNames = new Set((parsed.domains || []).map((d) => d.name.toLowerCase()));
+      const mergedDomains = [...(parsed.domains || [])];
+      for (const defDom of DEFAULT_DOMAINS) {
+        if (!existingDomainNames.has(defDom.name.toLowerCase())) {
+          mergedDomains.push(defDom);
+        }
+      }
+
       memoryDbCache = {
-        domains: parsed.domains || DEFAULT_DOMAINS,
+        domains: mergedDomains,
         mailboxes: parsed.mailboxes || [],
         messages: parsed.messages || [],
         settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
@@ -408,6 +507,20 @@ export const db = {
     }
 
     const [name, domain] = normalized.split('@');
+
+    // Auto-register domain into list if novel
+    if (domain && !data.domains.some((d) => d.name === domain)) {
+      data.domains.push({
+        id: 'dom_' + Math.random().toString(36).substring(2, 9),
+        name: domain,
+        isPrimary: false,
+        isCatchAll: true,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        mxRecords: [],
+      });
+    }
+
     const newMailbox: Mailbox = {
       id: 'mb_' + Math.random().toString(36).substring(2, 9),
       address: normalized,

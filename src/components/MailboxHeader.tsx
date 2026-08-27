@@ -149,31 +149,46 @@ export function MailboxHeader({
             </button>
 
             {domainDropdownOpen && (
-              <div className="absolute left-0 mt-1.5 w-60 rounded-2xl border border-slate-700 bg-slate-900/95 p-2 shadow-2xl z-50 backdrop-blur-xl">
-                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Domain Tersedia:
-                </div>
-                {domains.map((dom) => (
+              <div className="absolute left-0 mt-1.5 w-64 max-h-72 overflow-y-auto custom-scrollbar rounded-2xl border border-slate-700 bg-slate-900/95 p-2 shadow-2xl z-50 backdrop-blur-xl animate-in fade-in duration-150">
+                <div className="flex items-center justify-between px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 mb-1">
+                  <span>Domain Tersedia ({domains.length}):</span>
                   <button
-                    key={dom.id}
                     onClick={() => {
-                      onSelectDomain(dom.name);
                       setDomainDropdownOpen(false);
+                      onOpenCustomAlias();
                     }}
-                    className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-medium transition-all ${
-                      domain === dom.name
-                        ? 'bg-indigo-600/20 text-indigo-300 font-semibold border border-indigo-500/30'
-                        : 'text-slate-300 hover:bg-slate-800'
-                    }`}
+                    className="text-[9px] text-cyan-400 hover:underline font-bold lowercase"
                   >
-                    <span className="truncate">@{dom.name}</span>
-                    {dom.isPrimary && (
-                      <span className="rounded bg-indigo-500/20 px-1 py-0.2 text-[9px] text-indigo-300">
-                        Utama
-                      </span>
-                    )}
+                    + bebas ketik
                   </button>
-                ))}
+                </div>
+                <div className="space-y-0.5">
+                  {domains.map((dom) => (
+                    <button
+                      key={dom.id}
+                      onClick={() => {
+                        onSelectDomain(dom.name);
+                        setDomainDropdownOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-medium transition-all ${
+                        domain === dom.name
+                          ? 'bg-indigo-600/20 text-indigo-300 font-semibold border border-indigo-500/30'
+                          : 'text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="truncate font-mono text-[11px]">@{dom.name}</span>
+                      {dom.isPrimary ? (
+                        <span className="rounded bg-indigo-500/20 px-1 py-0.2 text-[8px] font-bold text-indigo-300">
+                          Utama
+                        </span>
+                      ) : (
+                        <span className="text-[9px] text-slate-500 font-normal">
+                          {dom.name.split('.').pop()}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
