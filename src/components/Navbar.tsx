@@ -29,6 +29,7 @@ interface NavbarProps {
   onOpenQrisModal?: () => void;
   onOpenReferralModal?: () => void;
   onOpenVideoStudio?: () => void;
+  onOpenGarapanModal?: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
   activeDomain: string;
@@ -45,6 +46,7 @@ export function Navbar({
   onOpenQrisModal,
   onOpenReferralModal,
   onOpenVideoStudio,
+  onOpenGarapanModal,
   soundEnabled,
   onToggleSound,
   activeDomain,
@@ -103,6 +105,17 @@ export function Navbar({
             >
               <Scissors className="h-3.5 w-3.5 text-rose-400 shrink-0" />
               <span>✂️ Video Studio</span>
+            </button>
+          )}
+
+          {/* Garapan App Premium Hub Button (Desktop/Tablet) */}
+          {onOpenGarapanModal && (
+            <button
+              onClick={onOpenGarapanModal}
+              className="hidden sm:flex items-center gap-1.5 rounded-xl border border-indigo-500/40 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-500/30 px-2.5 py-1.5 text-xs font-bold text-indigo-300 hover:from-indigo-600/40 hover:to-pink-500/40 active:scale-95 transition-all shadow-sm"
+              title="Hub Garapan App Premium & Bypass"
+            >
+              <span className="text-xs">🎁 Garapan Prem</span>
             </button>
           )}
 

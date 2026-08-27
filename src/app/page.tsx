@@ -17,6 +17,7 @@ import { ThemeModal } from '@/components/ThemeModal';
 import { VideoClipEditorModal } from '@/components/VideoClipEditorModal';
 import { QrisPaymentModal } from '@/components/QrisPaymentModal';
 import { ReferralModal } from '@/components/ReferralModal';
+import { GarapanPremModal } from '@/components/GarapanPremModal';
 import { ServerHealthCard } from '@/components/ServerHealthCard';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { applyTheme, getInitialTheme } from '@/lib/theme';
@@ -46,6 +47,7 @@ import {
   ArrowUpRight,
   ShieldCheck,
   CheckCircle2,
+  Award,
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
 
@@ -85,6 +87,7 @@ export default function Home() {
   const [qrisModalOpen, setQrisModalOpen] = useState(false);
   const [referralModalOpen, setReferralModalOpen] = useState(false);
   const [videoStudioOpen, setVideoStudioOpen] = useState(false);
+  const [garapanModalOpen, setGarapanModalOpen] = useState(false);
 
   // Keep previous messages count to detect incoming mail and play chime
   const prevCountRef = useRef<number>(0);
@@ -359,6 +362,7 @@ export default function Home() {
         onOpenSettings={handleOpenSettings}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
+        onOpenGarapanModal={() => setGarapanModalOpen(true)}
         onOpenThemeModal={() => setThemeModalOpen(true)}
         onOpenQrisModal={() => setQrisModalOpen(true)}
         onOpenReferralModal={() => setReferralModalOpen(true)}
@@ -400,68 +404,57 @@ export default function Home() {
             <div className="lg:col-span-4 flex flex-col gap-3">
               {/* Studio & Generator Bento Tiles */}
               <div className="grid grid-cols-2 gap-2.5">
-                {/* Tile 1: Video Clipper Studio */}
+                {/* Tile 1: Garapan App Prem (HIGHLIGHT) */}
+                <button
+                  type="button"
+                  onClick={() => setGarapanModalOpen(true)}
+                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group col-span-2 bg-gradient-to-r from-indigo-950/70 via-purple-950/60 to-slate-900 border border-indigo-500/40 shadow-lg shadow-indigo-950/50"
+                >
+                  <div className="w-full flex items-center justify-between">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 mb-1.5 group-hover:scale-110 transition-transform">
+                      <Award className="h-5 w-5 text-indigo-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-full">
+                      5 Toolkit Bypass
+                    </span>
+                  </div>
+                  <span className="text-xs font-black text-white flex items-center gap-1">
+                    <span>🎁 Hub Garapan App Premium</span>
+                    <ArrowUpRight className="h-3.5 w-3.5 text-indigo-400 group-hover:text-white" />
+                  </span>
+                  <span className="text-[10px] text-indigo-200/80">Edu KTM • Cookies • BIN Luhn • Family • Promo</span>
+                </button>
+
+                {/* Tile 2: Video Clipper Studio */}
                 <button
                   type="button"
                   onClick={() => setVideoStudioOpen(true)}
-                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group"
+                  className="bento-card-interactive flex flex-col items-start p-3 rounded-2xl text-left relative overflow-hidden group"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 mb-2 group-hover:scale-110 transition-transform">
-                    <Scissors className="h-5 w-5" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 mb-1.5 group-hover:scale-110 transition-transform">
+                    <Scissors className="h-4 w-4" />
                   </div>
                   <span className="text-xs font-bold text-white flex items-center gap-1">
                     <span>✂️ Video Studio</span>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
+                    <ArrowUpRight className="h-3 w-3 text-slate-400 group-hover:text-white" />
                   </span>
-                  <span className="text-[10px] text-slate-400">9:16 Shorts & Reels</span>
+                  <span className="text-[10px] text-slate-400 truncate">9:16 Shorts/FYP</span>
                 </button>
 
-                {/* Tile 2: Auto PRO Generator */}
+                {/* Tile 3: Auto PRO Generator */}
                 <button
                   type="button"
                   onClick={() => setAmPremiumModalOpen(true)}
-                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group"
+                  className="bento-card-interactive flex flex-col items-start p-3 rounded-2xl text-left relative overflow-hidden group"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 mb-2 group-hover:scale-110 transition-transform">
-                    <Zap className="h-5 w-5 fill-emerald-400" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform">
+                    <Zap className="h-4 w-4 fill-emerald-400" />
                   </div>
                   <span className="text-xs font-bold text-white flex items-center gap-1">
-                    <span>⚡ Generator PRO</span>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
+                    <span>⚡ Generator</span>
+                    <ArrowUpRight className="h-3 w-3 text-slate-400 group-hover:text-white" />
                   </span>
-                  <span className="text-[10px] text-slate-400">Alight Motion V1-V4</span>
-                </button>
-
-                {/* Tile 3: QRIS Upgrade */}
-                <button
-                  type="button"
-                  onClick={() => setQrisModalOpen(true)}
-                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 mb-2 group-hover:scale-110 transition-transform">
-                    <QrCode className="h-5 w-5" />
-                  </div>
-                  <span className="text-xs font-bold text-white flex items-center gap-1">
-                    <span>💳 QRIS Instant</span>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
-                  </span>
-                  <span className="text-[10px] text-slate-400">Upgrade Otomatis</span>
-                </button>
-
-                {/* Tile 4: Referral Rewards */}
-                <button
-                  type="button"
-                  onClick={() => setReferralModalOpen(true)}
-                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-400 mb-2 group-hover:scale-110 transition-transform">
-                    <Gift className="h-5 w-5" />
-                  </div>
-                  <span className="text-xs font-bold text-white flex items-center gap-1">
-                    <span>🎁 Referral Poin</span>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
-                  </span>
-                  <span className="text-[10px] text-slate-400">Hadiah & Komisi</span>
+                  <span className="text-[10px] text-slate-400 truncate">Alight Motion Pro</span>
                 </button>
               </div>
 
@@ -598,6 +591,7 @@ export default function Home() {
         currentFolder={currentFolder}
         onSelectFolder={handleSelectFolder}
         onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
+        onOpenGarapanModal={() => setGarapanModalOpen(true)}
         onOpenVideoStudio={() => setVideoStudioOpen(true)}
         onOpenQrisModal={() => setQrisModalOpen(true)}
         onOpenThemeModal={() => setThemeModalOpen(true)}
@@ -713,6 +707,16 @@ export default function Home() {
         }}
       />
 
+      {/* Hub Garapan App Premium & Bypass Studio */}
+      {garapanModalOpen && (
+        <GarapanPremModal
+          isOpen={garapanModalOpen}
+          onClose={() => setGarapanModalOpen(false)}
+          currentTempEmail={mailbox?.address}
+        />
+      )}
+
+      {/* Video Studio Modal */}
       {videoStudioOpen && (
         <VideoClipEditorModal
           isOpen={videoStudioOpen}

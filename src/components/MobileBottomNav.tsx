@@ -9,6 +9,7 @@ import {
   Palette,
   Gift,
   Share2,
+  Award,
 } from 'lucide-react';
 import { FolderType } from './FolderSidebar';
 
@@ -17,6 +18,7 @@ interface MobileBottomNavProps {
   onSelectFolder: (folder: FolderType) => void;
   onOpenAmPremiumModal: () => void;
   onOpenVideoStudio: () => void;
+  onOpenGarapanModal?: () => void;
   onOpenQrisModal: () => void;
   onOpenThemeModal: () => void;
   onOpenReferralModal: () => void;
@@ -28,6 +30,7 @@ export function MobileBottomNav({
   onSelectFolder,
   onOpenAmPremiumModal,
   onOpenVideoStudio,
+  onOpenGarapanModal,
   onOpenQrisModal,
   onOpenThemeModal,
   onOpenReferralModal,
@@ -87,34 +90,26 @@ export function MobileBottomNav({
           <Scissors className="h-6 w-6" />
         </button>
 
-        {/* 4. QRIS Upgrade */}
+        {/* 4. Garapan App Prem */}
+        {onOpenGarapanModal && (
+          <button
+            type="button"
+            onClick={onOpenGarapanModal}
+            className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 hover:text-indigo-400 transition-all active:scale-95"
+          >
+            <Award className="h-5 w-5 text-indigo-400" />
+            <span className="text-[10px] text-indigo-300 font-bold">Garapan</span>
+          </button>
+        )}
+
+        {/* 5. QRIS Upgrade */}
         <button
           type="button"
           onClick={onOpenQrisModal}
           className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 hover:text-amber-400 transition-all active:scale-95"
         >
           <QrCode className="h-5 w-5 text-amber-400" />
-          <span className="text-[10px]">QRIS PRO</span>
-        </button>
-
-        {/* 5. Referral / Gift */}
-        <button
-          type="button"
-          onClick={onOpenReferralModal}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 hover:text-purple-400 transition-all active:scale-95"
-        >
-          <Gift className="h-5 w-5 text-purple-400" />
-          <span className="text-[10px]">Referral</span>
-        </button>
-
-        {/* 6. Theme Switcher */}
-        <button
-          type="button"
-          onClick={onOpenThemeModal}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 hover:text-indigo-400 transition-all active:scale-95"
-        >
-          <Palette className="h-5 w-5 text-indigo-400" />
-          <span className="text-[10px]">Tema</span>
+          <span className="text-[10px]">QRIS</span>
         </button>
       </div>
     </div>
