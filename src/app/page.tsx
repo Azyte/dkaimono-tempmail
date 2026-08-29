@@ -415,14 +415,14 @@ export default function Home() {
                       <Award className="h-5 w-5 text-indigo-400" />
                     </div>
                     <span className="text-[10px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-full">
-                      5 Toolkit Bypass
+                      7 Power Tools V3
                     </span>
                   </div>
                   <span className="text-xs font-black text-white flex items-center gap-1">
-                    <span>🎁 Hub Garapan App Premium</span>
+                    <span>⚡ Dkaimono Power Studio</span>
                     <ArrowUpRight className="h-3.5 w-3.5 text-indigo-400 group-hover:text-white" />
                   </span>
-                  <span className="text-[10px] text-indigo-200/80">Edu KTM • Cookies • BIN Luhn • Family • Promo</span>
+                  <span className="text-[10px] text-indigo-200/80">Real Trials • Media Downloader • Live SMS • Edu KTM • VPN</span>
                 </button>
 
                 {/* Tile 2: Video Clipper Studio */}
