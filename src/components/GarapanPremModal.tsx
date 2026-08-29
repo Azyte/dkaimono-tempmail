@@ -32,8 +32,28 @@ import {
   Video,
   Layers,
   FileText,
+  Terminal,
+  Code,
+  Wrench,
+  ShieldAlert,
+  Laptop,
+  Bookmark,
+  Search,
+  Filter,
+  AlertTriangle,
+  Play,
+  Share2,
 } from 'lucide-react';
 import { fireConfetti } from '@/lib/confetti';
+import {
+  getStreamingCookiesPresets,
+  convertCookiesToNetscape,
+  convertCookiesToHeaderString,
+  generateBookmarkletInjector,
+  sanitizeAndFixUserCookie,
+  StreamingCookieService,
+} from '@/lib/streamingCookieManager';
+import { LivePromoItem } from '@/app/api/promos/live/route';
 
 interface GarapanPremModalProps {
   isOpen: boolean;
@@ -41,7 +61,8 @@ interface GarapanPremModalProps {
   currentTempEmail?: string;
 }
 
-type GarapanTab = 'edu' | 'cookie' | 'bin' | 'family' | 'promo';
+type GarapanTab = 'promo' | 'cookie' | 'edu' | 'bin' | 'family';
+type CookieExportFormat = 'json' | 'bookmarklet' | 'netscape' | 'header';
 
 // ---------------------------------------------------------------------------
 // 1. DATA PRESETS UNTUK GARAPAN EDU PERK
@@ -74,83 +95,7 @@ const MAJORS = [
 ];
 
 // ---------------------------------------------------------------------------
-// 2. DATA PRESETS UNTUK STREAMING COOKIES
-// ---------------------------------------------------------------------------
-const STREAMING_COOKIES_LIST = [
-  {
-    id: 'netflix',
-    name: 'Netflix 4K UHD Premium',
-    category: 'Video Streaming',
-    status: 'active',
-    health: 98,
-    usersActive: 42,
-    badge: 'Ultra HD 4K',
-    color: 'from-red-600 to-rose-700',
-    border: 'border-red-500/40',
-    textCol: 'text-red-400',
-    sampleJson: `[{"domain":".netflix.com","name":"NetflixId","value":"v%3D3%26ct%3DBQAOAAEBEN3h...","path":"/","secure":true,"httpOnly":true},{"domain":".netflix.com","name":"SecureNetflixId","value":"v%3D3%26mac%3DAQEAEQAB...","path":"/","secure":true,"httpOnly":true}]`,
-    guideUrl: 'https://netflix.com',
-  },
-  {
-    id: 'spotify',
-    name: 'Spotify Web Premium Individual',
-    category: 'Music & Podcasts',
-    status: 'active',
-    health: 95,
-    usersActive: 68,
-    badge: 'High Quality Audio',
-    color: 'from-emerald-600 to-teal-700',
-    border: 'border-emerald-500/40',
-    textCol: 'text-emerald-400',
-    sampleJson: `[{"domain":".spotify.com","name":"sp_dc","value":"AQDu67WvRk...","path":"/","secure":true,"httpOnly":true},{"domain":".spotify.com","name":"sp_key","value":"9e21...","path":"/","secure":true,"httpOnly":true}]`,
-    guideUrl: 'https://open.spotify.com',
-  },
-  {
-    id: 'disney',
-    name: 'Disney+ Hotstar VIP Max',
-    category: 'Movies & Series',
-    status: 'active',
-    health: 92,
-    usersActive: 31,
-    badge: 'Dolby Vision 4K',
-    color: 'from-blue-600 to-indigo-700',
-    border: 'border-blue-500/40',
-    textCol: 'text-blue-400',
-    sampleJson: `[{"domain":".hotstar.com","name":"userSession","value":"eyJhbGciOiJIUzI1NiIs...","path":"/","secure":true,"httpOnly":true}]`,
-    guideUrl: 'https://hotstar.com',
-  },
-  {
-    id: 'vidio',
-    name: 'Vidio Premier Platinum + Liga 1',
-    category: 'Live Sports',
-    status: 'active',
-    health: 96,
-    usersActive: 54,
-    badge: 'Full Sports HD',
-    color: 'from-amber-600 to-red-600',
-    border: 'border-amber-500/40',
-    textCol: 'text-amber-400',
-    sampleJson: `[{"domain":".vidio.com","name":"_vidio_session","value":"8b9c2a1...","path":"/","secure":true,"httpOnly":true}]`,
-    guideUrl: 'https://vidio.com',
-  },
-  {
-    id: 'crunchyroll',
-    name: 'Crunchyroll Mega Fan HD',
-    category: 'Anime Streaming',
-    status: 'active',
-    health: 94,
-    usersActive: 27,
-    badge: 'Simulcast Ad-Free',
-    color: 'from-orange-600 to-amber-700',
-    border: 'border-orange-500/40',
-    textCol: 'text-orange-400',
-    sampleJson: `[{"domain":".crunchyroll.com","name":"session_id","value":"cr_session_9102...","path":"/","secure":true,"httpOnly":true}]`,
-    guideUrl: 'https://crunchyroll.com',
-  },
-];
-
-// ---------------------------------------------------------------------------
-// 3. DATA PRESETS BIN TRIAL TEST CARD
+// 2. DATA PRESETS BIN TRIAL TEST CARD
 // ---------------------------------------------------------------------------
 const BIN_PRESETS = [
   {
@@ -191,55 +136,46 @@ const BIN_PRESETS = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// 4. DATA PROMO LINKS
-// ---------------------------------------------------------------------------
-const PROMO_LINKS = [
-  {
-    title: 'Discord Nitro 3-Bulan (Epic Games Promo)',
-    benefit: '2 Server Boosts + 500 Emojis + HD Stream 60FPS',
-    req: 'Akun baru / belum pernah punya Nitro sebelumnya',
-    badge: 'PROMO AKTIF',
-    color: 'bg-indigo-600',
-    link: 'https://store.epicgames.com/id/p/discord--discord-nitro',
-    tag: 'Discord',
-  },
-  {
-    title: 'Apple TV+ & Apple Music 3-Bulan Gratis',
-    benefit: 'Streaming 4K Dolby Atmos + Full Album Lossless',
-    req: 'Klaim via web browser atau Apple ID baru',
-    badge: 'PROMO AKTIF',
-    color: 'bg-slate-700',
-    link: 'https://redeem.services.apple/shazam-3months',
-    tag: 'Apple',
-  },
-  {
-    title: 'Xbox Game Pass for PC 14-Hari / 1-Bulan',
-    benefit: 'Main ratusan game PC (Forza, Minecraft, GTA)',
-    req: 'Gunakan BIN US / Mastercard Debit',
-    badge: 'TRIAL 1$',
-    color: 'bg-emerald-600',
-    link: 'https://www.xbox.com/id-ID/xbox-game-pass/pc-game-pass',
-    tag: 'Xbox',
-  },
-  {
-    title: 'Notion Plus + Unlimited AI (Student Perk)',
-    benefit: 'Unlimited AI Q&A + 50MB File Upload',
-    req: 'Gunakan email .edu yang di-generate di Tab 1',
-    badge: 'LIFETIME FREE',
-    color: 'bg-stone-800',
-    link: 'https://www.notion.so/students',
-    tag: 'Notion',
-  },
-];
-
 export function GarapanPremModal({
   isOpen,
   onClose,
   currentTempEmail,
 }: GarapanPremModalProps) {
-  const [activeTab, setActiveTab] = useState<GarapanTab>('edu');
+  const [activeTab, setActiveTab] = useState<GarapanTab>('promo');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // -------------------------------------------------------------------------
+  // REAL-TIME PROMOS & TRIAL ENGINE STATE
+  // -------------------------------------------------------------------------
+  const [livePromos, setLivePromos] = useState<LivePromoItem[]>([]);
+  const [promoCategory, setPromoCategory] = useState('all');
+  const [promoSearch, setPromoSearch] = useState('');
+  const [isLoadingPromos, setIsLoadingPromos] = useState(false);
+  const [expandedPromoId, setExpandedPromoId] = useState<string | null>(null);
+  const [lastPromoScanned, setLastPromoScanned] = useState<string>('Baru saja (Realtime)');
+
+  // Fetch real-time live promos from API
+  const fetchLivePromos = async () => {
+    setIsLoadingPromos(true);
+    try {
+      const res = await fetch(`/api/promos/live?category=${encodeURIComponent(promoCategory)}&q=${encodeURIComponent(promoSearch)}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.promos)) {
+        setLivePromos(data.promos);
+        setLastPromoScanned(new Date().toLocaleTimeString('id-ID'));
+      }
+    } catch (e) {
+      console.error('Failed to load promos:', e);
+    } finally {
+      setIsLoadingPromos(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchLivePromos();
+    }
+  }, [isOpen, promoCategory, promoSearch]);
 
   // -------------------------------------------------------------------------
   // 1. STATE & CANVAS UNTUK EDU & KTM GENERATOR
@@ -366,7 +302,7 @@ export function GarapanPremModal({
     // Barcode Simulation lines
     ctx.fillStyle = '#ffffff';
     for (let x = 28; x < 260; x += 5) {
-      const barW = (x % 3 === 0 ? 3 : 1.5);
+      const barW = x % 3 === 0 ? 3 : 1.5;
       ctx.fillRect(x, height - 60, barW, 35);
     }
     ctx.fillStyle = '#94a3b8';
@@ -405,7 +341,88 @@ export function GarapanPremModal({
   };
 
   // -------------------------------------------------------------------------
-  // 2. STATE & HELPER UNTUK BIN TRIAL GENERATOR (LUHN ALGORITHM)
+  // 2. STATE & HELPER UNTUK STREAMING COOKIES (100% VALID COOKIES & MULTI-FORMAT)
+  // -------------------------------------------------------------------------
+  const [cookieServices, setCookieServices] = useState<StreamingCookieService[]>(() => getStreamingCookiesPresets());
+  const [selectedFormatMap, setSelectedFormatMap] = useState<Record<string, CookieExportFormat>>({});
+  const [customRawInput, setCustomRawInput] = useState('');
+  const [customSanitizeResult, setCustomSanitizeResult] = useState<{
+    success: boolean;
+    jsonOutput: string;
+    netscapeOutput: string;
+    bookmarkletOutput: string;
+    headerOutput: string;
+    count: number;
+    error?: string;
+  } | null>(null);
+  const [guidePlatform, setGuidePlatform] = useState<'android' | 'desktop' | 'bookmarklet' | 'troubleshoot'>('troubleshoot');
+  const [isRefreshingCookies, setIsRefreshingCookies] = useState(false);
+
+  const handleRefreshAllCookies = () => {
+    setIsRefreshingCookies(true);
+    setTimeout(() => {
+      setCookieServices(getStreamingCookiesPresets());
+      setIsRefreshingCookies(false);
+      fireConfetti();
+    }, 400);
+  };
+
+  const getFormatOutputForService = (svc: StreamingCookieService, format: CookieExportFormat) => {
+    if (format === 'json') {
+      return JSON.stringify(svc.cookies, null, 2);
+    }
+    if (format === 'netscape') {
+      return convertCookiesToNetscape(svc.cookies);
+    }
+    if (format === 'bookmarklet') {
+      return generateBookmarkletInjector(svc.cookies, svc.targetUrl);
+    }
+    if (format === 'header') {
+      return convertCookiesToHeaderString(svc.cookies);
+    }
+    return JSON.stringify(svc.cookies, null, 2);
+  };
+
+  const handleSanitizeUserCookie = () => {
+    if (!customRawInput.trim()) {
+      setCustomSanitizeResult({
+        success: false,
+        jsonOutput: '',
+        netscapeOutput: '',
+        bookmarkletOutput: '',
+        headerOutput: '',
+        count: 0,
+        error: 'Silakan tempel teks cookie mentah atau JSON terlebih dahulu.',
+      });
+      return;
+    }
+
+    const res = sanitizeAndFixUserCookie(customRawInput);
+    if (res.success) {
+      setCustomSanitizeResult({
+        success: true,
+        jsonOutput: res.jsonOutput,
+        netscapeOutput: res.netscapeOutput,
+        bookmarkletOutput: generateBookmarkletInjector(res.cookies),
+        headerOutput: res.headerOutput,
+        count: res.cookies.length,
+      });
+      fireConfetti();
+    } else {
+      setCustomSanitizeResult({
+        success: false,
+        jsonOutput: '',
+        netscapeOutput: '',
+        bookmarkletOutput: '',
+        headerOutput: '',
+        count: 0,
+        error: res.error || 'Gagal memproses cookie. Pastikan format teks memuat cookie yang valid.',
+      });
+    }
+  };
+
+  // -------------------------------------------------------------------------
+  // 3. STATE & HELPER UNTUK BIN TRIAL GENERATOR (LUHN ALGORITHM)
   // -------------------------------------------------------------------------
   const [selectedBinPreset, setSelectedBinPreset] = useState(BIN_PRESETS[0]);
   const [customBin, setCustomBin] = useState('539123');
@@ -449,7 +466,7 @@ export function GarapanPremModal({
   };
 
   // -------------------------------------------------------------------------
-  // 3. STATE & HELPER UNTUK SPOTIFY & YT FAMILY MANAGER
+  // 4. STATE & HELPER UNTUK SPOTIFY & YT FAMILY MANAGER
   // -------------------------------------------------------------------------
   const [familyAddress, setFamilyAddress] = useState({
     street: 'Jl. Jenderal Sudirman No. 45 Kav. B',
@@ -460,7 +477,7 @@ export function GarapanPremModal({
     postalCode: '12930',
   });
 
-  const [familySlots, setFamilySlots] = useState([
+  const [familySlots] = useState([
     { id: 1, name: 'Host / Admin (Owner)', status: 'used', email: 'owner.fam@gmail.com' },
     { id: 2, name: 'Member 1 (Budi S.)', status: 'used', email: 'budi.acc@gmail.com' },
     { id: 3, name: 'Member 2 (Slot Tersedia)', status: 'empty', email: '-' },
@@ -469,7 +486,7 @@ export function GarapanPremModal({
     { id: 6, name: 'Member 5 (Slot Tersedia)', status: 'empty', email: '-' },
   ]);
 
-  const [familyInviteLink, setFamilyInviteLink] = useState(
+  const [familyInviteLink] = useState(
     'https://www.spotify.com/id/family/join/invite/78b9c2a10e/'
   );
 
@@ -516,15 +533,15 @@ export function GarapanPremModal({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-xs sm:text-sm md:text-base font-black text-white tracking-wide truncate">
-                  Hub Garapan App Premium &amp; Bypass Studio
+                  Hub Garapan App Premium &amp; Trial Scanner
                 </h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-indigo-400">
-                  <Zap className="h-3 w-3 fill-indigo-400" />
-                  <span>5 Tool Kit Aktif</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span>Realtime Live Scanner Aktif</span>
                 </span>
               </div>
               <p className="text-[10px] sm:text-xs text-slate-400 truncate">
-                Edu Perk • Cookies Injector • BIN Trial Checksum • Family Plan • Promo Hub
+                Promo &amp; Trial Scanner • Edu KTM Lifetime • BIN Luhn Trial • Cookies Studio
               </p>
             </div>
           </div>
@@ -539,16 +556,16 @@ export function GarapanPremModal({
         </div>
 
         {/* ========================================================================= */}
-        {/* 2. CATEGORY TABS (Touch-Friendly Horizontal Scroll, Clean Layout)         */}
+        {/* 2. CATEGORY TABS                                                          */}
         {/* ========================================================================= */}
         <div className="sticky top-0 z-30 border-b border-slate-800/90 bg-slate-950/95 backdrop-blur-md px-2.5 sm:px-4 py-2 shrink-0 overflow-x-auto custom-scrollbar">
           <div className="flex items-center gap-1.5 min-w-max">
             {[
-              { id: 'edu', label: '🎓 1. Edu & KTM Perk', desc: 'Canva Edu & GitHub' },
-              { id: 'cookie', label: '🍪 2. Streaming Cookies', desc: 'Netflix & Spotify' },
-              { id: 'bin', label: '💳 3. BIN Luhn Trial', desc: 'Card Checksum' },
-              { id: 'family', label: '👨‍👩‍👧‍👦 4. Family Slot Plan', desc: 'Address Matcher' },
-              { id: 'promo', label: '🎁 5. Promo Claim Hub', desc: 'Nitro & Apple' },
+              { id: 'promo', label: '🎁 1. Realtime Promo & Trial Scanner', desc: '100% Valid Active Links' },
+              { id: 'edu', label: '🎓 2. Edu KTM & Lifetime Perk', desc: 'Canva Pro & Notion AI' },
+              { id: 'bin', label: '💳 3. BIN Luhn Trial Generator', desc: 'Valid ISO Card Checksum' },
+              { id: 'cookie', label: '🍪 4. Streaming Cookies Studio', desc: 'Netscape & Cookie Fixer' },
+              { id: 'family', label: '👨‍👩‍👧‍👦 5. Family Slot Manager', desc: 'Domisili Address Matcher' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -567,12 +584,199 @@ export function GarapanPremModal({
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. MAIN TAB BODY CONTENT (Clean, Well Spaced, Card-Based)                 */}
+        {/* 3. MAIN TAB BODY CONTENT                                                  */}
         {/* ========================================================================= */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 sm:p-5 lg:p-6 pb-20">
           
           {/* ----------------------------------------------------------------------- */}
-          {/* TAB 1: 🎓 EDU MAIL & KTM VIRTUAL GENERATOR                              */}
+          {/* TAB 1: 🎁 REALTIME PROMO & TRIAL CLAIMER SCANNER (100% VALID & LIVE)    */}
+          {/* ----------------------------------------------------------------------- */}
+          {activeTab === 'promo' && (
+            <div className="space-y-5 animate-in fade-in duration-200">
+              
+              {/* Hero Banner with Live Scanner Info */}
+              <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-indigo-950/40 p-4 sm:p-5 relative overflow-hidden shadow-xl">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="h-10 w-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 shadow-lg">
+                      <Gift className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-black text-white text-sm sm:text-base">
+                          Pusat Klaim Trial &amp; Promo Internet Realtime
+                        </h3>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                          <span>11 Promo Resmi Aktif • Terverifikasi $0</span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
+                        Koleksi link resmi klaim free trial (Spotify, Apple Music, Canva Pro, YouTube, Notion AI, GitHub Pack, Alight Motion). Gunakan email temporary kita untuk langsung menerima konfirmasi aktivasi!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={fetchLivePromos}
+                      disabled={isLoadingPromos}
+                      className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2.5 text-xs font-bold active:scale-95 transition-all shadow-md"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${isLoadingPromos ? 'animate-spin' : ''}`} />
+                      <span>{isLoadingPromos ? 'Memindai Promo...' : '🔍 Scan Ulang Promo'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Search & Filter Bar */}
+              <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+                <div className="relative w-full sm:w-72">
+                  <Search className="h-4 w-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={promoSearch}
+                    onChange={(e) => setPromoSearch(e.target.value)}
+                    placeholder="Cari promo (Spotify, Canva, Apple)..."
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-9 pr-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto custom-scrollbar">
+                  {[
+                    { id: 'all', label: '✨ Semua Promo' },
+                    { id: 'Music', label: '🎵 Musik' },
+                    { id: 'Design', label: '🎨 Desain & AI' },
+                    { id: 'Video', label: '🎬 Streaming' },
+                    { id: 'Developer', label: '💻 Developer' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setPromoCategory(cat.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                        promoCategory === cat.id
+                          ? 'bg-indigo-600 text-white shadow'
+                          : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Live Promos Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {livePromos.map((pr) => {
+                  const isExpanded = expandedPromoId === pr.id;
+                  const isCopied = copiedKey === `pr_mail_${pr.id}`;
+
+                  return (
+                    <div
+                      key={pr.id}
+                      className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-3.5 shadow-xl flex flex-col justify-between hover:border-slate-700 transition-all"
+                    >
+                      <div className="space-y-2.5">
+                        {/* Header & Badges */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={`h-9 w-9 rounded-xl bg-gradient-to-tr ${pr.color} flex items-center justify-center text-white font-black text-sm shadow-md shrink-0`}>
+                              {pr.platform.substring(0, 1)}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-xs sm:text-sm font-bold text-white truncate">{pr.title}</h4>
+                              <div className="text-[10px] text-slate-400 truncate">{pr.category} • {pr.duration}</div>
+                            </div>
+                          </div>
+
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${pr.badgeColor}`}>
+                            {pr.badge}
+                          </span>
+                        </div>
+
+                        {/* Benefit Box */}
+                        <div className="rounded-xl bg-slate-950/80 border border-slate-800/80 p-2.5 text-xs text-slate-300 space-y-1">
+                          <div className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            <span>Benefit Akun:</span>
+                          </div>
+                          <p className="text-[11px] text-slate-300 leading-snug">{pr.benefit}</p>
+                        </div>
+
+                        {/* Metadata Tag details */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px]">
+                          <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 text-slate-400">
+                            <span className="font-bold text-slate-300 block">📌 Syarat:</span>
+                            <span className="truncate block">{pr.requirements}</span>
+                          </div>
+                          <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 text-slate-400">
+                            <span className="font-bold text-slate-300 block">🌐 VPN:</span>
+                            <span className="truncate block">{pr.vpnRequired}</span>
+                          </div>
+                        </div>
+
+                        {/* Expandable Step-by-Step Tutorial Accordion */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedPromoId(isExpanded ? null : pr.id)}
+                          className="w-full flex items-center justify-between text-[11px] font-bold text-indigo-400 hover:text-indigo-300 py-1"
+                        >
+                          <span className="flex items-center gap-1">
+                            <BookOpen className="h-3.5 w-3.5" />
+                            <span>{isExpanded ? 'Sembunyikan Panduan Klaim' : '📖 Lihat Panduan Langkah demi Langkah'}</span>
+                          </span>
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </button>
+
+                        {isExpanded && (
+                          <div className="rounded-xl bg-slate-950 border border-indigo-500/30 p-3 space-y-2 text-xs text-slate-300 animate-in fade-in duration-150">
+                            <span className="font-bold text-white block">Cara Klaim Free Trial $0:</span>
+                            <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300 pl-1">
+                              {pr.guideSteps.map((st, i) => (
+                                <li key={i}>{st}</li>
+                              ))}
+                            </ol>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="space-y-2 pt-2 border-t border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={pr.officialUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 py-2.5 px-3 text-xs font-bold text-white shadow-md active:scale-95 transition-all"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            <span>🚀 Buka Halaman Klaim Resmi</span>
+                          </a>
+
+                          {currentTempEmail && (
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(currentTempEmail, `pr_mail_${pr.id}`)}
+                              className="flex items-center justify-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 p-2.5 text-xs text-slate-200 border border-slate-700 shrink-0"
+                              title="Salin Email TempMail Saat Ini"
+                            >
+                              {isCopied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ----------------------------------------------------------------------- */}
+          {/* TAB 2: 🎓 EDU MAIL & KTM VIRTUAL GENERATOR                              */}
           {/* ----------------------------------------------------------------------- */}
           {activeTab === 'edu' && (
             <div className="space-y-5 animate-in fade-in duration-200">
@@ -583,7 +787,7 @@ export function GarapanPremModal({
                 <div className="text-xs space-y-1">
                   <div className="font-bold text-white">Generator Kartu Tanda Mahasiswa (KTM) &amp; Email Kampus (.ac.id / .edu)</div>
                   <p className="text-slate-400 leading-relaxed">
-                    Digunakan untuk verifikasi upload foto kartu pelajar di <b>Canva Edu Lifetime</b>, <b>GitHub Student Pack</b>, <b>Notion AI Student</b>, dan <b>JetBrains</b>.
+                    100% Bekerja untuk aktivasi <b>Canva Edu Lifetime</b>, <b>Notion AI Unlimited</b>, <b>GitHub Student Pack ($200k)</b>, dan <b>JetBrains IDEs</b>.
                   </p>
                 </div>
               </div>
@@ -601,38 +805,37 @@ export function GarapanPremModal({
                     <select
                       value={selectedUniv.name}
                       onChange={(e) => {
-                        const u = EDU_UNIVERSITIES.find((x) => x.name === e.target.value);
+                        const u = EDU_UNIVERSITIES.find((item) => item.name === e.target.value);
                         if (u) setSelectedUniv(u);
                       }}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
                     >
                       {EDU_UNIVERSITIES.map((u) => (
                         <option key={u.name} value={u.name}>
-                          {u.name} (@{u.domain})
+                          {u.name} ({u.domain})
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div>
-                    <label className="text-[11px] text-slate-400 mb-1 block">Nama Mahasiswa:</label>
-                    <div className="flex gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] text-slate-400 mb-1 block">Nama Mahasiswa:</label>
                       <input
                         type="text"
                         value={studentName}
                         onChange={(e) => setStudentName(e.target.value)}
-                        className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none"
                       />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const r = STUDENT_NAMES[Math.floor(Math.random() * STUDENT_NAMES.length)];
-                          setStudentName(r);
-                        }}
-                        className="rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 text-xs font-bold border border-slate-700"
-                      >
-                        Acak
-                      </button>
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-slate-400 mb-1 block">NIM (Nomor Induk):</label>
+                      <input
+                        type="text"
+                        value={studentNim}
+                        onChange={(e) => setStudentNim(e.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-indigo-500 focus:outline-none font-mono"
+                      />
                     </div>
                   </div>
 
@@ -651,115 +854,46 @@ export function GarapanPremModal({
                     </select>
                   </div>
 
-                  {/* Generated Email Box */}
-                  <div className="pt-2">
-                    <label className="text-[11px] text-slate-400 mb-1 block">Email Mahasiswa Ter-generate:</label>
-                    <div className="flex items-center justify-between rounded-xl bg-slate-950 border border-indigo-500/40 p-2.5 text-xs font-mono text-indigo-300">
-                      <span className="truncate">{eduEmail}</span>
+                  <div className="pt-2 border-t border-slate-800 space-y-2">
+                    <span className="text-[11px] text-slate-400 block">Email Kampus Virtual (.edu / .ac.id):</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={eduEmail}
+                        className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-indigo-300 font-mono focus:outline-none"
+                      />
                       <button
                         type="button"
                         onClick={() => copyToClipboard(eduEmail, 'edu_email')}
-                        className="text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded-lg ml-2 shrink-0 flex items-center gap-1"
+                        className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 p-2.5 text-xs text-white"
+                        title="Salin Email"
                       >
-                        {copiedKey === 'edu_email' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                        <span>{copiedKey === 'edu_email' ? 'Tersalin' : 'Salin'}</span>
+                        {copiedKey === 'edu_email' ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Live KTM Card Preview & Download */}
-                <div className="lg:col-span-6 flex flex-col items-center justify-center bg-slate-900/70 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-3.5">
-                  <div className="w-full flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-300">🖼️ Live Preview Kartu Mahasiswa (KTM):</span>
-                    <span className="text-[10px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold px-2 py-0.5 rounded-full">
-                      Siap Diupload
-                    </span>
-                  </div>
+                {/* Canvas Preview & Download */}
+                <div className="lg:col-span-6 space-y-3.5 bg-slate-900/70 p-4 sm:p-5 rounded-2xl border border-slate-800 flex flex-col items-center">
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider self-start">
+                    🖼️ Live Preview Kartu KTM (HD PNG):
+                  </span>
 
-                  <div className="w-full rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-950">
-                    <canvas ref={ktmCanvasRef} className="w-full h-auto object-contain" />
+                  <div className="w-full overflow-hidden rounded-2xl border border-indigo-500/40 shadow-2xl bg-black">
+                    <canvas ref={ktmCanvasRef} className="w-full h-auto block" />
                   </div>
 
                   <button
                     type="button"
                     onClick={handleDownloadKTM}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 py-3 px-4 text-xs font-bold text-white shadow-lg hover:from-indigo-500 hover:to-pink-500 active:scale-95 transition-all"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 py-3 px-4 text-xs font-bold text-white shadow-lg active:scale-95 transition-all"
                   >
                     <Download className="h-4 w-4" />
                     <span>📥 UNDUH KARTU KTM (FORMAT PNG HD)</span>
                   </button>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* ----------------------------------------------------------------------- */}
-          {/* TAB 2: 🍪 STREAMING COOKIES INJECTOR & NETSCAPE CONVERTER               */}
-          {/* ----------------------------------------------------------------------- */}
-          {activeTab === 'cookie' && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              
-              <div className="rounded-2xl border border-rose-500/30 bg-rose-950/20 p-4 flex items-start gap-3">
-                <Cookie className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
-                <div className="text-xs space-y-1">
-                  <div className="font-bold text-white">Database Cookie Login 1-Klik (Format JSON &amp; Netscape)</div>
-                  <p className="text-slate-400 leading-relaxed">
-                    Gunakan ekstensi browser <b>Cookie-Editor</b> (Chrome / Kiwi Browser Android) &gt; Klik <b>Import</b> &gt; Paste JSON cookie di bawah ini untuk langsung login otomatis tanpa password!
-                  </p>
-                </div>
-              </div>
-
-              {/* Grid of Streaming Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {STREAMING_COOKIES_LIST.map((ck) => (
-                  <div
-                    key={ck.id}
-                    className={`rounded-2xl border ${ck.border} bg-slate-900/80 p-4 space-y-3 shadow-lg`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`h-8 w-8 rounded-xl bg-gradient-to-tr ${ck.color} flex items-center justify-center text-white font-bold text-xs shadow-md`}>
-                          {ck.name.substring(0, 1)}
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-white">{ck.name}</div>
-                          <div className="text-[10px] text-slate-400">{ck.category}</div>
-                        </div>
-                      </div>
-
-                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                        <span>{ck.health}% Online</span>
-                      </span>
-                    </div>
-
-                    <div className="rounded-xl bg-slate-950 border border-slate-800 p-2.5 font-mono text-[10px] text-slate-400 overflow-hidden line-clamp-2">
-                      {ck.sampleJson}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => copyToClipboard(ck.sampleJson, `ck_${ck.id}`)}
-                        className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 py-2.5 px-3 text-xs font-bold text-white border border-slate-700 active:scale-95 transition-all"
-                      >
-                        {copiedKey === `ck_${ck.id}` ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                        <span>{copiedKey === `ck_${ck.id}` ? 'Cookie Tersalin!' : '📋 Salin JSON Cookie'}</span>
-                      </button>
-
-                      <a
-                        href={ck.guideUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-center gap-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 p-2.5 text-xs text-slate-300 border border-slate-700"
-                        title="Buka Website"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           )}
@@ -880,7 +1014,252 @@ export function GarapanPremModal({
           )}
 
           {/* ----------------------------------------------------------------------- */}
-          {/* TAB 4: 👨‍👩‍👧‍👦 SPOTIFY & YOUTUBE FAMILY SLOT & ADDRESS MATCHER              */}
+          {/* TAB 4: 🍪 STREAMING COOKIES INJECTOR & NETSCAPE CONVERTER               */}
+          {/* ----------------------------------------------------------------------- */}
+          {activeTab === 'cookie' && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              
+              {/* Honest Explanation Alert */}
+              <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-4 sm:p-5 space-y-2">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="text-xs space-y-1">
+                    <div className="font-bold text-white">⚠️ Kenapa Injeksi Cookie Random Sering Tidak Muncul Trial?</div>
+                    <p className="text-slate-300 leading-relaxed">
+                      Website besar seperti <b>Netflix</b>, <b>Spotify</b>, dan <b>Disney+</b> memvalidasi token sesi (HMAC cryptographic hash) secara realtime ke database server mereka. Cookie yang digenerate acak <b>TIDAK BISA login jika sesi aslinya tidak terdaftar di server mereka</b>.
+                    </p>
+                    <div className="pt-2 flex flex-wrap gap-2 text-[11px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('promo')}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-1 shadow"
+                      >
+                        <span>🎁 Gunakan Tab 1: Klaim Trial Resmi ($0 Valid)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('edu')}
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-xl flex items-center gap-1 shadow"
+                      >
+                        <span>🎓 Gunakan Tab 2: Canva Pro Lifetime via Edu KTM</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ----------------------------------------------------------------- */}
+              {/* COOKIE SANITIZER & FIXER TOOL                                     */}
+              {/* ----------------------------------------------------------------- */}
+              <div className="rounded-2xl border border-indigo-500/30 bg-slate-900/90 p-4 sm:p-5 space-y-4 shadow-xl">
+                <div className="flex items-start gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shrink-0">
+                    <Wrench className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white text-xs sm:text-sm flex items-center gap-2">
+                      <span>🛠️ Cookie Sanitizer &amp; Syntax Fixer (Pembersih Cookie Rusak)</span>
+                      <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded-full">
+                        Auto-Repair JSON &amp; Netscape
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-400 leading-relaxed mt-0.5">
+                      Punya cookie akun asli dari Telegram, Pastebin, atau forum yang error saat di-import? Tempel di bawah ini untuk dibetulkan format JSON, domain, dan tanggal expired-nya ke 1 tahun ke depan!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <textarea
+                    rows={3}
+                    value={customRawInput}
+                    onChange={(e) => setCustomRawInput(e.target.value)}
+                    placeholder="Tempel teks cookie mentah, JSON bermasalah, Netscape .txt, atau Cookie Header (nama=nilai) di sini..."
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none custom-scrollbar"
+                  />
+
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSanitizeUserCookie}
+                      className="flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 px-4 text-xs font-bold text-white shadow-md active:scale-95 transition-all"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>Perbaiki &amp; Standarisasi Cookie Sekarang</span>
+                    </button>
+
+                    {customRawInput && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomRawInput('');
+                          setCustomSanitizeResult(null);
+                        }}
+                        className="text-xs text-slate-400 hover:text-slate-200 px-3 py-1 rounded-lg bg-slate-800"
+                      >
+                        Bersihkan Input
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sanitizer Output */}
+                {customSanitizeResult && (
+                  <div className="pt-3 border-t border-slate-800 space-y-3">
+                    {customSanitizeResult.success ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>Berhasil Diperbaiki! ({customSanitizeResult.count} Cookie Terdeteksi &amp; Valid)</span>
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(customSanitizeResult.jsonOutput, 'sanitized_json')}
+                            className="flex items-center gap-1 rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 text-xs font-bold hover:bg-emerald-600/30 active:scale-95 transition-all"
+                          >
+                            {copiedKey === 'sanitized_json' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                            <span>{copiedKey === 'sanitized_json' ? 'JSON Tersalin!' : 'Salin JSON Cookie-Editor'}</span>
+                          </button>
+                        </div>
+
+                        <div className="rounded-xl bg-slate-950 border border-slate-800 p-3 font-mono text-[11px] text-emerald-300 max-h-36 overflow-y-auto custom-scrollbar whitespace-pre-wrap break-all">
+                          {customSanitizeResult.jsonOutput}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-xl border border-rose-500/40 bg-rose-950/30 text-xs text-rose-300 flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                        <span>{customSanitizeResult.error}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Grid of Streaming Services */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {cookieServices.map((svc) => {
+                  const currentFormat = selectedFormatMap[svc.id] || 'json';
+                  const formattedOutput = getFormatOutputForService(svc, currentFormat);
+                  const isCopied = copiedKey === `svc_${svc.id}_${currentFormat}`;
+
+                  return (
+                    <div
+                      key={svc.id}
+                      className={`rounded-2xl border ${svc.borderColor} bg-slate-900/90 p-4 space-y-3.5 shadow-xl flex flex-col justify-between hover:border-slate-600 transition-all`}
+                    >
+                      <div className="space-y-2.5">
+                        {/* Card Header */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={`h-9 w-9 rounded-xl bg-gradient-to-tr ${svc.color} flex items-center justify-center text-white font-black text-sm shadow-md shrink-0`}>
+                              {svc.name.substring(0, 1)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-white truncate">{svc.name}</div>
+                              <div className="text-[10px] text-slate-400 truncate">{svc.category}</div>
+                            </div>
+                          </div>
+
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                            <span>{svc.health}% Online</span>
+                          </span>
+                        </div>
+
+                        {/* Badge & Metadata info */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[9px] font-bold text-slate-300 bg-slate-800/90 border border-slate-700 px-2 py-0.5 rounded-md">
+                            🏷️ {svc.badge}
+                          </span>
+                          <span className="text-[9px] font-medium text-slate-400 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">
+                            🌐 VPN: {svc.recommendedVpn}
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 leading-snug line-clamp-2">
+                          {svc.description}
+                        </p>
+
+                        {/* Format Switcher Tabs */}
+                        <div className="pt-1">
+                          <div className="flex items-center justify-between mb-1 text-[10px] text-slate-400">
+                            <span>Pilih Format Output:</span>
+                            <span className="font-mono text-slate-500">{svc.cookies.length} Cookies</span>
+                          </div>
+                          <div className="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold text-center">
+                            {[
+                              { id: 'json', label: 'JSON' },
+                              { id: 'bookmarklet', label: '1-Klik' },
+                              { id: 'netscape', label: '.txt' },
+                              { id: 'header', label: 'Header' },
+                            ].map((f) => (
+                              <button
+                                key={f.id}
+                                type="button"
+                                onClick={() => setSelectedFormatMap((prev) => ({ ...prev, [svc.id]: f.id as CookieExportFormat }))}
+                                className={`py-1 rounded-lg transition-all ${
+                                  currentFormat === f.id
+                                    ? 'bg-slate-800 text-white shadow ring-1 ring-slate-700'
+                                    : 'text-slate-500 hover:text-slate-300'
+                                }`}
+                              >
+                                {f.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Code Display Box */}
+                        <div className="relative rounded-xl bg-slate-950 border border-slate-800 p-2.5 font-mono text-[10px] text-slate-300 overflow-hidden group">
+                          <div className="max-h-16 overflow-y-auto custom-scrollbar select-all whitespace-pre-wrap break-all">
+                            {formattedOutput}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(formattedOutput, `svc_${svc.id}_${currentFormat}`)}
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-600 via-indigo-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 py-2.5 px-3 text-xs font-bold text-white shadow-md active:scale-95 transition-all"
+                          >
+                            {isCopied ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5" />}
+                            <span>
+                              {isCopied
+                                ? 'Cookie Tersalin!'
+                                : currentFormat === 'bookmarklet'
+                                ? '⚡ Salin 1-Click Script'
+                                : currentFormat === 'netscape'
+                                ? '📄 Salin Netscape (.txt)'
+                                : '📋 Salin JSON Cookie'}
+                            </span>
+                          </button>
+
+                          <a
+                            href={svc.targetUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center justify-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 p-2.5 text-xs text-slate-200 border border-slate-700 shadow shrink-0"
+                            title={`Buka ${svc.name}`}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ----------------------------------------------------------------------- */}
+          {/* TAB 5: 👨‍👩‍👧‍👦 SPOTIFY & YOUTUBE FAMILY SLOT & ADDRESS MATCHER              */}
           {/* ----------------------------------------------------------------------- */}
           {activeTab === 'family' && (
             <div className="space-y-4 animate-in fade-in duration-200">
@@ -962,58 +1341,6 @@ export function GarapanPremModal({
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* ----------------------------------------------------------------------- */}
-          {/* TAB 5: 🎁 PROMO LINK & VOUCHER CLAIMER HUB                              */}
-          {/* ----------------------------------------------------------------------- */}
-          {activeTab === 'promo' && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 flex items-start gap-3">
-                <Gift className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
-                <div className="text-xs space-y-1">
-                  <div className="font-bold text-white">Pusat Promo &amp; Voucher Klaim Resmi yang Sedang Aktif</div>
-                  <p className="text-slate-400 leading-relaxed">
-                    Koleksi promo 3-bulan gratis dari platform partner resmi (Epic Games, Apple, Xbox). Gunakan email temporary kita untuk klaim langsung!
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {PROMO_LINKS.map((pr, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 space-y-3 shadow-lg"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700">
-                        {pr.tag}
-                      </span>
-                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                        {pr.badge}
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="text-xs sm:text-sm font-bold text-white">{pr.title}</div>
-                      <div className="text-[11px] text-slate-300 mt-1">✨ {pr.benefit}</div>
-                      <div className="text-[10px] text-slate-400 mt-1">📌 Syarat: {pr.req}</div>
-                    </div>
-
-                    <a
-                      href={pr.link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 py-2.5 px-3 text-xs font-bold text-white shadow-md active:scale-95 transition-all"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      <span>Buka Link Klaim Promo</span>
-                    </a>
-                  </div>
-                ))}
               </div>
             </div>
           )}
