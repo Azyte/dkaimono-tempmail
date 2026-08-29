@@ -17,7 +17,7 @@ import { ThemeModal } from '@/components/ThemeModal';
 import { VideoClipEditorModal } from '@/components/VideoClipEditorModal';
 import { QrisPaymentModal } from '@/components/QrisPaymentModal';
 import { ReferralModal } from '@/components/ReferralModal';
-import { GarapanPremModal } from '@/components/GarapanPremModal';
+import { PowerStudioModal } from '@/components/PowerStudioModal';
 import { ServerHealthCard } from '@/components/ServerHealthCard';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { applyTheme, getInitialTheme } from '@/lib/theme';
@@ -412,17 +412,17 @@ export default function Home() {
                 >
                   <div className="w-full flex items-center justify-between">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 mb-1.5 group-hover:scale-110 transition-transform">
-                      <Award className="h-5 w-5 text-indigo-400" />
+                      <Sparkles className="h-5 w-5 text-indigo-400" />
                     </div>
                     <span className="text-[10px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-full">
-                      7 Power Tools V3
+                      8 In 1 Suite
                     </span>
                   </div>
                   <span className="text-xs font-black text-white flex items-center gap-1">
-                    <span>⚡ Dkaimono Power Studio</span>
+                    <span>⚡ Cyber Power Studio &amp; DevTools Hub</span>
                     <ArrowUpRight className="h-3.5 w-3.5 text-indigo-400 group-hover:text-white" />
                   </span>
-                  <span className="text-[10px] text-indigo-200/80">Real Trials • Media Downloader • Live SMS • Edu KTM • VPN</span>
+                  <span className="text-[10px] text-indigo-200/80">Burn Secret • Webhooks • DNS • DevTools • FLAC Music • QR • Anti-Detect</span>
                 </button>
 
                 {/* Tile 2: Video Clipper Studio */}
@@ -707,9 +707,9 @@ export default function Home() {
         }}
       />
 
-      {/* Hub Garapan App Premium & Bypass Studio */}
+      {/* Cyber Power Studio & DevTools Hub */}
       {garapanModalOpen && (
-        <GarapanPremModal
+        <PowerStudioModal
           isOpen={garapanModalOpen}
           onClose={() => setGarapanModalOpen(false)}
           currentTempEmail={mailbox?.address}
