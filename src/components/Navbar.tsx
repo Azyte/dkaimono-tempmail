@@ -108,15 +108,15 @@ export function Navbar({
             </button>
           )}
 
-          {/* Cyber Power Studio & DevTools Hub Button (Desktop/Tablet) */}
+          {/* Cyber Power Studio & DevTools Hub Button (Visible on ALL devices including Mobile) */}
           {onOpenGarapanModal && (
             <button
               onClick={onOpenGarapanModal}
-              className="hidden sm:flex items-center gap-1.5 rounded-xl border border-indigo-500/40 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-500/30 px-3 py-1.5 text-xs font-bold text-indigo-300 hover:from-indigo-600/40 hover:to-pink-500/40 active:scale-95 transition-all shadow-md"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-xl border border-indigo-500/40 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-500/30 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-indigo-300 hover:from-indigo-600/40 hover:to-pink-500/40 active:scale-95 transition-all shadow-md"
               title="Cyber Power Studio & DevTools Hub"
             >
               <Sparkles className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
-              <span className="text-xs">⚡ Power Studio</span>
+              <span className="text-[11px] sm:text-xs">⚡ Studio</span>
             </button>
           )}
 

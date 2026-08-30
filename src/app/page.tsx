@@ -417,6 +417,7 @@ export default function Home() {
                 onClearMailbox={handleClearMailbox}
                 onOpenSettings={handleOpenSettings}
                 onOpenAmPremiumModal={() => setAmPremiumModalOpen(true)}
+                onOpenPowerStudio={() => setGarapanModalOpen(true)}
                 isRefreshing={isRefreshing}
                 refreshCountdown={refreshCountdown}
                 totalMessages={messages.length}

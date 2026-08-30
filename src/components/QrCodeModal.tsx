@@ -7,16 +7,18 @@ import { fireConfetti } from '@/lib/confetti';
 interface QrCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  emailAddress: string;
+  emailAddress?: string;
+  address?: string;
 }
 
-export function QrCodeModal({ isOpen, onClose, emailAddress }: QrCodeModalProps) {
+export function QrCodeModal({ isOpen, onClose, emailAddress, address }: QrCodeModalProps) {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
+  const targetEmail = emailAddress || address || '';
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-  const mailboxUrl = `${currentOrigin}/?mail=${encodeURIComponent(emailAddress)}`;
+  const mailboxUrl = `${currentOrigin}/?mail=${encodeURIComponent(targetEmail)}`;
   // Clean, high-contrast QR code (black on white) for 100% reliable camera scanning on all smartphones
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(mailboxUrl)}&margin=10`;
 
