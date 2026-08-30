@@ -400,7 +400,7 @@ export default function Home() {
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-3 sm:p-5 lg:p-6 pb-24 md:pb-8">
         {/* Bento Row 1: Hero Mailbox & Quick Tools Launcher */}
         {currentFolder !== 'am_accounts' && (
-          <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 ${selectedMessageId ? 'hidden md:grid' : 'grid'}`}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Left Bento: Mailbox Header Controller */}
             <div className="lg:col-span-8">
               <MailboxHeader
