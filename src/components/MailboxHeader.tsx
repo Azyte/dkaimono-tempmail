@@ -97,7 +97,7 @@ export function MailboxHeader({
     e.stopPropagation();
     try {
       if (typeof window !== 'undefined') {
-        const shareUrl = `${window.location.origin}/?mail=${encodeURIComponent(localPart)}`;
+        const shareUrl = `${window.location.origin}/?mail=${encodeURIComponent(mailbox.address)}`;
         await navigator.clipboard.writeText(shareUrl);
         setLinkCopied(true);
         fireConfetti();

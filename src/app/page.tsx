@@ -165,13 +165,13 @@ export default function Home() {
       if (domData.success && domData.domains && domData.domains.length > 0) {
         setDomains(domData.domains);
         const primary = domData.domains.find((d: DomainConfig) => d.isPrimary) || domData.domains[0];
-        setActiveDomain(primary.domain);
+        setActiveDomain((prev) => prev || primary.domain || 'loginptn.xyz');
       } else {
-        setActiveDomain('loginptn.xyz');
+        setActiveDomain((prev) => prev || 'loginptn.xyz');
       }
     } catch (err) {
       console.error('Error loading settings/domains:', err);
-      setActiveDomain('loginptn.xyz');
+      setActiveDomain((prev) => prev || 'loginptn.xyz');
     }
   }, []);
 
@@ -210,7 +210,6 @@ export default function Home() {
   // Initialize Mailbox
   const initMailbox = useCallback(
     async (targetAddress?: string) => {
-      const currentDom = activeDomain || 'loginptn.xyz';
       let addressToUse = targetAddress;
 
       if (!addressToUse) {
@@ -218,19 +217,23 @@ export default function Home() {
         if (saved && saved.includes('@')) {
           addressToUse = saved;
         } else {
+          const currentDom = activeDomain || 'loginptn.xyz';
           const randName = 'user' + Math.random().toString(36).substring(2, 8);
           addressToUse = `${randName}@${currentDom}`;
         }
       }
 
       const [local, dom] = addressToUse.split('@');
-      const finalDom = dom || currentDom;
-      const finalAddress = `${local}@${finalDom}`;
+      const finalDom = dom || activeDomain || 'loginptn.xyz';
+      const finalLocal = local.toLowerCase().trim();
+      const finalAddress = `${finalLocal}@${finalDom.toLowerCase().trim()}`;
+
+      setActiveDomain(finalDom);
 
       const mb: Mailbox = {
         id: finalAddress,
         address: finalAddress,
-        name: local,
+        name: finalLocal,
         domain: finalDom,
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -256,16 +259,36 @@ export default function Home() {
     fetchAmAccountsCount();
     requestNotificationPermission();
 
-    // Check query params for shared alias or referral code
+    // Check query params for shared alias or referral code (from QR code scan or direct link)
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const mailParam = params.get('mail');
+      const mailParam =
+        params.get('mail') ||
+        params.get('mailbox') ||
+        params.get('email') ||
+        params.get('address') ||
+        params.get('inbox') ||
+        params.get('u');
       const refParam = params.get('ref');
 
       if (mailParam) {
-        const clean = mailParam.replace(/[^a-z0-9._-]/gi, '').toLowerCase();
-        if (clean) {
-          initMailbox(`${clean}@${activeDomain || 'loginptn.xyz'}`);
+        const clean = decodeURIComponent(mailParam).trim();
+        if (clean.includes('@')) {
+          const parts = clean.split('@');
+          const cleanLocal = parts[0].toLowerCase().replace(/[^a-z0-9._-]/gi, '');
+          const cleanDom = parts[1].toLowerCase().replace(/[^a-z0-9.-]/gi, '');
+          if (cleanLocal && cleanDom) {
+            initMailbox(`${cleanLocal}@${cleanDom}`);
+          } else {
+            initMailbox();
+          }
+        } else {
+          const cleanLocal = clean.toLowerCase().replace(/[^a-z0-9._-]/gi, '');
+          if (cleanLocal) {
+            initMailbox(`${cleanLocal}@${activeDomain || 'loginptn.xyz'}`);
+          } else {
+            initMailbox();
+          }
         }
       } else {
         initMailbox();
@@ -275,7 +298,7 @@ export default function Home() {
         setReferralModalOpen(true);
       }
     }
-  }, [fetchSettingsAndDomains, fetchCurrentUser, fetchAmAccountsCount, initMailbox, activeDomain]);
+  }, []);
 
   // Polling Interval every 10 seconds
   useEffect(() => {
