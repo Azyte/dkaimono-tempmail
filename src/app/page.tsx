@@ -549,6 +549,7 @@ export default function Home() {
             <FolderSidebar
               currentFolder={currentFolder}
               onSelectFolder={handleSelectFolder}
+              onOpenPowerStudio={() => setGarapanModalOpen(true)}
               counts={counts}
               isPro={currentUser?.isPro}
             />
@@ -584,6 +585,7 @@ export default function Home() {
                   onToggleStar={handleToggleStar}
                   onDeleteMessage={handleDeleteMessage}
                   onOpenTestEmail={() => setTestEmailModalOpen(true)}
+                  onOpenPowerStudio={() => setGarapanModalOpen(true)}
                   currentFolder={currentFolder}
                   isLoading={isRefreshing}
                 />

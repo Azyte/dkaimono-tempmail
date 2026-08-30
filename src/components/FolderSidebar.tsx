@@ -8,6 +8,7 @@ export type FolderType = 'all' | 'inbox' | 'spam' | 'starred' | 'logs' | 'am_acc
 interface FolderSidebarProps {
   currentFolder: FolderType;
   onSelectFolder: (folder: FolderType) => void;
+  onOpenPowerStudio?: () => void;
   counts: {
     all: number;
     inbox: number;
@@ -22,6 +23,7 @@ interface FolderSidebarProps {
 export function FolderSidebar({
   currentFolder,
   onSelectFolder,
+  onOpenPowerStudio,
   counts,
   isPro,
 }: FolderSidebarProps) {
@@ -134,6 +136,26 @@ export function FolderSidebar({
           );
         })}
       </div>
+
+      {/* Cyber Power Studio Quick Launch Banner */}
+      {onOpenPowerStudio && (
+        <div
+          onClick={onOpenPowerStudio}
+          className="rounded-2xl border border-indigo-500/40 bg-gradient-to-tr from-indigo-950/60 via-purple-950/40 to-slate-900/80 p-3.5 shadow-lg hover:border-indigo-400 cursor-pointer active:scale-[0.98] transition-all group"
+        >
+          <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold mb-1">
+            <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400">⚡</span>
+            <span>Cyber Power Studio</span>
+          </div>
+          <p className="text-[10px] text-slate-400 leading-relaxed">
+            Burn Secret, Webhooks, DNS, DevTools, FLAC Music, QR, Anti-Detect.
+          </p>
+          <div className="mt-2 text-[10px] font-bold text-indigo-400 group-hover:text-white transition-colors flex items-center gap-1">
+            <span>Buka 8 Perkakas</span>
+            <span>➔</span>
+          </div>
+        </div>
+      )}
 
       {/* Catch-All Feature Callout */}
       <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 shadow-sm">

@@ -23,6 +23,7 @@ interface EmailListProps {
   onToggleStar: (id: string, e: React.MouseEvent) => void;
   onDeleteMessage: (id: string, e: React.MouseEvent) => void;
   onOpenTestEmail: () => void;
+  onOpenPowerStudio?: () => void;
   currentFolder: FolderType;
   isLoading: boolean;
 }
@@ -34,6 +35,7 @@ export function EmailList({
   onToggleStar,
   onDeleteMessage,
   onOpenTestEmail,
+  onOpenPowerStudio,
   currentFolder,
   isLoading,
 }: EmailListProps) {
@@ -127,26 +129,70 @@ export function EmailList({
       {/* Email List Scrollable Container */}
       <div className="flex-1 divide-y divide-slate-800/60 overflow-y-auto custom-scrollbar">
         {filteredMessages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center p-6 sm:p-8 text-center min-h-[280px]">
-            <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/60 shadow-inner">
-              <Inbox className="h-6 w-6 sm:h-7 sm:w-7 text-slate-400" />
+          <div className="flex h-full flex-col items-center justify-center p-4 sm:p-6 text-center min-h-[340px] space-y-4">
+            <div className="space-y-2">
+              <div className="mx-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/60 shadow-inner">
+                <Inbox className="h-6 w-6 sm:h-7 sm:w-7 text-slate-400" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-200">
+                {searchQuery ? 'Tidak ada pesan yang cocok' : 'Belum ada email masuk'}
+              </h4>
+              <p className="max-w-xs text-xs text-slate-400 mx-auto">
+                {searchQuery
+                  ? 'Coba kata kunci pencarian yang lain.'
+                  : 'Email masuk akan otomatis muncul di sini secara realtime.'}
+              </p>
             </div>
-            <h4 className="mt-3 text-sm font-semibold text-slate-200">
-              {searchQuery ? 'Tidak ada pesan yang cocok' : 'Belum ada email masuk'}
-            </h4>
-            <p className="mt-1 max-w-xs text-xs text-slate-400">
-              {searchQuery
-                ? 'Coba kata kunci pencarian yang lain.'
-                : 'Email masuk akan otomatis muncul di sini secara realtime.'}
-            </p>
 
-            <button
-              onClick={onOpenTestEmail}
-              className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 px-3.5 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-600/30 transition-all active:scale-95"
-            >
-              <FlaskConical className="h-3.5 w-3.5 text-indigo-400" />
-              <span>Kirim Email Test</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onOpenTestEmail}
+                className="flex items-center gap-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 px-3.5 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-600/30 transition-all active:scale-95 shadow-sm"
+              >
+                <FlaskConical className="h-3.5 w-3.5 text-indigo-400" />
+                <span>Kirim Email Test</span>
+              </button>
+
+              {onOpenPowerStudio && (
+                <button
+                  onClick={onOpenPowerStudio}
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-3.5 py-2 text-xs font-bold text-white hover:from-indigo-500 hover:to-purple-500 transition-all active:scale-95 shadow-md"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Buka Power Studio</span>
+                </button>
+              )}
+            </div>
+
+            {/* Quick Tools Badges */}
+            {onOpenPowerStudio && (
+              <div className="w-full max-w-md pt-2 border-t border-slate-800/80">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  ⚡ Perkakas Instan (Cyber Power Suite):
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
+                  {[
+                    { label: '🔐 Burn Secret', desc: 'Pesan 1x Baca' },
+                    { label: '🤖 Webhook Relay', desc: 'Discord / TG' },
+                    { label: '🌐 DNS Inspector', desc: 'Cek Record' },
+                    { label: '🧰 DevTools', desc: 'JWT & Hash' },
+                    { label: '🎵 FLAC Music', desc: 'Download Hi-Res' },
+                    { label: '📱 QR Studio', desc: 'Wi-Fi & WA' },
+                    { label: '🎭 Anti-Detect', desc: 'User-Agent' },
+                    { label: '🛡️ WireGuard VPN', desc: 'Clash YAML' },
+                  ].map((t, idx) => (
+                    <button
+                      key={idx}
+                      onClick={onOpenPowerStudio}
+                      className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 text-left transition-all active:scale-95 group"
+                    >
+                      <div className="font-bold text-slate-200 group-hover:text-indigo-300 truncate">{t.label}</div>
+                      <div className="text-[9px] text-slate-400 truncate">{t.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           filteredMessages.map((msg) => {

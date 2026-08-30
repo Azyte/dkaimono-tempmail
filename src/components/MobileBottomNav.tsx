@@ -10,6 +10,7 @@ import {
   Gift,
   Share2,
   Award,
+  Sparkles,
 } from 'lucide-react';
 import { FolderType } from './FolderSidebar';
 
@@ -90,15 +91,15 @@ export function MobileBottomNav({
           <Scissors className="h-6 w-6" />
         </button>
 
-        {/* 4. Garapan App Prem */}
+        {/* 4. Cyber Power Studio */}
         {onOpenGarapanModal && (
           <button
             type="button"
             onClick={onOpenGarapanModal}
             className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl text-slate-400 hover:text-indigo-400 transition-all active:scale-95"
           >
-            <Award className="h-5 w-5 text-indigo-400" />
-            <span className="text-[10px] text-indigo-300 font-bold">Garapan</span>
+            <Sparkles className="h-5 w-5 text-indigo-400" />
+            <span className="text-[10px] text-indigo-300 font-bold">Studio</span>
           </button>
         )}
 

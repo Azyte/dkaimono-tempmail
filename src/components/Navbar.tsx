@@ -108,14 +108,15 @@ export function Navbar({
             </button>
           )}
 
-          {/* Garapan App Premium Hub Button (Desktop/Tablet) */}
+          {/* Cyber Power Studio & DevTools Hub Button (Desktop/Tablet) */}
           {onOpenGarapanModal && (
             <button
               onClick={onOpenGarapanModal}
-              className="hidden sm:flex items-center gap-1.5 rounded-xl border border-indigo-500/40 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-500/30 px-2.5 py-1.5 text-xs font-bold text-indigo-300 hover:from-indigo-600/40 hover:to-pink-500/40 active:scale-95 transition-all shadow-sm"
-              title="Hub Garapan App Premium & Bypass"
+              className="hidden sm:flex items-center gap-1.5 rounded-xl border border-indigo-500/40 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-500/30 px-3 py-1.5 text-xs font-bold text-indigo-300 hover:from-indigo-600/40 hover:to-pink-500/40 active:scale-95 transition-all shadow-md"
+              title="Cyber Power Studio & DevTools Hub"
             >
-              <span className="text-xs">🎁 Garapan Prem</span>
+              <Sparkles className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+              <span className="text-xs">⚡ Power Studio</span>
             </button>
           )}
 
