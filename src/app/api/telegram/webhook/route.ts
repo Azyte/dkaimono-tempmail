@@ -436,14 +436,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const primaryDomain = db.getSettings().defaultDomain || 'loginptn.xyz';
+    const configuredDomains = db.getDomains().map((d) => d.name);
+    const publicBridgeDomains = ['sharklasers.com', 'guerrillamail.com', 'guerrillamailblock.com', 'pokemail.net', 'spam4.me', 'grr.la'];
+    const allAvailableDomains = Array.from(new Set([...configuredDomains, ...publicBridgeDomains]));
+    const primaryDomain = user?.preferredDomain || db.getSettings().defaultDomain || allAvailableDomains[0] || 'sharklasers.com';
 
     // Standard Reply Keyboard
     const mainReplyKeyboard = {
       keyboard: [
         user?.isPro ? [{ text: '⚡ Buat Akun Pro / Trial' }, { text: '🎲 Buat Email Acak' }] : [{ text: '🎲 Buat Email Acak' }],
         [{ text: '✏️ Buat Alias Kustom' }, { text: '📬 Cek Inbox Terakhir' }],
-        [{ text: '📧 Email Aktif Saya' }],
+        [{ text: '🌐 Pilih Domain' }, { text: '📧 Email Aktif Saya' }],
       ],
       resize_keyboard: true,
       persistent: true,
@@ -453,7 +456,7 @@ export async function POST(req: NextRequest) {
     if (text === '/start' || text === '/help' || text.startsWith('/start')) {
       let welcomeText =
         `👋 <b>Halo! Selamat datang di Bot TempMail Realtime!</b> 🚀\n\n` +
-        `Domain Utama: <code>@${primaryDomain}</code>\n\n`;
+        `🌐 <b>Domain Aktif Bot Anda:</b> <code>@${primaryDomain}</code>\n\n`;
 
       if (user?.isPro) {
         welcomeText +=
@@ -470,6 +473,7 @@ export async function POST(req: NextRequest) {
         `<b>📋 Perintah TempMail:</b>\n` +
         `• <code>/new</code> ➡️ Buat email acak baru\n` +
         `• <code>/custom nama_alias</code> ➡️ Buat email kustom\n` +
+        `• <code>/domain</code> ➡️ Ganti domain aktif bot\n` +
         `• <code>/inbox</code> ➡️ Cek pesan &amp; kode OTP\n` +
         `• <code>/myemail</code> ➡️ Lihat daftar email aktif\n\n` +
         `<i>Pilih tombol di bawah untuk mulai:</i>`;
@@ -562,6 +566,64 @@ export async function POST(req: NextRequest) {
       };
 
       sendTelegramMessage(botToken, chatId, hubText, hubKeyboard);
+      return NextResponse.json({ ok: true });
+    }
+
+    // 2.5 DOMAIN SELECTOR: /domain, /domains, '🌐 Pilih Domain', 'cb_pick_domain'
+    if (text === '/domain' || text === '/domains' || text === '🌐 Pilih Domain' || text === 'cb_pick_domain') {
+      let domainText =
+        `🌐 <b>PILIH DOMAIN EMAIL TELEGRAM ANDA</b> ✨\n\n` +
+        `🌟 <b>Domain Aktif Saat Ini:</b> <code>@${primaryDomain}</code>\n\n` +
+        `<i>Silakan pilih domain yang ingin Anda gunakan untuk membuat email baru (/new atau /custom):</i>`;
+
+      const domainButtons: Array<Array<{ text: string; callback_data: string }>> = [];
+
+      for (let i = 0; i < allAvailableDomains.length; i += 2) {
+        const row: Array<{ text: string; callback_data: string }> = [];
+        const d1 = allAvailableDomains[i];
+        const isD1Active = d1 === primaryDomain;
+        row.push({
+          text: `${isD1Active ? '✅' : '🔘'} @${d1}`,
+          callback_data: `cb_set_domain_${d1}`,
+        });
+        if (i + 1 < allAvailableDomains.length) {
+          const d2 = allAvailableDomains[i + 1];
+          const isD2Active = d2 === primaryDomain;
+          row.push({
+            text: `${isD2Active ? '✅' : '🔘'} @${d2}`,
+            callback_data: `cb_set_domain_${d2}`,
+          });
+        }
+        domainButtons.push(row);
+      }
+
+      sendTelegramMessage(botToken, chatId, domainText, { inline_keyboard: domainButtons });
+      return NextResponse.json({ ok: true });
+    }
+
+    // SET DOMAIN CALLBACK: cb_set_domain_<domain>
+    if (text.startsWith('cb_set_domain_')) {
+      const chosenDomain = text.replace('cb_set_domain_', '').trim().toLowerCase();
+      if (chosenDomain && allAvailableDomains.includes(chosenDomain)) {
+        if (user) {
+          db.updateUser(user.id, { preferredDomain: chosenDomain });
+        }
+        const confirmText =
+          `✅ <b>DOMAIN AKTIF BERHASIL DIUBAH!</b> 🎉\n\n` +
+          `Domain aktif bot Anda sekarang: <code>@${chosenDomain}</code>\n\n` +
+          `Semua pembuatan email acak (<code>/new</code>) atau kustom (<code>/custom</code>) berikutnya akan otomatis menggunakan <b>@${chosenDomain}</b>! 🚀`;
+
+        const confirmKeyboard = {
+          inline_keyboard: [
+            [
+              { text: '🎲 Buat Email Baru Sekarang', callback_data: 'cb_new' },
+              { text: '🌐 Ganti Domain Lain', callback_data: 'cb_pick_domain' },
+            ],
+          ],
+        };
+
+        sendTelegramMessage(botToken, chatId, confirmText, confirmKeyboard);
+      }
       return NextResponse.json({ ok: true });
     }
 
@@ -768,6 +830,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
+      let targetDomain = primaryDomain;
+      if (customName.includes('@')) {
+        const parts = customName.split('@');
+        customName = parts[0];
+        if (parts[1] && allAvailableDomains.includes(parts[1].toLowerCase())) {
+          targetDomain = parts[1].toLowerCase();
+        }
+      }
+
       const cleanAlias = customName.toLowerCase().replace(/[^a-z0-9._-]/g, '');
       if (cleanAlias.length < 2) {
         sendTelegramMessage(
@@ -779,7 +850,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
-      const emailAddress = `${cleanAlias}@${primaryDomain}`;
+      const emailAddress = `${cleanAlias}@${targetDomain}`;
       db.createOrGetMailbox(emailAddress, user?.id);
 
       if (user) {

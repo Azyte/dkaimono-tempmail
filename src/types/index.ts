@@ -180,6 +180,7 @@ export interface User {
   keepEmailsForever?: boolean;
   savedMailboxes?: string[];
   monitoredAliases?: string[]; // list of alias prefixes to send to Telegram
+  preferredDomain?: string; // e.g. "sharklasers.com" or "loginptn.xyz"
   amAccounts?: AmPremiumAccount[];
   createdAt: string;
 }
