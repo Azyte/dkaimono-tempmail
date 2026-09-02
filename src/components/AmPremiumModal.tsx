@@ -451,18 +451,18 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-                    <span>Pilih Engine Server Generator (4 Generator Dapmojin):</span>
+                    <span>Pilih Engine Generator (Standalone &amp; Direct Core):</span>
                   </label>
-                  <span className="text-[10px] text-emerald-400 font-medium">Bisa Create Banyak Akun</span>
+                  <span className="text-[10px] text-emerald-400 font-bold">100% Mandiri</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-0.5">
                   {[
-                    { id: 'all4', name: '🌟 4 Gen Sekaligus', desc: '1 Klik = 4 Akun (Gen 1,2,3,4)' },
-                    { id: 'auto', name: '⚡ Auto Multi-Gen', desc: 'Smart Auto Failover 4-in-1' },
-                    { id: 'v4', name: '👑 Gen 4 (Rafael VIP)', desc: 'VIP Engine Kuota Tinggi' },
-                    { id: 'v3', name: '☁️ Gen 3 (QSR Cloud)', desc: 'Direct Cloud Engine' },
-                    { id: 'v1', name: '🚀 Gen 1 (Dapji V1)', desc: 'Dapji Classic Server' },
-                    { id: 'v2', name: '⚡ Gen 2 (AmPrem V2)', desc: 'AmPrem Turbo Server' },
+                    { id: 'auto', name: '⚡ DK-Native Core', desc: 'Direct Firebase API (Tanpa Pihak Ketiga)' },
+                    { id: 'all4', name: '🌟 Multi-Batch Pro', desc: '1 Klik = Multi Akun Otomatis' },
+                    { id: 'v4', name: '👑 VIP Quantum Core', desc: 'VIP Direct Session' },
+                    { id: 'v3', name: '☁️ Cloud Engine Direct', desc: 'Cloud Alight API' },
+                    { id: 'v1', name: '🚀 Turbo Direct Relay', desc: 'Fast Relay Mode' },
+                    { id: 'v2', name: '🛡️ Shield Failover', desc: 'Secondary Auto Backup' },
                   ].map((eng) => (
                     <button
                       key={eng.id}
