@@ -742,6 +742,32 @@ export default function Home() {
         />
       )}
 
+      {/* Test Email Simulation Modal */}
+      <TestEmailModal
+        isOpen={testEmailModalOpen}
+        onClose={() => setTestEmailModalOpen(false)}
+        recipientEmail={mailbox?.address || ''}
+        onSuccess={() => {
+          if (mailbox) fetchMessages(mailbox.address);
+        }}
+      />
+
+      {/* Custom Alias Modal */}
+      <CustomAliasModal
+        isOpen={customAliasModalOpen}
+        onClose={() => setCustomAliasModalOpen(false)}
+        domains={domains}
+        activeDomain={activeDomain}
+        onSelectMailbox={(address) => initMailbox(address)}
+      />
+
+      {/* QR Code Modal */}
+      <QrCodeModal
+        isOpen={qrCodeModalOpen}
+        onClose={() => setQrCodeModalOpen(false)}
+        emailAddress={mailbox?.address || ''}
+      />
+
       {/* Video Studio Modal */}
       {videoStudioOpen && (
         <VideoClipEditorModal
