@@ -131,7 +131,7 @@ export async function syncExternalInbox(fullAddress: string): Promise<void> {
           size: Buffer.byteLength(simulatedRaw),
         };
 
-        db.addMessage(newMsg);
+        db.saveMessage(newMsg);
         existingSubjectsAndTimes.add(sig);
       }
     } catch (err) {

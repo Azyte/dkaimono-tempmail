@@ -634,6 +634,10 @@ export const db = {
     return data.messages.find((m) => m.id === id) || null;
   },
 
+  addMessage(msg: EmailMessage): EmailMessage {
+    return this.saveMessage(msg);
+  },
+
   saveMessage(msg: EmailMessage): EmailMessage {
     const data = loadDb();
 
