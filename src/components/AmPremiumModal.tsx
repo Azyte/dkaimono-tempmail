@@ -116,6 +116,15 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const [showPasswords, setShowPasswords] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
   const [editingClip, setEditingClip] = useState<any | null>(null);
+  const [cooldownTimer, setCooldownTimer] = useState<number>(0);
+
+  React.useEffect(() => {
+    if (cooldownTimer <= 0) return;
+    const interval = setInterval(() => {
+      setCooldownTimer((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownTimer]);
 
   if (!isOpen) return null;
 
@@ -125,6 +134,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (cooldownTimer > 0) return;
     setLoading(true);
     setErrorMsg('');
     setResults([]);
@@ -168,6 +178,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
       setErrorMsg(err.message || 'Terjadi kesalahan saat menghubungi server.');
     } finally {
       setLoading(false);
+      setCooldownTimer(10);
     }
   };
 
@@ -555,13 +566,17 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || cooldownTimer > 0}
               className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 hover:from-emerald-500 hover:to-cyan-500 active:scale-[0.99] transition-all disabled:opacity-50"
             >
               {loading ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
                   <span>Sedang Memproses {count} {currentService.name.split(' ')[0]}...</span>
+                </>
+              ) : cooldownTimer > 0 ? (
+                <>
+                  <span className="text-amber-300">⏳ Jeda Antrean Aman ({cooldownTimer}s)</span>
                 </>
               ) : (
                 <>

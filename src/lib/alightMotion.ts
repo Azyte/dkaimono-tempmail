@@ -42,14 +42,44 @@ const NATIVE_HEADERS = {
   'Origin': 'https://alight-creative.firebaseapp.com',
 };
 
+// 🛡️ Resilient HTTP Fetch with Exponential Backoff & Jitter
+async function fetchWithBackoff(
+  url: string,
+  options: RequestInit,
+  maxRetries = 3
+): Promise<Response> {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      const response = await fetch(url, options);
+      if (response.status === 429) {
+        attempt++;
+        const retryAfter = response.headers.get('Retry-After');
+        const delayMs = retryAfter
+          ? parseInt(retryAfter, 10) * 1000
+          : Math.min(Math.pow(2, attempt) * 1000 + Math.floor(Math.random() * 800), 6000);
+        console.warn(`[RateLimit 429] Cooldown ${delayMs}ms before retry ${attempt}/${maxRetries}...`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
+      return response;
+    } catch (err: any) {
+      attempt++;
+      if (attempt >= maxRetries) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt + Math.floor(Math.random() * 500)));
+    }
+  }
+  throw new Error('Mencapai batas antrean percobaan request.');
+}
+
 // 1. Direct Native Request Magic Link to Firebase Identity Toolkit (100% Standalone)
 export async function requestMagicLink(
   emailAddress: string,
   engine: AmEngine = 'auto'
 ): Promise<{ success: boolean; engineUsed: string; error?: string }> {
-  // ⚡ 1. Primary Engine: DK-Native Core (Direct Google Firebase API)
+  // ⚡ 1. Primary Engine: DK-Native Core (Direct Google Firebase API with Backoff)
   try {
-    const fbRes = await fetch(
+    const fbRes = await fetchWithBackoff(
       `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${FIREBASE_API_KEY}`,
       {
         method: 'POST',
@@ -60,7 +90,8 @@ export async function requestMagicLink(
           continueUrl: 'https://alightcreative.com?ui_sid=0366624874&ui_sd=0',
           canHandleCodeInApp: true,
         }),
-      }
+      },
+      3
     );
 
     const fbData = await fbRes.json().catch(() => ({}));
@@ -73,19 +104,23 @@ export async function requestMagicLink(
 
   // 🚀 2. Secondary Engine: Alternative Direct Relay
   try {
-    const directRes = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=' + FIREBASE_API_KEY, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Client-Version': 'Android/FirebaseCore-Android/10.0.0',
+    const directRes = await fetchWithBackoff(
+      'https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=' + FIREBASE_API_KEY,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Client-Version': 'Android/FirebaseCore-Android/10.0.0',
+        },
+        body: JSON.stringify({
+          requestType: 'EMAIL_SIGNIN',
+          email: emailAddress,
+          continueUrl: 'https://alightcreative.com/auth_action',
+          canHandleCodeInApp: true,
+        }),
       },
-      body: JSON.stringify({
-        requestType: 'EMAIL_SIGNIN',
-        email: emailAddress,
-        continueUrl: 'https://alightcreative.com/auth_action',
-        canHandleCodeInApp: true,
-      }),
-    });
+      2
+    );
     const dData = await directRes.json().catch(() => ({}));
     if (directRes.ok && dData.email) {
       return { success: true, engineUsed: '🚀 DK-Quantum Relay' };
@@ -103,7 +138,7 @@ export async function requestMagicLink(
     if (d4.success || d4.status) return { success: true, engineUsed: '🛡️ Cloud Pro Engine' };
   } catch (e) {}
 
-  return { success: false, engineUsed: 'standalone', error: 'Gagal mengirim email permintaan link. Silakan coba lagi.' };
+  return { success: false, engineUsed: 'standalone', error: 'Server sedang cooldown. Sistem akan mencoba kembali secara otomatis.' };
 }
 
 export function extractMagicLinkFromEmail(html: string, text: string): string | null {
@@ -149,10 +184,10 @@ export async function verifyAmMagicLink(
     oobCode = decodeURIComponent(oobMatch[1]);
   }
 
-  // ⚡ 1. Direct Native Firebase Sign-In Authentication
+  // ⚡ 1. Direct Native Firebase Sign-In Authentication with Exponential Backoff
   if (oobCode) {
     try {
-      const signinRes = await fetch(
+      const signinRes = await fetchWithBackoff(
         `https://identitytoolkit.googleapis.com/v1/accounts:signInWithEmailLink?key=${FIREBASE_API_KEY}`,
         {
           method: 'POST',
@@ -161,7 +196,8 @@ export async function verifyAmMagicLink(
             email: emailAddress,
             oobCode: oobCode,
           }),
-        }
+        },
+        3
       );
 
       const signinData = await signinRes.json().catch(() => ({}));
@@ -187,10 +223,6 @@ export async function verifyAmMagicLink(
 
   // 🛡️ 2. Fallback Verification Relay
   try {
-    const wrappedLink = rawLink.startsWith('https://alight-creative.firebaseapp.com/')
-      ? rawLink
-      : `https://alight-creative.firebaseapp.com/__/auth/links?link=${encodeURIComponent(rawLink)}`;
-
     const v4Res = await fetch('https://dapjimotionpro.my.id/api/proxy-rafael?action=verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
@@ -361,7 +393,7 @@ export async function createSingleAmPremium(
   };
 }
 
-// 4. Batch Account Creation
+// 4. Batch Account Creation with Anti-Spam Queue Throttling
 export async function createBatchAmPremium(
   count: number,
   domain = 'loginptn.xyz',
@@ -375,9 +407,10 @@ export async function createBatchAmPremium(
   for (let i = 0; i < total; i++) {
     const res = await createSingleAmPremium(undefined, domain, userId, deviceFingerprint, engine);
     results.push(res);
-    // 800ms throttle between creation calls
+    // Anti-Spam Queue Delay with Jitter (1200ms - 2000ms)
     if (i < total - 1) {
-      await new Promise((r) => setTimeout(r, 800));
+      const queueDelay = 1200 + Math.floor(Math.random() * 800);
+      await new Promise((r) => setTimeout(r, queueDelay));
     }
   }
 
