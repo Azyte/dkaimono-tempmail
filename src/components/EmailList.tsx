@@ -12,6 +12,10 @@ import {
   Inbox,
   FlaskConical,
   X,
+  Radio,
+  ArrowRight,
+  Shield,
+  Zap,
 } from 'lucide-react';
 import { EmailMessage } from '@/types';
 import { FolderType } from './FolderSidebar';
@@ -90,9 +94,9 @@ export function EmailList({
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/80 bg-slate-950/80 shadow-xl backdrop-blur-xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/90 shadow-2xl backdrop-blur-2xl">
       {/* Search Header Bar */}
-      <div className="border-b border-slate-800/80 p-3 sm:p-4">
+      <div className="border-b border-slate-800/80 p-3 sm:p-4 bg-slate-900/40">
         <div className="relative flex items-center">
           <Search className="absolute left-3.5 h-4 w-4 text-slate-400" />
           <input
@@ -100,7 +104,7 @@ export function EmailList({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari pengirim, subjek, isi email..."
-            className="w-full rounded-xl border border-slate-800 bg-slate-900/90 pl-10 pr-9 py-2 text-xs text-slate-200 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all"
+            className="w-full rounded-2xl border border-slate-800 bg-slate-900/90 pl-10 pr-9 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner"
           />
           {searchQuery && (
             <button
@@ -113,81 +117,90 @@ export function EmailList({
         </div>
 
         {/* Results Counter Subtitle */}
-        <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-slate-400">
-          <span>
+        <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-slate-400 font-medium">
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
             {currentFolder === 'all' && 'Semua Pesan Masuk'}
-            {currentFolder === 'inbox' && 'Kotak Masuk (Bersih)'}
+            {currentFolder === 'inbox' && 'Kotak Masuk (Clean)'}
             {currentFolder === 'spam' && 'Pesan Spam & Filtered'}
-            {currentFolder === 'starred' && 'Pesan Favorit'}
+            {currentFolder === 'starred' && 'Pesan Berbintang'}
           </span>
-          <span className="font-mono text-slate-400">
+          <span className="font-mono text-cyan-300 font-semibold">
             {filteredMessages.length} pesan
           </span>
         </div>
       </div>
 
       {/* Email List Scrollable Container */}
-      <div className="flex-1 divide-y divide-slate-800/60 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 divide-y divide-slate-800/50 overflow-y-auto custom-scrollbar">
         {filteredMessages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center p-4 sm:p-6 text-center min-h-[340px] space-y-4">
-            <div className="space-y-2">
-              <div className="mx-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/60 shadow-inner">
-                <Inbox className="h-6 w-6 sm:h-7 sm:w-7 text-slate-400" />
+          /* Minimalist & Aesthetic Empty State */
+          <div className="flex h-full flex-col items-center justify-center p-4 sm:p-6 text-center min-h-[360px] space-y-4">
+            {/* Pulsing Radar Ring */}
+            <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-500/20 opacity-75" />
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-500/30 bg-gradient-to-tr from-slate-900 to-indigo-950/60 shadow-lg text-indigo-400">
+                <Inbox className="h-7 w-7" />
               </div>
-              <h4 className="text-sm font-bold text-slate-200">
-                {searchQuery ? 'Tidak ada pesan yang cocok' : 'Belum ada email masuk'}
+            </div>
+
+            <div className="space-y-1 max-w-xs mx-auto">
+              <h4 className="text-sm font-bold text-white">
+                {searchQuery ? 'Tidak ada pesan yang cocok' : 'Kotak Masuk Kosong'}
               </h4>
-              <p className="max-w-xs text-xs text-slate-400 mx-auto">
+              <p className="text-xs text-slate-400 leading-relaxed">
                 {searchQuery
                   ? 'Coba kata kunci pencarian yang lain.'
-                  : 'Email masuk akan otomatis muncul di sini secara realtime.'}
+                  : 'Sistem aktif mendengarkan. Pesan dan OTP baru akan otomatis muncul secara realtime.'}
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Quick Interactive Actions */}
+            <div className="flex items-center gap-2 pt-1">
               <button
+                type="button"
                 onClick={onOpenTestEmail}
-                className="flex items-center gap-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 px-3.5 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-600/30 transition-all active:scale-95 shadow-sm"
+                className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all"
               >
-                <FlaskConical className="h-3.5 w-3.5 text-indigo-400" />
-                <span>Kirim Email Test</span>
+                <FlaskConical className="h-4 w-4" />
+                <span>Simulasi Tes Email Masuk</span>
               </button>
-
-              {onOpenPowerStudio && (
-                <button
-                  onClick={onOpenPowerStudio}
-                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-3.5 py-2 text-xs font-bold text-white hover:from-indigo-500 hover:to-purple-500 transition-all active:scale-95 shadow-md"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Buka Power Studio</span>
-                </button>
-              )}
             </div>
 
-            {/* Quick Tools Badges */}
+            {/* ⚡ Quick Tools Bento 2x4 Grid */}
             {onOpenPowerStudio && (
-              <div className="w-full max-w-md pt-2 border-t border-slate-800/80">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  ⚡ Perkakas Instan (Cyber Power Suite):
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
+              <div className="w-full max-w-md pt-3 border-t border-slate-800/80">
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    ⚡ Cyber Power Studio (8 IN 1):
+                  </span>
+                  <button
+                    onClick={onOpenPowerStudio}
+                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                  >
+                    <span>Semua Tools</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
                   {[
                     { label: '🔐 Burn Secret', desc: 'Pesan 1x Baca' },
                     { label: '🤖 Webhook Relay', desc: 'Discord / TG' },
                     { label: '🌐 DNS Inspector', desc: 'Cek Record' },
                     { label: '🧰 DevTools', desc: 'JWT & Hash' },
                     { label: '🎵 FLAC Music', desc: 'Download Hi-Res' },
-                    { label: '📱 QR Studio', desc: 'Wi-Fi & WA' },
+                    { label: '📱 QR Studio', desc: 'Wi-Fi & Link' },
                     { label: '🎭 Anti-Detect', desc: 'User-Agent' },
                     { label: '🛡️ WireGuard VPN', desc: 'Clash YAML' },
                   ].map((t, idx) => (
                     <button
                       key={idx}
                       onClick={onOpenPowerStudio}
-                      className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-slate-800 text-left transition-all active:scale-95 group"
+                      className="p-2.5 rounded-2xl bg-slate-900/70 hover:bg-slate-850 border border-slate-800/90 text-left transition-all active:scale-95 group hover:border-indigo-500/40"
                     >
                       <div className="font-bold text-slate-200 group-hover:text-indigo-300 truncate">{t.label}</div>
-                      <div className="text-[9px] text-slate-400 truncate">{t.desc}</div>
+                      <div className="text-[10px] text-slate-400 truncate mt-0.5">{t.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -203,43 +216,43 @@ export function EmailList({
               <div
                 key={msg.id}
                 onClick={() => onSelectMessage(msg.id)}
-                className={`group relative cursor-pointer p-3 sm:p-4 transition-all active:scale-[0.99] ${
+                className={`group relative cursor-pointer p-3.5 sm:p-4 transition-all active:scale-[0.99] ${
                   isSelected
-                    ? 'bg-indigo-950/40 border-l-4 border-l-indigo-500 shadow-inner'
+                    ? 'bg-indigo-950/50 border-l-4 border-l-indigo-500 shadow-inner'
                     : 'hover:bg-slate-900/60'
                 } ${!msg.isRead ? 'bg-slate-900/40' : ''}`}
               >
-                <div className="flex items-start gap-2.5 sm:gap-3">
+                <div className="flex items-start gap-3">
                   {/* Sender Avatar & Unread Indicator */}
                   <div className="relative shrink-0">
                     <div
-                      className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-tr ${getAvatarGradient(
+                      className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr ${getAvatarGradient(
                         msg.from.name || msg.from.address
-                      )} text-xs sm:text-sm font-bold text-white shadow-md`}
+                      )} text-sm font-bold text-white shadow-md`}
                     >
                       {senderInitial}
                     </div>
 
                     {!msg.isRead && (
-                      <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 sm:h-3 sm:w-3">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>
-                        <span className="relative inline-flex h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-cyan-500"></span>
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
+                        <span className="relative inline-flex h-3 w-3 rounded-full bg-cyan-500" />
                       </span>
                     )}
                   </div>
 
                   {/* Content Info */}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center justify-between gap-2">
                       <p
                         className={`truncate text-xs ${
-                          !msg.isRead ? 'font-bold text-slate-100' : 'font-medium text-slate-300'
+                          !msg.isRead ? 'font-black text-white' : 'font-medium text-slate-300'
                         }`}
                       >
                         {msg.from.name || msg.from.address}
                       </p>
 
-                      <div className="flex items-center gap-1 shrink-0 text-[10px] text-slate-400">
+                      <div className="flex items-center gap-1 shrink-0 text-[10px] text-slate-400 font-mono">
                         <Clock className="h-3 w-3" />
                         <span>{formatTime(msg.receivedAt)}</span>
                       </div>
@@ -248,7 +261,7 @@ export function EmailList({
                     {/* Subject Line */}
                     <p
                       className={`mt-0.5 truncate text-xs ${
-                        !msg.isRead ? 'font-bold text-white' : 'text-slate-200'
+                        !msg.isRead ? 'font-bold text-cyan-200' : 'text-slate-200'
                       }`}
                     >
                       {msg.subject || '(Tanpa Subjek)'}
@@ -287,7 +300,7 @@ export function EmailList({
                   <div className="flex shrink-0 flex-col items-center gap-1.5">
                     <button
                       onClick={(e) => onToggleStar(msg.id, e)}
-                      className={`p-1 rounded-lg transition-colors active:scale-95 ${
+                      className={`p-1.5 rounded-xl transition-colors active:scale-95 ${
                         msg.isStarred
                           ? 'text-yellow-400 hover:text-yellow-300'
                           : 'text-slate-500 hover:text-slate-300'
@@ -299,7 +312,7 @@ export function EmailList({
                     <button
                       onClick={(e) => onDeleteMessage(msg.id, e)}
                       title="Hapus pesan"
-                      className="p-1 rounded-lg text-slate-500 hover:text-rose-400 transition-colors active:scale-95"
+                      className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 transition-colors active:scale-95"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
