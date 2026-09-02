@@ -179,20 +179,20 @@ export function EmailViewer({
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/80 bg-slate-950/90 shadow-2xl backdrop-blur-xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-cyan-400/40 bg-slate-950 shadow-[4px_4px_0px_#00F0FF,6px_6px_0px_#000000] font-mono">
       {/* Top Header Controls Bar */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 bg-slate-900/60 px-3.5 py-2.5 sm:px-5 sm:py-3">
+      <div className="flex items-center justify-between border-b-2 border-cyan-400/30 bg-slate-900/80 px-3.5 py-2.5 sm:px-4 sm:py-3">
         <div className="flex items-center gap-2">
           {/* Back button (Mobile view) */}
           <button
             onClick={onBack}
-            className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-sky-400 lg:hidden hover:bg-slate-700 active:scale-95 transition-all shadow-sm"
+            className="flex items-center gap-1 rounded-lg border-2 border-cyan-400 bg-cyan-500/20 px-2.5 py-1.5 text-xs font-black text-cyan-300 lg:hidden hover:bg-cyan-500/30 active:translate-x-[1px] active:translate-y-[1px] transition-all shadow-[2px_2px_0px_#000000]"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Daftar Inbox</span>
+            <span>&lt; INBOX</span>
           </button>
 
-          <span className="hidden lg:inline text-xs font-semibold text-slate-300">Detail Pesan</span>
+          <span className="hidden lg:inline text-xs font-black text-cyan-400 tracking-wider uppercase">[TRANSMISSION DECRYPTED]</span>
         </div>
 
         {/* Action Buttons */}

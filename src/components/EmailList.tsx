@@ -16,9 +16,13 @@ import {
   ArrowRight,
   Shield,
   Zap,
+  Gamepad2,
+  Sword,
+  Target,
 } from 'lucide-react';
 import { EmailMessage } from '@/types';
 import { FolderType } from './FolderSidebar';
+import { playNotificationSound } from '@/lib/sound';
 
 interface EmailListProps {
   messages: EmailMessage[];
@@ -58,12 +62,11 @@ export function EmailList({
 
   const getAvatarGradient = (name: string) => {
     const gradients = [
-      'from-blue-600 to-indigo-600',
-      'from-purple-600 to-pink-600',
-      'from-emerald-600 to-teal-600',
-      'from-amber-600 to-orange-600',
-      'from-cyan-600 to-blue-600',
-      'from-rose-600 to-red-600',
+      'from-cyan-500 to-blue-600 border-cyan-400',
+      'from-fuchsia-500 to-rose-600 border-fuchsia-400',
+      'from-emerald-500 to-teal-600 border-emerald-400',
+      'from-amber-500 to-orange-600 border-amber-400',
+      'from-purple-500 to-indigo-600 border-purple-400',
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -82,8 +85,8 @@ export function EmailList({
       const diffMin = Math.floor(diffSec / 60);
       const diffHours = Math.floor(diffMin / 60);
 
-      if (diffSec < 60) return 'Baru saja';
-      if (diffMin < 60) return `${diffMin}m lalu`;
+      if (diffSec < 60) return 'JUST NOW';
+      if (diffMin < 60) return `${diffMin}M AGO`;
       if (diffHours < 24) {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
@@ -94,113 +97,116 @@ export function EmailList({
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/90 shadow-2xl backdrop-blur-2xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-cyan-400/40 bg-slate-950 shadow-[4px_4px_0px_#00F0FF,6px_6px_0px_#000000] font-mono">
       {/* Search Header Bar */}
-      <div className="border-b border-slate-800/80 p-3 sm:p-4 bg-slate-900/40">
+      <div className="border-b-2 border-cyan-400/30 p-3 bg-slate-900/70">
         <div className="relative flex items-center">
-          <Search className="absolute left-3.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 h-4 w-4 text-cyan-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari pengirim, subjek, isi email..."
-            className="w-full rounded-2xl border border-slate-800 bg-slate-900/90 pl-10 pr-9 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner"
+            placeholder="[SEARCH QUEST LOG / SENDER / SUBJ]..."
+            className="w-full rounded-lg border-2 border-slate-700 bg-black pl-9 pr-8 py-2 text-xs text-cyan-300 placeholder-slate-600 focus:border-cyan-400 focus:outline-none transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 text-slate-500 hover:text-slate-300"
+              className="absolute right-2.5 text-slate-500 hover:text-slate-300"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
 
-        {/* Results Counter Subtitle */}
-        <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-slate-400 font-medium">
-          <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-            {currentFolder === 'all' && 'Semua Pesan Masuk'}
-            {currentFolder === 'inbox' && 'Kotak Masuk (Clean)'}
-            {currentFolder === 'spam' && 'Pesan Spam & Filtered'}
-            {currentFolder === 'starred' && 'Pesan Berbintang'}
+        {/* Quest Log Counter HUD */}
+        <div className="mt-2 flex items-center justify-between px-1 text-[10px] font-black text-slate-400 tracking-wider">
+          <span className="flex items-center gap-1 text-cyan-400">
+            <Gamepad2 className="h-3 w-3" />
+            {currentFolder === 'all' && 'QUEST LOG: ALL MESSAGES'}
+            {currentFolder === 'inbox' && 'STAGE 1: CLEAN INBOX'}
+            {currentFolder === 'spam' && 'DUNGEON: SPAM TRAPS'}
+            {currentFolder === 'starred' && 'INVENTORY: STARRED'}
           </span>
-          <span className="font-mono text-cyan-300 font-semibold">
-            {filteredMessages.length} pesan
+          <span className="text-amber-400 font-black">
+            TOTAL: {filteredMessages.length} ITEMS
           </span>
         </div>
       </div>
 
       {/* Email List Scrollable Container */}
-      <div className="flex-1 divide-y divide-slate-800/50 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 divide-y-2 divide-slate-900 overflow-y-auto custom-scrollbar">
         {filteredMessages.length === 0 ? (
-          /* Minimalist & Aesthetic Empty State */
-          <div className="flex h-full flex-col items-center justify-center p-4 sm:p-6 text-center min-h-[360px] space-y-4">
-            {/* Pulsing Radar Ring */}
+          /* Retro Empty State */
+          <div className="flex h-full flex-col items-center justify-center p-4 sm:p-6 text-center min-h-[340px] space-y-4">
+            {/* Pulsing Arcade Ring */}
             <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-500/20 opacity-75" />
-              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-500/30 bg-gradient-to-tr from-slate-900 to-indigo-950/60 shadow-lg text-indigo-400">
-                <Inbox className="h-7 w-7" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-2xl bg-cyan-400/20" />
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-cyan-400 bg-slate-900 text-cyan-400 shadow-[3px_3px_0px_#000000]">
+                <Gamepad2 className="h-7 w-7" />
               </div>
             </div>
 
             <div className="space-y-1 max-w-xs mx-auto">
-              <h4 className="text-sm font-bold text-white">
-                {searchQuery ? 'Tidak ada pesan yang cocok' : 'Kotak Masuk Kosong'}
+              <h4 className="text-xs sm:text-sm font-black text-cyan-300 tracking-widest uppercase">
+                {searchQuery ? 'NO MATCHING LOGS' : 'NO INCOMING TRANSMISSION'}
               </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-slate-400 leading-relaxed">
                 {searchQuery
                   ? 'Coba kata kunci pencarian yang lain.'
-                  : 'Sistem aktif mendengarkan. Pesan dan OTP baru akan otomatis muncul secara realtime.'}
+                  : 'Radar aktif mendengarkan... Kirim pesan untuk trigger event!'}
               </p>
             </div>
 
-            {/* Quick Interactive Actions */}
+            {/* 1-Tap Trigger Test Action */}
             <div className="flex items-center gap-2 pt-1">
               <button
                 type="button"
-                onClick={onOpenTestEmail}
-                className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all"
+                onClick={() => {
+                  playNotificationSound();
+                  onOpenTestEmail();
+                }}
+                className="flex items-center gap-2 rounded-xl border-2 border-emerald-400 bg-emerald-500 px-4 py-2.5 text-xs font-black text-black shadow-[3px_3px_0px_#000000] hover:bg-emerald-400 active:translate-x-[2px] active:translate-y-[2px] transition-all uppercase"
               >
-                <FlaskConical className="h-4 w-4" />
-                <span>Simulasi Tes Email Masuk</span>
+                <FlaskConical className="h-4 w-4 text-black" />
+                <span>[START] TRIGGER TEST OTP</span>
               </button>
             </div>
 
-            {/* ⚡ Quick Tools Bento 2x4 Grid */}
+            {/* 🎮 Retro Power-Ups Bento Grid */}
             {onOpenPowerStudio && (
-              <div className="w-full max-w-md pt-3 border-t border-slate-800/80">
-                <div className="flex items-center justify-between mb-2 px-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    ⚡ Cyber Power Studio (8 IN 1):
+              <div className="w-full max-w-md pt-3 border-t-2 border-cyan-400/20">
+                <div className="flex items-center justify-between mb-2 px-1 text-[10px] font-black">
+                  <span className="text-cyan-400 uppercase tracking-widest">
+                    🕹️ 8-BIT CYBER POWER-UPS:
                   </span>
                   <button
                     onClick={onOpenPowerStudio}
-                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                    className="text-fuchsia-400 hover:text-fuchsia-300 flex items-center gap-0.5"
                   >
-                    <span>Semua Tools</span>
+                    <span>ALL TOOLS</span>
                     <ArrowRight className="h-3 w-3" />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
                   {[
-                    { label: '🔐 Burn Secret', desc: 'Pesan 1x Baca' },
+                    { label: '🔐 Burn Secret', desc: '1x Self-Destruct' },
                     { label: '🤖 Webhook Relay', desc: 'Discord / TG' },
-                    { label: '🌐 DNS Inspector', desc: 'Cek Record' },
+                    { label: '🌐 DNS Inspector', desc: 'Record Lookup' },
                     { label: '🧰 DevTools', desc: 'JWT & Hash' },
-                    { label: '🎵 FLAC Music', desc: 'Download Hi-Res' },
+                    { label: '🎵 FLAC Music', desc: 'Hi-Res Audio' },
                     { label: '📱 QR Studio', desc: 'Wi-Fi & Link' },
-                    { label: '🎭 Anti-Detect', desc: 'User-Agent' },
+                    { label: '🎭 Anti-Detect', desc: 'Agent Spoof' },
                     { label: '🛡️ WireGuard VPN', desc: 'Clash YAML' },
                   ].map((t, idx) => (
                     <button
                       key={idx}
                       onClick={onOpenPowerStudio}
-                      className="p-2.5 rounded-2xl bg-slate-900/70 hover:bg-slate-850 border border-slate-800/90 text-left transition-all active:scale-95 group hover:border-indigo-500/40"
+                      className="p-2 rounded-xl bg-slate-900 border-2 border-slate-800 text-left transition-all active:translate-x-[1px] active:translate-y-[1px] shadow-[2px_2px_0px_#000000] hover:border-cyan-400 group"
                     >
-                      <div className="font-bold text-slate-200 group-hover:text-indigo-300 truncate">{t.label}</div>
-                      <div className="text-[10px] text-slate-400 truncate mt-0.5">{t.desc}</div>
+                      <div className="font-black text-slate-200 group-hover:text-cyan-400 truncate">{t.label}</div>
+                      <div className="text-[9px] text-slate-500 truncate mt-0.5">{t.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -216,27 +222,27 @@ export function EmailList({
               <div
                 key={msg.id}
                 onClick={() => onSelectMessage(msg.id)}
-                className={`group relative cursor-pointer p-3.5 sm:p-4 transition-all active:scale-[0.99] ${
+                className={`group relative cursor-pointer p-3 sm:p-3.5 transition-all active:translate-x-[1px] ${
                   isSelected
-                    ? 'bg-indigo-950/50 border-l-4 border-l-indigo-500 shadow-inner'
-                    : 'hover:bg-slate-900/60'
-                } ${!msg.isRead ? 'bg-slate-900/40' : ''}`}
+                    ? 'bg-slate-900 border-l-4 border-l-cyan-400 shadow-inner'
+                    : 'hover:bg-slate-900/50'
+                } ${!msg.isRead ? 'bg-slate-900/30' : ''}`}
               >
                 <div className="flex items-start gap-3">
-                  {/* Sender Avatar & Unread Indicator */}
+                  {/* Avatar Badge */}
                   <div className="relative shrink-0">
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr ${getAvatarGradient(
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr ${getAvatarGradient(
                         msg.from.name || msg.from.address
-                      )} text-sm font-bold text-white shadow-md`}
+                      )} border-2 text-xs font-black text-white shadow-[2px_2px_0px_#000000]`}
                     >
                       {senderInitial}
                     </div>
 
                     {!msg.isRead && (
-                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
-                        <span className="relative inline-flex h-3 w-3 rounded-full bg-cyan-500" />
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-cyan-400" />
                       </span>
                     )}
                   </div>
@@ -246,73 +252,73 @@ export function EmailList({
                     <div className="flex items-center justify-between gap-2">
                       <p
                         className={`truncate text-xs ${
-                          !msg.isRead ? 'font-black text-white' : 'font-medium text-slate-300'
+                          !msg.isRead ? 'font-black text-cyan-300' : 'font-bold text-slate-300'
                         }`}
                       >
                         {msg.from.name || msg.from.address}
                       </p>
 
-                      <div className="flex items-center gap-1 shrink-0 text-[10px] text-slate-400 font-mono">
+                      <div className="flex items-center gap-1 shrink-0 text-[9px] text-slate-400">
                         <Clock className="h-3 w-3" />
                         <span>{formatTime(msg.receivedAt)}</span>
                       </div>
                     </div>
 
-                    {/* Subject Line */}
+                    {/* Subject */}
                     <p
                       className={`mt-0.5 truncate text-xs ${
-                        !msg.isRead ? 'font-bold text-cyan-200' : 'text-slate-200'
+                        !msg.isRead ? 'font-black text-white' : 'text-slate-200'
                       }`}
                     >
-                      {msg.subject || '(Tanpa Subjek)'}
+                      {msg.subject || '(NO SUBJECT)'}
                     </p>
 
-                    {/* Body Snippet */}
-                    <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-400">
-                      {msg.text ? msg.text.replace(/\s+/g, ' ').substring(0, 100) : '(Konten HTML)'}
+                    {/* Snippet */}
+                    <p className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">
+                      {msg.text ? msg.text.replace(/\s+/g, ' ').substring(0, 90) : '(HTML PAYLOAD)'}
                     </p>
 
-                    {/* Badges Footer */}
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {/* Badges */}
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 font-mono text-[9px]">
                       {msg.isSpam && (
-                        <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-400">
-                          <ShieldAlert className="h-3 w-3" />
-                          <span>Spam ({msg.spamScore}%)</span>
+                        <span className="inline-flex items-center gap-1 rounded border border-rose-500/60 bg-rose-950/40 px-1.5 py-0.2 font-black text-rose-400">
+                          <ShieldAlert className="h-2.5 w-2.5" />
+                          <span>SPAM CRIT ({msg.spamScore}%)</span>
                         </span>
                       )}
 
                       {msg.security.spf === 'pass' && !msg.isSpam && (
-                        <span className="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400">
+                        <span className="inline-flex items-center rounded border border-emerald-500/60 bg-emerald-950/40 px-1.5 py-0.2 font-bold text-emerald-400">
                           SPF OK
                         </span>
                       )}
 
                       {msg.attachments && msg.attachments.length > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[9px] font-medium text-slate-300">
-                          <Paperclip className="h-2.5 w-2.5 text-slate-400" />
-                          <span>{msg.attachments.length}</span>
+                        <span className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-800 px-1.5 py-0.2 font-bold text-slate-300">
+                          <Paperclip className="h-2.5 w-2.5" />
+                          <span>DROP ({msg.attachments.length})</span>
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Actions (Star & Delete) */}
-                  <div className="flex shrink-0 flex-col items-center gap-1.5">
+                  {/* Actions */}
+                  <div className="flex shrink-0 flex-col items-center gap-1">
                     <button
                       onClick={(e) => onToggleStar(msg.id, e)}
-                      className={`p-1.5 rounded-xl transition-colors active:scale-95 ${
+                      className={`p-1 rounded transition-colors active:scale-90 ${
                         msg.isStarred
-                          ? 'text-yellow-400 hover:text-yellow-300'
-                          : 'text-slate-500 hover:text-slate-300'
+                          ? 'text-amber-400 hover:text-amber-300'
+                          : 'text-slate-600 hover:text-slate-400'
                       }`}
                     >
-                      <Star className={`h-4 w-4 ${msg.isStarred ? 'fill-yellow-400' : ''}`} />
+                      <Star className={`h-4 w-4 ${msg.isStarred ? 'fill-amber-400' : ''}`} />
                     </button>
 
                     <button
                       onClick={(e) => onDeleteMessage(msg.id, e)}
                       title="Hapus pesan"
-                      className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 transition-colors active:scale-95"
+                      className="p-1 rounded text-slate-600 hover:text-rose-400 transition-colors active:scale-90"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

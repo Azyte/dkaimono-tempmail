@@ -1,4 +1,4 @@
-export type AppTheme = 'midnight' | 'tokyonight' | 'emerald' | 'nordic' | 'nord';
+export type AppTheme = 'retro' | 'midnight' | 'tokyonight' | 'emerald' | 'nordic' | 'nord';
 
 export interface ThemeOption {
   id: AppTheme;
@@ -13,6 +13,17 @@ export interface ThemeOption {
 }
 
 export const THEME_OPTIONS: ThemeOption[] = [
+  {
+    id: 'retro',
+    name: '🕹️ 8-Bit Arcade Retro',
+    badge: '👾 Pixel Neon & CRT',
+    icon: '🕹️',
+    description: 'Tampilan konsol game retro 8-bit & arcade cyberpunk dengan pixel borders, CRT scanlines, dan coin sound!',
+    bgHex: '#0c0d14',
+    cardHex: '#131522',
+    accentHex: '#00F0FF',
+    accentSecondaryHex: '#ff007f',
+  },
   {
     id: 'midnight',
     name: 'Midnight Obsidian',
@@ -78,10 +89,10 @@ export function applyTheme(theme: AppTheme) {
 }
 
 export function getInitialTheme(): AppTheme {
-  if (typeof window === 'undefined') return 'midnight';
+  if (typeof window === 'undefined') return 'retro';
   const saved = localStorage.getItem('tempmail_theme') as AppTheme;
-  if (saved && ['midnight', 'tokyonight', 'emerald', 'nordic', 'nord'].includes(saved)) {
+  if (saved && ['retro', 'midnight', 'tokyonight', 'emerald', 'nordic', 'nord'].includes(saved)) {
     return saved;
   }
-  return 'midnight';
+  return 'retro';
 }

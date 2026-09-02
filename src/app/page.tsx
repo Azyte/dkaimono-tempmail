@@ -425,92 +425,92 @@ export default function Home() {
             </div>
 
             {/* Right Bento: Studio Quick Actions & Server Health */}
-            <div className="lg:col-span-4 flex flex-col gap-3">
+            <div className="lg:col-span-4 flex flex-col gap-3 font-mono">
               {/* Studio & Generator Bento Tiles */}
               <div className="grid grid-cols-2 gap-2.5">
-                {/* Tile 1: Garapan App Prem (HIGHLIGHT) */}
+                {/* Tile 1: Cyber Power Studio (HIGHLIGHT) */}
                 <button
                   type="button"
                   onClick={() => setGarapanModalOpen(true)}
-                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group col-span-2 bg-gradient-to-r from-indigo-950/70 via-purple-950/60 to-slate-900 border border-indigo-500/40 shadow-lg shadow-indigo-950/50"
+                  className="bento-card-interactive flex flex-col items-start p-3.5 rounded-2xl text-left relative overflow-hidden group col-span-2 border-2 border-indigo-500 bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-900 shadow-[3px_3px_0px_#000000]"
                 >
                   <div className="w-full flex items-center justify-between">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 mb-1.5 group-hover:scale-110 transition-transform">
-                      <Sparkles className="h-5 w-5 text-indigo-400" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500 text-white mb-1.5 group-hover:scale-110 transition-transform shadow-sm">
+                      <Sparkles className="h-4 w-4 fill-white" />
                     </div>
-                    <span className="text-[10px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 px-2 py-0.5 rounded-full">
-                      8 In 1 Suite
+                    <span className="text-[9px] font-black text-indigo-300 bg-indigo-500/20 border border-indigo-400 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                      8-IN-1 SUITE
                     </span>
                   </div>
-                  <span className="text-xs font-black text-white flex items-center gap-1">
-                    <span>⚡ Cyber Power Studio &amp; DevTools Hub</span>
+                  <span className="text-xs font-black text-white flex items-center gap-1 uppercase tracking-wider">
+                    <span>⚡ 8-IN-1 CYBER POWER STUDIO</span>
                     <ArrowUpRight className="h-3.5 w-3.5 text-indigo-400 group-hover:text-white" />
                   </span>
-                  <span className="text-[10px] text-indigo-200/80">Burn Secret • Webhooks • DNS • DevTools • FLAC Music • QR • Anti-Detect</span>
+                  <span className="text-[9px] text-slate-300">Burn Secret • Webhooks • DNS • DevTools • FLAC • QR • VPN</span>
                 </button>
 
                 {/* Tile 2: Video Clipper Studio */}
                 <button
                   type="button"
                   onClick={() => setVideoStudioOpen(true)}
-                  className="bento-card-interactive flex flex-col items-start p-3 rounded-2xl text-left relative overflow-hidden group"
+                  className="bento-card-interactive flex flex-col items-start p-3 rounded-2xl text-left relative overflow-hidden group border-2 border-rose-500/60 bg-rose-950/30 shadow-[2px_2px_0px_#000000]"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 mb-1.5 group-hover:scale-110 transition-transform">
-                    <Scissors className="h-4 w-4" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500 text-white mb-1 group-hover:scale-110 transition-transform">
+                    <Scissors className="h-3.5 w-3.5" />
                   </div>
-                  <span className="text-xs font-bold text-white flex items-center gap-1">
-                    <span>✂️ Video Studio</span>
-                    <ArrowUpRight className="h-3 w-3 text-slate-400 group-hover:text-white" />
+                  <span className="text-xs font-black text-white flex items-center gap-1 uppercase tracking-wider">
+                    <span>✂️ VIDEO STUDIO</span>
+                    <ArrowUpRight className="h-3 w-3 text-rose-400 group-hover:text-white" />
                   </span>
-                  <span className="text-[10px] text-slate-400 truncate">9:16 Shorts/FYP</span>
+                  <span className="text-[9px] text-slate-400 truncate">9:16 Shorts/FYP</span>
                 </button>
 
                 {/* Tile 3: Auto PRO Generator */}
                 <button
                   type="button"
                   onClick={() => setAmPremiumModalOpen(true)}
-                  className="bento-card-interactive flex flex-col items-start p-3 rounded-2xl text-left relative overflow-hidden group"
+                  className="bento-card-interactive flex flex-col items-start p-3 rounded-2xl text-left relative overflow-hidden group border-2 border-emerald-500/60 bg-emerald-950/30 shadow-[2px_2px_0px_#000000]"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 mb-1.5 group-hover:scale-110 transition-transform">
-                    <Zap className="h-4 w-4 fill-emerald-400" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-black mb-1 group-hover:scale-110 transition-transform">
+                    <Zap className="h-3.5 w-3.5 fill-black" />
                   </div>
-                  <span className="text-xs font-bold text-white flex items-center gap-1">
-                    <span>⚡ Generator</span>
-                    <ArrowUpRight className="h-3 w-3 text-slate-400 group-hover:text-white" />
+                  <span className="text-xs font-black text-white flex items-center gap-1 uppercase tracking-wider">
+                    <span>⚡ PRO GENERATOR</span>
+                    <ArrowUpRight className="h-3 w-3 text-emerald-400 group-hover:text-white" />
                   </span>
-                  <span className="text-[10px] text-slate-400 truncate">Alight Motion Pro</span>
+                  <span className="text-[9px] text-slate-400 truncate">Alight Motion Pro</span>
                 </button>
               </div>
 
               {/* Server Ping Health Widget */}
-              <div className="bento-card rounded-2xl p-3 flex items-center justify-between">
+              <div className="bento-card rounded-2xl p-3 flex items-center justify-between border-2 border-cyan-400/40 bg-slate-950 shadow-[3px_3px_0px_#000000]">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-live-pulse" />
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
                   <div>
-                    <span className="text-[11px] font-bold text-white block">Cluster Server Online</span>
-                    <span className="text-[9px] text-slate-400">Ping 18ms • Siap TempMail & Generator</span>
+                    <span className="text-[11px] font-black text-cyan-300 block tracking-wider uppercase">CLUSTER SERVER: ONLINE</span>
+                    <span className="text-[9px] text-slate-400 font-bold">PING: 18MS • READY FOR INCOMING</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setAmPremiumModalOpen(true)}
-                  className="rounded-lg bg-slate-800 hover:bg-slate-700 px-2 py-1 text-[10px] font-bold text-slate-300 border border-slate-700"
+                  className="rounded-lg border-2 border-cyan-400 bg-cyan-500/20 hover:bg-cyan-500/30 px-2.5 py-1 text-[10px] font-black text-cyan-300 uppercase shadow-[2px_2px_0px_#000000]"
                 >
-                  Cek Status
+                  [CHECK]
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Mobile Folder Filter Bar */}
+        {/* Mobile Folder Filter Bar (Arcade Buttons) */}
         {!selectedMessageId && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:hidden custom-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:hidden custom-scrollbar font-mono">
             {[
-              { id: 'all' as FolderType, label: 'Semua', count: counts.all, icon: Mail },
-              { id: 'inbox' as FolderType, label: 'Inbox', count: counts.inbox, icon: Inbox },
-              { id: 'spam' as FolderType, label: 'Spam', count: counts.spam, icon: ShieldAlert },
-              { id: 'starred' as FolderType, label: 'Favorit', count: counts.starred, icon: Star },
-              { id: 'am_accounts' as FolderType, label: '⚡ Auto Pro Hub', count: counts.amAccounts, icon: Zap },
+              { id: 'all' as FolderType, label: 'ALL', count: counts.all, icon: Mail },
+              { id: 'inbox' as FolderType, label: 'INBOX', count: counts.inbox, icon: Inbox },
+              { id: 'spam' as FolderType, label: 'SPAM', count: counts.spam, icon: ShieldAlert },
+              { id: 'starred' as FolderType, label: 'STARRED', count: counts.starred, icon: Star },
+              { id: 'am_accounts' as FolderType, label: '⚡ PRO HUB', count: counts.amAccounts, icon: Zap },
             ].map((item) => {
               const Icon = item.icon;
               const isActive = currentFolder === item.id;
@@ -518,20 +518,18 @@ export default function Home() {
                 <button
                   key={item.id}
                   onClick={() => handleSelectFolder(item.id)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-xl border-2 px-3 py-1.5 text-xs font-black transition-all active:translate-x-[1px] active:translate-y-[1px] ${
                     isActive
-                      ? item.id === 'am_accounts'
-                        ? 'bg-gradient-to-r from-emerald-600 to-cyan-600 text-white shadow-md'
-                        : 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-md shadow-cyan-600/30'
-                      : 'border border-slate-800 bg-slate-900/90 text-slate-400 hover:text-slate-200'
+                      ? 'border-cyan-400 bg-cyan-500 text-black shadow-[2px_2px_0px_#000000]'
+                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
                   <span>{item.label}</span>
                   {item.count > 0 && (
                     <span
-                      className={`rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold ${
-                        isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
+                      className={`rounded-md px-1 py-0.2 text-[9px] font-black ${
+                        isActive ? 'bg-black text-cyan-400' : 'bg-slate-800 text-slate-300'
                       }`}
                     >
                       {item.count}
