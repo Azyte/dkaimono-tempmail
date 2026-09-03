@@ -21,7 +21,7 @@ export function CustomAliasModal({
   onSelectMailbox,
 }: CustomAliasModalProps) {
   const [aliasName, setAliasName] = useState('');
-  const [selectedDomain, setSelectedDomain] = useState(activeDomain || domains[0]?.name || 'loginptn.xyz');
+  const [selectedDomain, setSelectedDomain] = useState(activeDomain || domains[0]?.name || 'sharklasers.com');
   const [isManualDomain, setIsManualDomain] = useState(false);
   const [manualDomainText, setManualDomainText] = useState('');
 

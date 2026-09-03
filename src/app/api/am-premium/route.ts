@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     const customAlias = body.customAlias ? String(body.customAlias).trim() : undefined;
     const inviteUrl = body.inviteUrl ? String(body.inviteUrl).trim() : undefined;
     const amEngine = body.amEngine || 'auto';
-    const domain = body.domain || db.getSettings().defaultDomain || 'loginptn.xyz';
+    const domain = body.domain || db.getSettings().defaultDomain || 'sharklasers.com';
 
     if (serviceType === 'alight_motion' && amEngine === 'all4') {
       const all4Results = await createBatchAmPremium(4, domain, user.id, deviceId, 'all4' as any);

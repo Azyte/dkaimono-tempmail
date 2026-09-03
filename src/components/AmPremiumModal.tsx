@@ -117,6 +117,36 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
   const [showSteps, setShowSteps] = useState(false);
   const [editingClip, setEditingClip] = useState<any | null>(null);
   const [cooldownTimer, setCooldownTimer] = useState<number>(0);
+  const [selectedDomain, setSelectedDomain] = useState<string>('sharklasers.com');
+  const [availableDomains, setAvailableDomains] = useState<string[]>([
+    'sharklasers.com',
+    'guerrillamail.com',
+    'pokemail.net',
+    'spam4.me',
+    'grr.la',
+  ]);
+
+  React.useEffect(() => {
+    fetch('/api/domains')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.domains && Array.isArray(data.domains)) {
+          const names = data.domains.map((d: any) => d.name).filter(Boolean);
+          const combined = Array.from(
+            new Set([
+              'sharklasers.com',
+              'guerrillamail.com',
+              'pokemail.net',
+              'spam4.me',
+              'grr.la',
+              ...names,
+            ])
+          );
+          setAvailableDomains(combined);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   React.useEffect(() => {
     if (cooldownTimer <= 0) return;
@@ -159,6 +189,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
           serviceType,
           count,
           amEngine,
+          domain: selectedDomain,
           customAlias: count === 1 && customAlias.trim() ? customAlias.trim() : undefined,
           inviteUrl: inviteUrl.trim() || undefined,
         }),
@@ -516,6 +547,35 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
               </div>
             </div>
 
+            {/* Domain Selector for Email-based Services */}
+            {!['video_clipper', 'scribd_doc', 'media_downloader', 'flux_ai_image', 'temp_sms', 'warp_plus', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(serviceType) && (
+              <div className="space-y-1.5 rounded-2xl border border-cyan-500/30 bg-cyan-950/20 p-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-cyan-300 flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>Pilih Domain Email:</span>
+                  </label>
+                  <span className="text-[10px] text-emerald-400 font-bold">100% Aktif &amp; Teruji</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-0.5">
+                  {availableDomains.map((dom) => (
+                    <button
+                      key={dom}
+                      type="button"
+                      onClick={() => setSelectedDomain(dom)}
+                      className={`px-2.5 py-1.5 rounded-xl border text-xs font-mono font-bold transition-all text-left truncate ${
+                        selectedDomain === dom
+                          ? 'border-cyan-400 bg-cyan-500/25 text-cyan-300 ring-1 ring-cyan-400/40 shadow-sm'
+                          : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                      }`}
+                    >
+                      <span className="truncate">{selectedDomain === dom ? '✅ ' : '🔘 '}@{dom}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Custom Input Field (Only for 1 item) */}
             {count === 1 && (
               <div className="space-y-1.5">
@@ -549,7 +609,7 @@ export function AmPremiumModal({ isOpen, onClose, onSuccessCreated }: AmPremiumM
                     className="flex-1 bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none"
                   />
                   {!['video_clipper', 'scribd_doc', 'media_downloader', 'flux_ai_image', 'temp_sms', 'warp_plus', 'outline_vpn', 'proton_vpn', 'gaming_ssh', 'proxy_nodes', 'nextdns_pro', 'ai_tokens', 'deezer_hifi'].includes(serviceType) && (
-                    <span className="text-xs font-mono text-slate-500">@loginptn.xyz</span>
+                    <span className="text-xs font-mono text-cyan-400">@{selectedDomain}</span>
                   )}
                 </div>
               </div>

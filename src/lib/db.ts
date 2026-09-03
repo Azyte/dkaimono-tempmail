@@ -982,6 +982,12 @@ export const db = {
     return all;
   },
 
+  getAmAccount(id: string) {
+    const data = loadDb();
+    const all = data.amAccounts || [];
+    return all.find((a) => a.id === id || a.email === id);
+  },
+
   saveAmAccount(account: any) {
     const data = loadDb();
     if (!data.amAccounts) data.amAccounts = [];

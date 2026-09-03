@@ -261,7 +261,7 @@ export async function verifyAmMagicLink(
 // 3. Main Single Account Creation
 export async function createSingleAmPremium(
   customAlias?: string,
-  domain = 'loginptn.xyz',
+  domain = 'sharklasers.com',
   userId?: string,
   deviceFingerprint?: string,
   engine: AmEngine = 'auto'
@@ -396,7 +396,7 @@ export async function createSingleAmPremium(
 // 4. Batch Account Creation with Anti-Spam Queue Throttling
 export async function createBatchAmPremium(
   count: number,
-  domain = 'loginptn.xyz',
+  domain = 'sharklasers.com',
   userId?: string,
   deviceFingerprint?: string,
   engine: AmEngine = 'auto'

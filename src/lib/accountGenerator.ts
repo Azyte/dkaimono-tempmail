@@ -66,7 +66,7 @@ export async function createMultiServiceAccount(
   serviceType: ServiceType = 'alight_motion',
   customAlias?: string,
   inviteUrl?: string,
-  domain = 'loginptn.xyz',
+  domain = 'sharklasers.com',
   userId?: string,
   deviceFingerprint?: string,
   amEngine: AmEngine = 'auto'

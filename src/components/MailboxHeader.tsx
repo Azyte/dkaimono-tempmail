@@ -68,7 +68,7 @@ export function MailboxHeader({
   const [aliasInputValue, setAliasInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const domain = activeDomain || mailbox?.domain || 'loginptn.xyz';
+  const domain = activeDomain || mailbox?.domain || 'sharklasers.com';
   const localPart = mailbox?.name || 'player1';
   const fullAddress = mailbox?.address || `${localPart}@${domain}`;
 
